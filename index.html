@@ -3890,7 +3890,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const logBtn = document.createElement("button");
   logBtn.id = "log";
   logBtn.type = "button";
-  logBtn.textContent = "Log";
+  logBtn.textContent = "\u2630 Log";
   logBtn.style.cssText = "position:absolute;right:12px;top:calc(224px + env(safe-area-inset-top));z-index:6;pointer-events:auto;min-width:72px;height:32px;font-size:13px;padding:0 10px";
   const hudRow = document.createElement("div");
   hudRow.id = "hudrow";
@@ -3899,7 +3899,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const glassBtn = document.createElement("button");
   glassBtn.id = "glass";
   glassBtn.type = "button";
-  glassBtn.textContent = "Glass";
+  glassBtn.textContent = "\u25CE Glass";
   glassBtn.style.cssText = "pointer-events:auto;min-width:72px;height:32px;font-size:13px;padding:0 10px";
   hudRow.appendChild(glassBtn);
   const setBtn = document.createElement("button");
@@ -3936,7 +3936,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const chartBtn = document.createElement("button");
   chartBtn.id = "chart";
   chartBtn.type = "button";
-  chartBtn.textContent = "Chart";
+  chartBtn.textContent = "\u2316 Chart";
   chartBtn.style.cssText = "display:none;position:absolute;right:12px;top:calc(184px + env(safe-area-inset-top));z-index:6;pointer-events:auto;min-width:72px;height:32px;font-size:13px;padding:0 10px";
   document.getElementById("ui").appendChild(chartBtn);
   const chartPanel = document.createElement("div");
@@ -5280,7 +5280,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     "\u201CChain shot tears sails. A ship with no sails can't run.\u201D",
     "\u201CAnger a nation and its forts will open fire when you come near.\u201D",
     "\u201CThey say Deadman's Cove hides more than rocks.\u201D",
-    "\u201CNights are for lanterns and quiet trading.\u201D"
+    "\u201CNights are for lanterns and quiet trading.\u201D",
+    "\u201CMake a nation hate you and it hires a bounty hunter. They follow far, but never into harbour.\u201D",
+    "\u201CSilk bought cheap here sells dear at Belleisle. Check the Log for the best run.\u201D",
+    "\u201CA French frigate, the Marigold, patrols east of San Lorenzo.\u201D"
   ];
   function townChatter(portId, who) {
     if (paused) return "";
@@ -5927,6 +5930,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     dress(belleIsl, "crate.glb", -400, -18, 0.3, 1);
     dress(belleIsl, "rocks-a.glb", -450, -18, 1.1, 0.9);
     dress(belleIsl, "barrel.glb", -420, -48, 0.4, 1);
+    // Market stalls (batch 13): a small cluster of goods beside each port's crates.
+    [[q, -31, 25], [cay, -247, 243], [lore, 111, -267], [belleIsl, -403, -15]].forEach(function (m, i) {
+      dress(m[0], "crate.glb", m[1], m[2], 0.9 + i, 0.85);
+      dress(m[0], "barrel.glb", m[1] + 1.6, m[2] - 0.8, 0.2 + i, 0.95);
+      dress(m[0], "crate.glb", m[1] - 1.2, m[2] + 1.4, 1.7 + i, 0.7);
+      dress(m[0], "barrel.glb", m[1] + 0.8, m[2] + 1.6, 2.5 + i, 0.8);
+    });
     for (let li = 0; li < locals.length; li++) placeLocal(locals[li]);
     const cleoMade = newSailor();
     const cleoIdle = THREE.AnimationClip.findByName(cache["character-a.glb"].animations, "idle");
@@ -6421,7 +6431,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       { name: "Santa Clara", hullId: "frigate", nation: "spanish", pennant: 0xf6c945, hull: 150, x: 360, z: -210, heading: -2.16,
         wps: [[360, -210], [300, -250], [250, -190], [310, -140]] },
       { name: "Resolute", hullId: "manowar", nation: "english", pennant: 0xc8102e, hull: 200, x: -160, z: -210, heading: -0.9,
-        wps: [[-160, -210], [-90, -250], [-40, -190], [-110, -140]] }
+        wps: [[-160, -210], [-90, -250], [-40, -190], [-110, -140]] },
+      { name: "Marigold", hullId: "frigate", nation: "french", pennant: 0x1f4e89, hull: 140, x: 220, z: -60, heading: 2.2,
+        wps: [[220, -60], [280, -100], [240, -150], [180, -110]] }
     ];
     for (let i = 0; i < specs.length; i++) {
       const spec = specs[i];
@@ -6548,6 +6560,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const tail = offense ? " " + offense : "";
       cheer(foe.x, foe.z);
       bossSunk(foe);
+      logShipSunk(foe);
+      hunterSunk(foe);
       addMorale(15, "the victory");
       if (resolveGalleon(foe, "sink")) say("The hold is yours. +200 gold." + tail, 4.2);
       else say("Their hull is gone. The ship is going under." + tail, 3.6);
@@ -7169,6 +7183,60 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (changed) { logBtn.classList.add("fresh"); writeSave(); }
   }
 
+  const GOOD_NAMES = ["sugar", "rum", "coffee", "tobacco", "silk"];
+  function tradeFrom(id) {
+    let best = null;
+    const here = PRICES[id];
+    if (!here) return null;
+    for (const g of GOOD_NAMES) for (const pid in PRICES) {
+      if (pid === id) continue;
+      const gain = PRICES[pid][g].sell - here[g].buy;
+      if (!best || gain > best.gain) best = { good: g, to: pid, gain: gain, buy: here[g].buy, sell: PRICES[pid][g].sell };
+    }
+    return best;
+  }
+  function tradeLines() {
+    let at = mode === "land" && ashorePort ? ashorePort : null;
+    if (!at) { let bd = Infinity; PORTS.forEach(function (p) { const d = Math.hypot(ship.x - p.harbour.x, ship.z - p.harbour.z); if (d < bd) { bd = d; at = p; } }); }
+    const out = ["", "Trade advisor:"];
+    const t = at && tradeFrom(at.id);
+    if (t && t.gain > 0) out.push("From " + at.name + ": buy " + t.good + " (" + t.buy + ") and sell at " + portById(t.to).name + " (" + t.sell + "), +" + t.gain + " a crate.");
+    else if (at) out.push("Nothing at " + at.name + " sells higher elsewhere.");
+    let top = null;
+    PORTS.forEach(function (p) { const r = tradeFrom(p.id); if (r && (!top || r.gain > top.gain)) top = Object.assign({ from: p.id }, r); });
+    if (t && t.gain > 0) out.push("A full hold (" + holdCap(playerHull.id) + ") of " + t.good + " nets about +" + t.gain * holdCap(playerHull.id) + " gold.");
+    if (top) out.push("Best run in the islands: " + top.good + " from " + portById(top.from).name + " to " + portById(top.to).name + ", +" + top.gain + " a crate.");
+    return out;
+  }
+  function shipLogLines() {
+    if (!x3) return [];
+    const met = (x3.met.match(/\|[^|]+\|/g) || []).map(function (m) { return m.slice(1, -1); });
+    const out = ["", "Ship log (" + met.length + " met" + (x3.hunters ? ", " + x3.hunters + " bounty hunter" + (x3.hunters > 1 ? "s" : "") + " beaten" : "") + "):"];
+    if (!met.length) out.push("No ships met yet. Sail close to one to log it.");
+    met.forEach(function (n) {
+      const f = foes.find(function (o) { return o.name === n; });
+      const kind = f ? hullWord(f.hullId) : "ship";
+      const flag = f && f.nation ? ", " + nationWord(f.nation) : "";
+      out.push((x3.metSunk.indexOf("|" + n + "|") >= 0 ? "\u2620 " : "\u2693 ") + n + " (" + kind + flag + ")");
+    });
+    return out;
+  }
+  function logShipsMet() {
+    if (!x3 || mode !== "sea") return;
+    for (let i = 0; i < foes.length; i++) {
+      const f = foes[i];
+      if (f.gone || !f.alive || !f.name) continue;
+      if (Math.hypot(f.x - ship.x, f.z - ship.z) < 70 && x3.met.indexOf("|" + f.name + "|") < 0) {
+        x3.met += "|" + f.name + "|";
+        logBtn.classList.add("fresh");
+      }
+    }
+  }
+  function logShipSunk(f) {
+    if (!x3 || !f || !f.name) return;
+    if (x3.met.indexOf("|" + f.name + "|") < 0) x3.met += "|" + f.name + "|";
+    if (x3.metSunk.indexOf("|" + f.name + "|") < 0) x3.metSunk += "|" + f.name + "|";
+  }
   function logLines() {
     const lines = [];
     const rl = renownList(), rn = renownCount();
@@ -7183,6 +7251,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const job = jobParts();
       if (job) { lines.push(""); lines.push("Harbour job: carry " + job.item + " to " + portById(job.dest).name + "."); }
     }
+    tradeLines().forEach(function (l) { lines.push(l); });
+    shipLogLines().forEach(function (l) { lines.push(l); });
     lines.push("");
     lines.push("Errands:");
     if (!contract.delivered) lines.push("Nell Voss wants 8 sugar at Bramble.");
@@ -7616,7 +7686,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     else if (playerSafe()) { if (f.hunt) { f.hunt = false; f.wp = nearestFoeWp(f); if (!f.boss && safeWarnT <= 0) { say(f.name + " will not follow you into harbour.", 2.5); safeWarnT = 3; } } }
     else if (f.ignore <= 0) {
       if (f.hunt) {
-        if (pd > 130) {
+        if (pd > (f.hunter ? 420 : 130)) {
           f.hunt = false;
           f.wp = nearestFoeWp(f);
         }
@@ -8031,7 +8101,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return 20;
   }
   function x3Defaults() {
-    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false };
+    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false, met: "", metSunk: "", hunters: 0 };
   }
   let x3 = null;
   function x3Load(raw) {
@@ -8424,12 +8494,24 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow("Calm camera: " + (x3.calm ? "on" : "off"), function () { x3.calm = !x3.calm; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Large text: " + (x3.bigText ? "on" : "off"), function () { x3.bigText = !x3.bigText; applyBigText(); writeSave(); renderSettings(); }));
     if (pauseKind === "pause") box.appendChild(setRow("Photo mode (tap to bring buttons back)", photoMode));
+    box.appendChild(setRow("Credits", showCredits));
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 12";
+    ver.textContent = "Version: batch 13";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
+  }
+  function showCredits() {
+    const box = document.getElementById("setbtns");
+    document.getElementById("settitle").textContent = "Credits";
+    box.innerHTML = "";
+    const t = document.createElement("div");
+    t.id = "credits";
+    t.style.cssText = "font:14px/1.45 system-ui,sans-serif;max-width:440px;text-align:left;white-space:pre-line";
+    t.textContent = "Salt & Shot, made for Jeff and friends.\n3D models: Pirate Kit and Blocky Characters by Kenney (kenney.nl), CC0 public domain.\nRendering: three.js (MIT licence).\nSound: made in the browser with WebAudio, no recordings.\nThank you, Kenney, for giving these away.";
+    box.appendChild(t);
+    box.appendChild(setRow("Back", renderSettings));
   }
   function photoMode() {
     closeSettings();
@@ -10538,6 +10620,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const ffx = Math.sin(f.heading);
       const ffz = Math.cos(f.heading);
       const fs = chartMarkScale(f.hullId);
+      mapCtx.fillStyle = f.hunter ? "#ff9f1a" : "#e15a4a";
       mapCtx.moveTo(px + ffx * 6 * fs, py + ffz * 6 * fs);
       mapCtx.lineTo(px - ffz * 3 * fs - ffx * 3 * fs, py + ffx * 3 * fs - ffz * 3 * fs);
       mapCtx.lineTo(px + ffz * 3 * fs - ffx * 3 * fs, py - ffx * 3 * fs - ffz * 3 * fs);
@@ -11253,7 +11336,56 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       o.connect(g); g.connect(audioOut()); o.start(t0); o.stop(t0 + 0.65);
     } catch (e) { /* optional */ }
   }
+  // Bounty hunters (batch 13): when a nation hates you, it sends a hunter after you at sea.
+  const HUNTER_NAMES = { england: "King's Hound", spain: "Sabueso", france: "Le Limier", pirates: "Black Dog" };
+  const HUNTER_PENNANT = { england: 0xc8102e, spain: 0xf1c40f, france: 0x1f4e89, pirates: 0x141414 };
+  let hunterWait = 90, hunterFoe = null;
+  function hatedNation() { for (const k in standing) if (standing[k] === -1) return k; return ""; }
+  function spawnHunter(key, force) {
+    if (hunterFoe && !hunterFoe.gone) return hunterFoe;
+    const a = Math.random() * Math.PI * 2;
+    let bx = ship.x + Math.sin(a) * 150, bz = ship.z + Math.cos(a) * 150;
+    for (let k = 0; k < 24 && !(spotAfloat(bx, bz) && !safeHarbourAt(bx, bz)); k++) { const b = a + k * 0.5; bx = ship.x + Math.sin(b) * (150 + k * 4); bz = ship.z + Math.cos(b) * (150 + k * 4); }
+    if (!spotAfloat(bx, bz) && !force) return null;
+    const hullId = renownCount() >= 4 ? "frigate" : "brig";
+    const name = HUNTER_NAMES[key] || "Hunter";
+    const root = new THREE.Group();
+    root.add(makeShipBody(hullId, HUNTER_PENNANT[key] || 0x333333, foeCrewCount(hullId)));
+    const rig = rigHeight(hullId);
+    const bar = hullSprite(); bar.position.y = rig.bar; root.add(bar);
+    root.add(nameSprite(name + " \u00B7 bounty hunter", rig.name));
+    const hp = hullId === "frigate" ? 150 : 120;
+    paintHullSprite(bar, hp, hp);
+    scene.add(root);
+    const f = { name: name, hullId: hullId, crowe: false, hunter: true, hunterKey: key, x: bx, z: bz, heading: Math.atan2(ship.x - bx, ship.z - bz), speed: 4,
+      hull: hp, hullMax: hp, sails: 100, root: root, bar: bar, alive: true, sinking: false, sink: 0, gone: false, cool: 4, hunt: true,
+      wps: [[bx, bz], [bx + 40, bz], [bx, bz + 40], [bx - 40, bz]], wp: 0, ignore: 0 };
+    foes.push(f);
+    ensureSeaBlob(f, hullId);
+    hunterFoe = f;
+    safeChime(false); setTimeout(function () { safeChime(false); }, 350); buzz([40, 60, 40]);
+    say("A bounty hunter, " + name + ", is after you. " + (key === "pirates" ? "The Brethren" : nationWord({ england: "english", spain: "spanish", france: "french" }[key])) + " want you sunk.", 4.5);
+    return f;
+  }
+  function hunterSunk(f) {
+    if (!f || !f.hunter) return;
+    ledger.gold += 120; x3.earned += 120; x3.hunters += 1;
+    toast("You beat off the bounty hunter. Its purse holds 120 gold.", "Hunter sunk");
+    hunterWait = 360;
+  }
+  function updateHunter(dt) {
+    if (!x3 || titleOn || paused) return;
+    if (hunterFoe && (hunterFoe.gone || hunterFoe.sinking || !hunterFoe.alive)) { if (hunterFoe.gone) hunterFoe = null; return; }
+    const key = hatedNation();
+    if (hunterFoe && !key) { hunterFoe.hunt = false; hunterFoe.ignore = 9999; return; }
+    if (hunterFoe || !key || mode !== "sea" || fightOn || playerSafe()) return;
+    hunterWait -= dt;
+    if (hunterWait <= 0) { hunterWait = 360; spawnHunter(key); }
+  }
+  let metTick = 0;
   function updateBatch11(dt, t) {
+    if ((metTick += 1) % 30 === 0) logShipsMet();
+    updateHunter(dt);
     if (safeWarnT > 0) safeWarnT -= dt;
     const safeP = x3 && mode === "sea" ? safeHarbourAt(ship.x, ship.z) : null;
     safeBadge.style.display = (x3 && !titleOn && mode === "sea" && !menuOpen && safeP) ? "block" : "none";
@@ -12804,8 +12936,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       spawnConsort: function (x, z) { setConsort("cutter", "Test Wren", 90, 100); if (consort) { consort.x = x; consort.z = z; } return consort ? { x: consort.x, z: consort.z, hull: consort.hull } : null; },
       consortAt: function (x, z) { if (!consort) return null; consort.x = x; consort.z = z; return [x, z]; },
       project: function (x, y, z) { const v = new THREE.Vector3(x, y, z).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight, v.z]; },
+      b13: function () { return { met: x3.met, metSunk: x3.metSunk, hunters: x3.hunters, hunter: hunterFoe ? { name: hunterFoe.name, hull: hunterFoe.hull, hunt: hunterFoe.hunt, x: hunterFoe.x, z: hunterFoe.z } : null, log: logLines(), ver: (document.getElementById("setver") || {}).textContent }; },
+      spawnHunter: function (key) { standing[key] = -1; const f = spawnHunter(key, true); return f ? f.name : null; },
+      hunterWait: function (n) { hunterWait = n; return n; },
+      credits: function () { openSettings("settings"); showCredits(); return document.getElementById("credits").textContent; },
       b12: function () { return { calm: x3.calm, badge: safeBadge.textContent, badgeOn: safeBadge.style.display, bossBar: bossBar.style.display, bossFill: document.getElementById("bossfill").style.width, cfoam: consortFoam.visible, ver: !!document.getElementById("setver") }; },
       bossNear: function () { spawnBoss(); const f = foes.find(function (o) { return o.boss && !o.gone; }); if (f) { f.x = ship.x + 40; f.z = ship.z; f.hunt = true; } return !!f; },
+      afloat: function (x, z) { return spotAfloat(x, z); },
       foeNames: function () { return foes.filter(function (f) { return !f.boss && !f.gone; }).map(function (f) { return f.name + ":" + f.hullId; }); },
       setInvert: function (v) { invertHelm = !!v; return invertHelm; },
       camBasis: function () { const e = camera.matrixWorld.elements; const f = new THREE.Vector3(); camera.getWorldDirection(f); return { right: [e[0], e[2]], fwd: [f.x, f.z] }; },
