@@ -11577,7 +11577,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (hunterFoe && !key) {
       if (hunterFoe.hunt || hunterFoe.ignore < 9000) { hunterFoe.hunt = false; hunterFoe.ignore = 9999; say(hunterFoe.name + " calls off the hunt.", 3); }
       // Once well out of sight, the stood-down hunter leaves the sea for good.
-      if (Math.hypot(hunterFoe.x - ship.x, hunterFoe.z - ship.z) > 260 || mode !== "sea") { hunterFoe.gone = true; hunterFoe.alive = false; scene.remove(hunterFoe.root); if (hunterFoe.blob) hunterFoe.blob.visible = false; hunterFoe = null; hunterWait = hunterGap(); hunterWarned = false; }
+      hunterFoe.standT = (hunterFoe.standT || 0) + dt;
+      if (Math.hypot(hunterFoe.x - ship.x, hunterFoe.z - ship.z) > 260 || mode !== "sea" || hunterFoe.standT > 20) { hunterFoe.gone = true; hunterFoe.alive = false; scene.remove(hunterFoe.root); if (hunterFoe.blob) hunterFoe.blob.visible = false; hunterFoe = null; hunterWait = hunterGap(); hunterWarned = false; }
       return;
     }
     if (hunterFoe && !hunterFoe.sinking && playerSafe()) {
