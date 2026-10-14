@@ -7805,7 +7805,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           f.rakeOn -= steerDt;
           const gx = ship.x + Math.sin(ship.heading) * 22 * f.rakeEnd, gz = ship.z + Math.cos(ship.heading) * 22 * f.rakeEnd;
           const gd = Math.hypot(gx - f.x, gz - f.z);
-          if (f.rakeOn <= 0 || gd < 7) { f.rakeOn = 0; f.rakeCd = 20 + Math.random() * 15; }
+          if (f.rakeOn <= 0 || gd < 7) {
+            if (gd >= 7) { floatText(f.x, 10, f.z, "rake spoiled", "#9dffb0"); addMorale(2, "good seamanship"); }
+            f.rakeOn = 0; f.rakeCd = 20 + Math.random() * 15;
+          }
           else return { want: Math.atan2(gx - f.x, gz - f.z), dist: Infinity, hunting: true };
         }
       }
@@ -8536,7 +8539,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // Other ships carry a stern lantern after dark, so you can still find them when their name tags are hidden.
   let foeLampGeo = null, foeLampMat = null;
   function syncFoeLamps() {
-    const dark = dayU.value < 0.35;
+    const dark = dayU.value < 0.35 || (typeof fogK === "number" && fogK > 0.5);
     for (let i = 0; i < foes.length; i++) {
       const f = foes[i];
       if (!f.root || f.gone) continue;
@@ -9746,8 +9749,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       ledger.gold += sell;
       gainSkill("trade");
       addGlut(good, 1);
+      const wasShort = !!(shortage && ashorePort && shortage.port === ashorePort.id && shortage.good === good);
+      if (wasShort) {
+        shortage.sold = (shortage.sold || 0) + 1;
+        if (shortage.sold >= 6) { toast(ashorePort.name + " has all the " + good + " it needs for now. The shortage is over.", "Market news"); shortage = null; }
+      }
       if (x3) { const sid = ashorePort ? ashorePort.id : "bramble"; if (x3.soldAt.indexOf("|" + sid + "|") < 0) x3.soldAt += "|" + sid + "|"; }
-      tradeNote = "Sold 1 " + good + " for " + sell + " gold." + (glutOf(good) > 8 ? " The " + good + " market here is getting flooded." : "");
+      tradeNote = "Sold 1 " + good + " for " + sell + " gold." + (wasShort ? " They needed that: top price." : "") + (glutOf(good) > 8 ? " The " + good + " market here is getting flooded." : "");
       if (!quiet) buzz(10);
       writeSave();
     }
@@ -13300,7 +13308,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       story: function () { return { contract: JSON.parse(JSON.stringify(contract)), gold: ledger.gold, sugar: ledger.sugar, renown: renownCount(), next: nextGoal().text, sunk: x3.sunk, mode: mode, hull: ship.hull }; },
       toSea: function () { if (mode === "land") { closeMenu(); boardShip(); } return mode; },
       deeds: function () { return { n: deedCount(), list: x3.deeds, sail: x3.sail, owned: x3.sailsOwned, job: x3.job, jobsDone: x3.jobsDone }; },
-      fog: function (on) { if (on) fogT = 90; return { fogT: fogT, fogK: fogK, near: scene.fog.near, far: scene.fog.far }; },
+      fog: function (on) { if (on) fogT = 90; if (on === false) { fogT = 0; fogK = 0; } return { fogT: fogT, fogK: fogK, near: scene.fog.near, far: scene.fog.far }; },
       stormExit: function () { wasInSquall = true; checkDeeds(); return { leftStormT: leftStormT, deeds: x3.deeds }; },
       sky: function () { return { rainbow: !!rainbow, star: !!(star && star.visible), starWait: starWait }; },
       board: function (name) { for (let i = 0; i < foes.length; i++) if (foes[i].name === name) { openFight(foes[i]); return true; } return false; },
