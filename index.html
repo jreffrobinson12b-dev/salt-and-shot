@@ -4115,6 +4115,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const HAZE = new THREE.Color(0xe4f2ea);
   scene.background = SKY_HIGH;
   scene.fog = new THREE.Fog(HAZE, 180, 900);
+  const dayU = { value: 1 };
+  const DAY_LEN = 720;
+  const HAZE_NIGHT = new THREE.Color(0x1a2a40);
+  const fogTmp = new THREE.Color();
 
   const camera = new THREE.PerspectiveCamera(60, 1, 0.2, 1800);
   const IS_PHONE = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) || /Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -4157,14 +4161,20 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         "  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);",
         "}"
       ].join("\n"),
+      uniforms: { uDay: dayU },
       fragmentShader: [
         "varying vec3 vDir;",
+        "uniform float uDay;",
         "void main() {",
         "  float h = normalize(vDir).y;",
         "  float t = smoothstep(-0.12, 0.88, h);",
         "  vec3 haze = vec3(0.86, 0.93, 0.90);",
         "  vec3 high = vec3(0.239, 0.494, 0.761);",
-        "  gl_FragColor = vec4(mix(haze, high, t), 1.0);",
+        "  vec3 dayc = mix(haze, high, t);",
+        "  vec3 night = mix(vec3(0.10, 0.16, 0.26), vec3(0.03, 0.05, 0.12), t);",
+        "  vec3 dusk = mix(vec3(0.98, 0.62, 0.42), high * 0.7, t);",
+        "  vec3 c = uDay > 0.5 ? mix(dusk, dayc, (uDay - 0.5) * 2.0) : mix(night, dusk, uDay * 2.0);",
+        "  gl_FragColor = vec4(c, 1.0);",
         "}"
       ].join("\n")
     })
@@ -4185,7 +4195,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const waterUniforms = {
     uTime: { value: 0 },
     uCam: { value: new THREE.Vector2() },
-    uSun: { value: new THREE.Vector2(28, 12).normalize() }
+    uSun: { value: new THREE.Vector2(28, 12).normalize() },
+    uDay: dayU
   };
   const water = new THREE.Mesh(
     new THREE.PlaneGeometry(2600, 2600, 90, 90),
@@ -4210,6 +4221,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         "uniform float uTime;",
         "uniform vec2 uCam;",
         "uniform vec2 uSun;",
+        "uniform float uDay;",
         "varying float vH;",
         "varying vec3 vWorld;",
         "void main() {",
@@ -4235,7 +4247,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         "  float glitter = band * reach * (0.72 + 0.28 * sin(along * 0.42 - uTime * 1.3));",
         "  col = mix(col, vec3(0.93, 0.78, 0.48), glitter * 0.22);",
         "  col = mix(col, haze, horizon);",
-        "  gl_FragColor = vec4(col, 1.0);",
+        "  gl_FragColor = vec4(col * mix(0.38, 1.0, uDay), 1.0);",
         "}"
       ].join("\n")
     })
@@ -6355,6 +6367,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function damagePlayer(n) {
     if (ship.hull <= 0) return;
+    if (x3 && x3.reinforced) n = Math.max(1, Math.round(n * 0.85));
     shakeCam(Math.min(0.9, 0.25 + n * 0.02));
     buzz(n >= 20 ? [60, 40, 60] : 50);
     loseHands(Math.ceil(n / 14));
@@ -6802,6 +6815,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (coffeeErrand.accepted && !coffeeErrand.delivered) lines.push("Cleo Vann wants 4 coffee at Belleisle.");
     if (x3 && x3.bountyAccepted && !x3.bountyPaid) lines.push(x3.bountyDown ? "Claim Grey Nun's bounty from Hob at Bramble." : "Sink or take Grey Nun, south of Belleisle.");
     if (x3 && x3.wrightAccepted && !x3.wrightPaid) lines.push("Bess Corley wants 6 tobacco at the Bramble shipyard.");
+    if (x3 && x3.silkAccepted && !x3.silkPaid) lines.push("Take 4 silk to the Belleisle church for Nell.");
     if (x3 && crewShort()) lines.push("Short-handed. Hire hands at a tavern.");
     if (willaErrand.accepted && !willaErrand.seen) lines.push("Sail close to Resolute, then back to Willa at Salt Cay.");
     else if (willaErrand.accepted && willaErrand.seen && !willaErrand.paid) lines.push("Tell Willa Sparr what you saw.");
@@ -7567,7 +7581,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return 20;
   }
   function x3Defaults() {
-    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false };
+    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false };
   }
   let x3 = null;
   function x3Load(raw) {
@@ -7665,6 +7679,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     writeSave();
     renderMenu();
   }
+  function buyUpgrade(key, cost, line) {
+    if (x3[key]) return;
+    if (ledger.gold < cost) { say("The yard wants " + cost + " gold.", 2); return; }
+    ledger.gold -= cost;
+    x3[key] = true;
+    say(line, 3);
+    writeSave();
+    renderMenu();
+  }
   function yardGunButtons(body, box) {
     body.textContent += " Guns mounted: " + gunType().name + ".";
     for (const id in GUNS) if (x3.guns !== id) box.appendChild(menuButton("Fit " + GUNS[id].name + " (" + GUNS[id].cost + " gold): " + GUNS[id].note, function () { buyGuns(id); }));
@@ -7700,10 +7723,147 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (f.name === "Gull Purse" || f.name === "Grey Nun" || f.name === "Santa Miseria") return "wary";
     return "steady";
   }
+  const toastEl = document.createElement("div");
+  toastEl.id = "toast";
+  toastEl.style.cssText = "display:none;position:absolute;left:50%;top:calc(52px + env(safe-area-inset-top));transform:translateX(-50%);z-index:9;padding:10px 18px;border-radius:14px;background:rgba(28,22,12,.92);border:2px solid #f2d48a;color:#f2d48a;font-family:Palatino,Georgia,serif;font-size:18px;text-align:center;pointer-events:none;max-width:86vw;box-shadow:0 4px 18px rgba(0,0,0,.5)";
+  document.getElementById("ui").appendChild(toastEl);
+  let toastT = 0;
+  function toast(line) {
+    toastEl.innerHTML = "<div style='font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.8'>Quest complete</div>" + line;
+    toastEl.style.display = "block";
+    toastEl.animate([{ transform: "translateX(-50%) scale(0.7)", opacity: 0 }, { transform: "translateX(-50%) scale(1)", opacity: 1 }], { duration: 260, easing: "ease-out" });
+    toastT = 3.5;
+    fanfare();
+  }
+  function fanfare() {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const notes = [523, 659, 784, 1047];
+      for (let i = 0; i < notes.length; i++) {
+        const t = audioCtx.currentTime + i * 0.11;
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = "square";
+        o.frequency.setValueAtTime(notes[i], t);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.06, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + (i === 3 ? 0.5 : 0.16));
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t); o.stop(t + 0.55);
+      }
+    } catch (e) { /* audio optional */ }
+  }
+  let questSnap = null;
+  function questFlags() {
+    return {
+      "Nell's sugar contract": !!contract.delivered,
+      "Crowe brought down": !!contract.crowePaid,
+      "Santa Miseria taken": !!contract.galleonPaid,
+      "Hob's letter delivered": !!letter.delivered,
+      "Cleo's coffee delivered": !!coffeeErrand.delivered,
+      "Willa paid for the sighting": !!willaErrand.paid,
+      "Grey Nun bounty claimed": !!(x3 && x3.bountyPaid),
+      "Bess's tobacco delivered": !!(x3 && x3.wrightPaid),
+      "Nell's last commission": !!(x3 && x3.silkPaid)
+    };
+  }
+  let questClock = 0;
+  function watchQuests() {
+    const nowMs = performance.now();
+    const dt = questClock ? Math.min(0.1, (nowMs - questClock) / 1000) : 0;
+    questClock = nowMs;
+    if (toastT > 0) { toastT -= dt; if (toastT <= 0) toastEl.style.display = "none"; }
+    if (titleOn || !worldReady || !x3) { questSnap = null; return; }
+    const now = questFlags();
+    if (questSnap) for (const k in now) if (now[k] && !questSnap[k]) toast(k);
+    questSnap = now;
+  }
+  let sternLamp = null;
+  let sternHost = null;
+  function syncSternLamp() {
+    if (!ship || !ship.root) return;
+    if (sternHost === ship.root && sternLamp) return;
+    if (sternLamp && sternLamp.parent) sternLamp.parent.remove(sternLamp);
+    sternLamp = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.45, 0.35), new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xffb347, emissiveIntensity: 0.2 }));
+    const ry = ship.root.rotation.y, rx = ship.root.rotation.x, rz = ship.root.rotation.z;
+    ship.root.rotation.set(0, 0, 0);
+    ship.root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(ship.root);
+    ship.root.rotation.set(rx, ry, rz);
+    ship.root.updateMatrixWorld(true);
+    const len = Math.max(2, (box.max.z - box.min.z) * 0.5);
+    sternLamp.position.set(0, 3.2, -len * 0.82 / Math.max(0.001, ship.root.scale.z || 1));
+    sternLamp.castShadow = false;
+    ship.root.add(sternLamp);
+    sternHost = ship.root;
+  }
+  let dayOffset = 0;
+  function updateDaylight(t) {
+    t += dayOffset;
+    const c = Math.cos((t / DAY_LEN) * Math.PI * 2);
+    const d = Math.max(0, Math.min(1, 0.5 + c * 0.9));
+    dayU.value = d;
+    const k = 0.45 + 0.55 * d;
+    hemi.intensity = 0.72 * k;
+    sun.intensity = 1.85 * (0.25 + 0.75 * d);
+    fill.intensity = 0.52 * k;
+    fogTmp.copy(HAZE_NIGHT).lerp(HAZE, d);
+    scene.fog.color.copy(fogTmp);
+    if (sunDisc) sunDisc.visible = d > 0.35;
+    if (typeof sternLamp !== "undefined" && sternLamp) sternLamp.material.emissiveIntensity = d < 0.6 ? 1.6 : 0.2;
+  }
+  let seaAmb = null;
+  function updateAmbience() {
+    try {
+      if (!audioCtx || audioCtx.state !== "running") return;
+      if (!seaAmb) {
+        if (!noiseBuf) noiseBurst(0.0001, 0.01, 100);
+        if (!noiseBuf) return;
+        const src = audioCtx.createBufferSource();
+        src.buffer = noiseBuf; src.loop = true;
+        const f = audioCtx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 420;
+        const g = audioCtx.createGain(); g.gain.value = 0;
+        src.connect(f); f.connect(g); g.connect(audioCtx.destination);
+        src.start();
+        seaAmb = { g: g, f: f };
+      }
+      const t = audioCtx.currentTime;
+      const swell = 0.5 + 0.5 * Math.sin(t * 0.7) * Math.sin(t * 0.23);
+      const base = titleOn || document.hidden ? 0 : (mode === "sea" ? 0.035 + Math.min(0.03, Math.abs(ship.speed) * 0.005) : 0.015);
+      seaAmb.g.gain.setTargetAtTime(base * (0.6 + 0.6 * swell), t, 0.3);
+      seaAmb.f.frequency.setTargetAtTime(300 + swell * 380, t, 0.3);
+    } catch (e) { /* audio optional */ }
+  }
+  let goldSeen = null;
+  function watchGold() {
+    if (titleOn || !worldReady) { goldSeen = null; return; }
+    if (goldSeen !== null && ledger.gold > goldSeen) {
+      const gain = ledger.gold - goldSeen;
+      const at = mode === "land" ? person : ship;
+      floatText(at.x, mode === "land" ? 3 : 9, at.z, "+" + gain + " gold", "#ffd86a");
+      try {
+        if (audioCtx) {
+          const t = audioCtx.currentTime;
+          [1318, 1760].forEach(function (fq, i) {
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.type = "triangle"; o.frequency.setValueAtTime(fq, t + i * 0.07);
+            g.gain.setValueAtTime(0.0001, t + i * 0.07); g.gain.exponentialRampToValueAtTime(0.07, t + i * 0.07 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.07 + 0.25);
+            o.connect(g); g.connect(audioCtx.destination); o.start(t + i * 0.07); o.stop(t + i * 0.07 + 0.3);
+          });
+        }
+      } catch (e) { /* optional */ }
+    }
+    goldSeen = ledger.gold;
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden && worldReady && !titleOn) writeSave();
+    try { if (audioCtx) { if (document.hidden) audioCtx.suspend(); else audioCtx.resume(); } } catch (e) { /* optional */ }
+  });
+  window.addEventListener("pagehide", function () { if (worldReady && !titleOn) writeSave(); });
   function updateAimTip() {
     if (!x3) return;
     if (mode === "sea" && lookHeld && !x3.aimed) { x3.aimed = true; writeSave(); }
-    const show = !x3.aimed && mode === "sea" && !titleOn && !fightOn && !menuOpen && !document.getElementById("howto");
+    const show = toastT <= 0 && !x3.aimed && mode === "sea" && !titleOn && !fightOn && !menuOpen && !document.getElementById("howto");
     aimTip.style.display = show ? "block" : "none";
   }
 
@@ -8045,7 +8205,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const cloth = ship.sails <= 0 ? 0.07 : ship.sails / 100;
       const hurt = ship.hull < 35 ? 0.85 : 1;
       if (calmT > 0) set *= 0.5;
-      const target = set * cloth * MAX_SPEED * windFactor * shallowFactor(ship.x, ship.z) * hurt;
+      const target = set * cloth * MAX_SPEED * windFactor * shallowFactor(ship.x, ship.z) * hurt * (x3 && x3.copper ? 1.08 : 1);
       const move = hullSpec(playerHull.id);
       ship.speed = damp(ship.speed, target, dt, 0.55 * move.accel);
       const turnBoost = 0.3 + 0.7 * Math.min(1, Math.abs(ship.speed) / 4);
@@ -8326,6 +8486,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       renderShipyard(title, body, purse, box);
     } else if (menuKind === "agent") {
       renderAgent(title, body, purse, box);
+      silkStoryButtons(body, box, "agent");
     } else if (menuKind === "church") {
       renderChurch(title, body, purse, box);
     } else if (menuKind === "quarter") {
@@ -8454,6 +8615,23 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return "";
   }
 
+  function silkStoryButtons(body, box, where) {
+    if (!x3 || !contract.galleonPaid || x3.silkPaid) return;
+    if (where === "agent" && !x3.silkAccepted) {
+      body.textContent += " Nell has one more errand: 4 bolts of silk for the Belleisle church, a peace gift. The bishop pays 150.";
+      box.insertBefore(menuButton("Take Nell's last commission", function () { x3.silkAccepted = true; writeSave(); renderMenu(); }), box.lastChild);
+    }
+    if (where === "church" && x3.silkAccepted && ashorePort && ashorePort.id === "belle") {
+      if (ledger.silk >= 4) box.insertBefore(menuButton("Give the bishop 4 silk (150 gold)", function () {
+        ledger.silk -= 4; ledger.gold += 150; x3.silkPaid = true;
+        if (standing.france < 3) standing.france += 1;
+        say("The bishop blesses the gift. 150 gold, and France warms to you.", 4);
+        writeSave(); renderMenu();
+      }), box.lastChild);
+      else body.textContent += " The bishop waits for Nell's 4 silk. You hold " + ledger.silk + ".";
+    }
+  }
+
   function renderChurch(title, body, purse, box) {
     const key = nationKey();
     const nation = key === "spain" ? "Spain" : key === "france" ? "France" : "England";
@@ -8464,6 +8642,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (n >= 3) box.appendChild(menuButton("The parish can take no more", donate));
     else box.appendChild(menuButton("Donate " + DONATE + " gold", donate));
     box.appendChild(menuButton("Leave", closeMenu));
+    silkStoryButtons(body, box, "church");
   }
 
   function donate() {
@@ -8514,6 +8693,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const patch = hullRepairCost();
     if (patch > 0) box.appendChild(menuButton("Patch hull to " + ship.hullMax + " (" + patch + " gold)", repairHull));
     yardGunButtons(body, box);
+    const cmax = crewMaxFor(playerHull.id);
+    if (x3.crew < cmax) {
+      const need = cmax - x3.crew;
+      body.textContent += " This hull wants " + cmax + " hands and you have " + x3.crew + "." + (crewShort() ? " Short-handed, she reloads slow and steers lazy." : "");
+      box.appendChild(menuButton("Hire " + need + " hands to fill her (" + (need * 2) + " gold)", function () { hireHands(cmax); }));
+    }
+    if (!x3.copper) box.appendChild(menuButton("Copper-sheathe the bottom (180 gold): 8% faster", function () { buyUpgrade("copper", 180, "Copper sheathing on. She runs cleaner."); }));
+    if (!x3.reinforced) box.appendChild(menuButton("Reinforce the hull (200 gold): take 15% less shot damage", function () { buyUpgrade("reinforced", 200, "Oak knees and iron straps. She takes a hit better."); }));
     yardExtras(box);
     box.appendChild(menuButton("Leave", closeMenu));
   }
@@ -9440,9 +9627,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     layoutHint(now);
     if (!x3) x3Load(null);
     updateAimTip();
+    syncSternLamp();
+    updateAmbience();
+    watchGold();
     crewTick();
+    watchQuests();
     last = now;
     waterUniforms.uTime.value = now / 1000;
+    updateDaylight(now / 1000);
     windAngle += dt * (Math.PI * 2 / WIND_TURN);
     if (fireCool > 0) fireCool -= dt;
     if (!titleOn) {
@@ -10582,7 +10774,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         lookYaw = Math.atan2(x - ship.x, z - ship.z) - ship.heading;
         lookHeld = true;
       },
-      setLookHeld: function (v) { lookHeld = v; }
+      setLookHeld: function (v) { lookHeld = v; },
+      night: function () { dayOffset = DAY_LEN / 2 - performance.now() / 1000; },
+      day: function () { return dayU.value; },
+      toast: function () { return toastEl.style.display !== "none" ? toastEl.textContent : ""; },
+      galleonPaid: function () { contract.galleonPaid = true; },
+      hull: function () { return { hull: ship.hull, max: ship.hullMax }; },
+      hurt: function (n) { damagePlayer(n); return ship.hull; },
+      buyHull: function (id) { if (id === "frigate") buyFrigate(); else if (id === "brig") buyLargeHull(); return playerHull.id; }
     },
     foeAt: function (i) {
       const f = foes[i];
