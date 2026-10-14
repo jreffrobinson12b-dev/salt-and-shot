@@ -6342,7 +6342,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const fracW = Math.min(1, (spr.userData.textW || 160) / 512);
       // Cap a tag's on-screen height so a label next to the camera never fills the view.
       if (spr.userData.baseSY == null) { spr.userData.baseSX = spr.scale.x; spr.userData.baseSY = spr.scale.y; }
-      const rawH = spr.userData.baseSY * 0.62 / worldPerPx, capH = 30;
+      const rawH = spr.userData.baseSY * 0.62 / worldPerPx, capH = 22;
       const kS = rawH > capH ? capH / rawH : 1;
       spr.scale.set(spr.userData.baseSX * kS, spr.userData.baseSY * kS, 1);
       const screenH = Math.max(16, spr.scale.y * 0.62 / worldPerPx);
@@ -6371,6 +6371,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     addHud(document.getElementById("map"));
     addHud(document.getElementById("chart"));
     addHud(document.getElementById("stick"));
+    // Batch 15: the title, status lines, wind dial and hint were missing, so tags could land on top of them.
+    addHud(document.querySelector("#top h1"));
+    addHud(document.getElementById("sub"));
+    addHud(document.getElementById("windbox"));
+    addHud(document.getElementById("hint"));
+    addHud(document.getElementById("safebadge"));
+    addHud(document.getElementById("bossbar"));
     const hudBtns = fresh ? document.querySelectorAll("#btns button") : [];
     for (let bi = 0; bi < hudBtns.length; bi++) addHud(hudBtns[bi]);
     if (fresh) { separatePlaceTags.hud = hud; separatePlaceTags.at = nowMs; }
@@ -6590,6 +6597,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   let simWrecked = false;
   function wreckPlayer() {
     simWrecked = true;
+    if (typeof hunterLeave === "function") hunterLeave();
     addMorale(-25);
     ship.x = 18;
     ship.z = 60;
@@ -6707,6 +6715,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     shakeCam(Math.min(0.9, 0.25 + n * 0.02));
     buzz(n >= 20 ? [60, 40, 60] : 50);
     loseHands(Math.ceil(n / 14));
+    if (typeof hitFlash === "function") hitFlash(n);
     ship.hull = Math.max(0, ship.hull - n);
     floatText(ship.x, 8, ship.z, "-" + n, "#ffb4a8");
     if (ship.hull <= 0) wreckPlayer();
@@ -7218,6 +7227,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     let at = mode === "land" && ashorePort ? ashorePort : null;
     if (!at) { let bd = Infinity; PORTS.forEach(function (p) { const d = Math.hypot(ship.x - p.harbour.x, ship.z - p.harbour.z); if (d < bd) { bd = d; at = p; } }); }
     const out = ["", "Trade advisor:"];
+    let held = null;
+    GOOD_NAMES.forEach(function (g) { if ((ledger[g] || 0) > 0) { let bp = null; PORTS.forEach(function (p) { if (!bp || PRICES[p.id][g].sell > PRICES[bp.id][g].sell) bp = p; }); if (!held || ledger[g] * PRICES[bp.id][g].sell > held.v) held = { g: g, n: ledger[g], p: bp, v: ledger[g] * PRICES[bp.id][g].sell }; } });
+    if (held) out.push("You carry " + held.n + " " + held.g + ": best sold at " + held.p.name + " (" + PRICES[held.p.id][held.g].sell + " each).");
     const t = at && tradeFrom(at.id);
     if (t && t.gain > 0) out.push("From " + at.name + ": buy " + t.good + " (" + t.buy + ") and sell at " + portById(t.to).name + " (" + t.sell + "), +" + t.gain + " a crate.");
     else if (at) out.push("Nothing at " + at.name + " sells higher elsewhere.");
@@ -7236,7 +7248,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     met.forEach(function (n) {
       const f = foes.find(function (o) { return o.name === n; });
       const kind = f ? hullWord(f.hullId) : "ship";
-      const flag = f && f.nation ? ", " + nationWord(f.nation) : "";
+      const flag = f && f.nation ? ", " + nationWord(f.nation) : (f && f.hunter ? ", bounty hunter" : "");
       out.push((x3.metSunk.indexOf("|" + n + "|") >= 0 ? "\u2620 " : "\u2693 ") + n + " (" + kind + flag + ")");
     });
     return out;
@@ -7263,6 +7275,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     lines.push("Renown: " + RENOWN_TITLES[rn] + " (" + rn + " of " + rl.length + ")");
     lines.push("Next: " + nextGoal().text);
     rl.forEach(function (m) { lines.push((m.done ? "\u2713 " : "\u25CB ") + m.text); });
+    if (x3) lines.push("Time at sea: " + Math.floor(x3.seaTime / 60) + " min \u00B7 Sailed: " + (x3.dist / 185).toFixed(1) + " nautical miles");
+    if (hunterFoe && !hunterFoe.gone && !hunterFoe.sinking) lines.push("A bounty hunter, " + hunterFoe.name + ", is on your trail.");
     if (x3) lines.push("Ships sunk or taken: " + x3.sunk + " \u00B7 Gold earned: " + x3.earned + " \u00B7 Crew morale: " + x3.morale);
     if (x3) {
       lines.push("");
@@ -8121,7 +8135,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return 20;
   }
   function x3Defaults() {
-    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false, met: "", metSunk: "", hunters: 0 };
+    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false, met: "", metSunk: "", hunters: 0, seaTime: 0, dist: 0, bigBtn: false };
   }
   let x3 = null;
   function x3Load(raw) {
@@ -8510,6 +8524,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow("Vibration: " + (x3.vibrate ? "on" : "off"), function () { x3.vibrate = !x3.vibrate; if (x3.vibrate) buzz(40); writeSave(); renderSettings(); }));
     box.appendChild(setRow("Invert helm: " + (invertHelm ? "on" : "off"), function () { invertHelm = !invertHelm; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Difficulty: " + DIFF_WORD[x3.diff], function () { const o = ["easy", "normal", "hard"]; x3.diff = o[(o.indexOf(x3.diff) + 1) % 3]; writeSave(); renderSettings(); }));
+    if (x3.tut >= 9) box.appendChild(setRow("Replay the lessons", function () { x3.tut = 0; tutSaid = -1; writeSave(); renderSettings(); }));
+    box.appendChild(setRow("Bigger buttons: " + (x3.bigBtn ? "on" : "off"), function () { x3.bigBtn = !x3.bigBtn; applyBigText(); writeSave(); renderSettings(); }));
     if (x3.tut < 4) box.appendChild(setRow("Skip the lessons", function () { x3.tut = 9; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Calm camera: " + (x3.calm ? "on" : "off"), function () { x3.calm = !x3.calm; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Large text: " + (x3.bigText ? "on" : "off"), function () { x3.bigText = !x3.bigText; applyBigText(); writeSave(); renderSettings(); }));
@@ -8518,7 +8534,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 14";
+    ver.textContent = "Version: batch 15";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -10872,7 +10888,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     { id: "rich", text: "Hold 1000 gold at once", reward: "" },
     { id: "leviathan", text: "Sink the Leviathan", reward: "black" },
     { id: "hunter", text: "Beat a bounty hunter", reward: "" },
-    { id: "spotter", text: "Log every patrol ship in the islands", reward: "" }
+    { id: "spotter", text: "Log every patrol ship in the islands", reward: "" },
+    { id: "voyager", text: "Sail 20 nautical miles in all", reward: "" }
   ];
   const SAILS = {
     white: { name: "Canvas white", hex: 0, cost: 0 },
@@ -10906,6 +10923,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       rich: ledger.gold >= 1000,
       leviathan: !!x3.bossDown,
       hunter: x3.hunters > 0,
+      voyager: x3.dist >= 20 * 185,
       spotter: PATROLS.every(function (n) { return x3.met.indexOf("|" + n + "|") >= 0; })
     };
     for (let i = 0; i < DEEDS.length; i++) {
@@ -11246,8 +11264,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // Short (sideways) screens: settings become a two-column grid so seven rows fit without scrolling.
   polishCss.textContent += "@media (max-height:500px){#setbtns{display:grid!important;grid-template-columns:1fr 1fr;gap:6px!important}#setbtns>button{height:42px!important;font-size:15px!important}#setbtns>div{grid-column:1/-1}#settitle{font-size:18px!important;margin-bottom:6px!important}#setbtns{width:min(540px,92vw)}}#setbtns:has(>div){}";
   polishCss.textContent += "@media (max-height:380px){#setbtns>button{height:38px!important}#setbtns{gap:4px!important}#settitle{margin-bottom:4px!important}}@media (max-aspect-ratio:1/1){#safebadge{top:calc(274px + env(safe-area-inset-top))!important}}";
+  polishCss.textContent += "@media (max-height:500px) and (min-width:700px){#setbtns{grid-template-columns:1fr 1fr 1fr!important;width:min(720px,94vw)!important}}";
   const DIFF_WORD = { easy: "Easy", normal: "Normal", hard: "Hard" };
-  function applyBigText() { document.body.classList.toggle("bigtext", !!(x3 && x3.bigText)); }
+  function applyBigText() { document.body.classList.toggle("bigtext", !!(x3 && x3.bigText)); document.body.classList.toggle("bigbtn", !!(x3 && x3.bigBtn)); }
+  polishCss.textContent += "body.bigbtn #btns button{min-width:112px!important;height:54px!important;font-size:17px!important}body.bigbtn #stick{width:140px!important;height:140px!important}body.bigbtn #knob{width:60px!important;height:60px!important;margin:-30px 0 0 -30px!important}@media (max-height:420px){body.bigbtn #btns button{height:50px!important;min-width:106px!important}body.bigbtn #stick{width:128px!important;height:128px!important}}";
   polishCss.textContent += "body.bigtext button{font-size:18px!important}body.bigtext #hint{font-size:16px!important}body.bigtext #mbody,body.bigtext #setbtns{font-size:17px!important;line-height:1.4!important}body.bigtext #sub,body.bigtext #windbox{font-size:14px!important}body.bigtext #toast,body.bigtext #story{font-size:16px!important}body.bigtext #logpanel{font-size:17px!important}body.bigtext #boot{font-size:17px!important}body.bigtext #safebadge,body.bigtext #bossbar{font-size:14px!important}";
   // Field patch (batch 11): at sea, when the hull is below 60%, the carpenter can patch 30% back for gold and morale.
   let patchCool = 0;
@@ -11261,10 +11281,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (ledger.gold < cost) { say("A field patch needs " + cost + " gold. Break off and run for a port.", 3); patchCool = 3; return false; }
     ledger.gold -= cost;
     ship.hull = Math.min(ship.hullMax, ship.hull + Math.round(ship.hullMax * 0.3));
-    patchCool = 40; addMorale(-5);
+    patchCool = x3.diff === "easy" ? 25 : 40; addMorale(-5);
     floatText(ship.x, 8, ship.z, "+" + Math.round(ship.hullMax * 0.3), "#b8f5b0");
     if (consort && !consort.sinking && Math.hypot(consort.x - ship.x, consort.z - ship.z) < 40) { consort.hull = Math.min(consort.hullMax, consort.hull + Math.round(consort.hullMax * 0.15)); paintHullSprite(consort.bar, consort.hull, consort.hullMax); }
-    say("The carpenter patches the hull (" + cost + " gold). Next patch in 40 s.", 3);
+    say("The carpenter patches the hull (" + cost + " gold). Next patch in " + Math.round(patchCool) + " s.", 3);
     noiseBurst(0.2, 0.1, 700); buzz(30); writeSave();
     return true;
   }
@@ -11364,7 +11384,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // Bounty hunters (batch 13): when a nation hates you, it sends a hunter after you at sea.
   const HUNTER_NAMES = { england: "King's Hound", spain: "Sabueso", france: "Le Limier", pirates: "Black Dog" };
   const HUNTER_PENNANT = { england: 0xc8102e, spain: 0xf1c40f, france: 0x1f4e89, pirates: 0x141414 };
-  let hunterWait = 180, hunterFoe = null, hunterWarned = false;
+  let hunterWait = 180, hunterFoe = null, hunterWarned = false, hunterSpawns = 0;
   function hunterGap() { return 480 * ({ easy: 2, normal: 1, hard: 0.75 }[x3 ? x3.diff : "normal"] || 1); }
   function hatedNation() { for (const k in standing) if (standing[k] === -1) return k; return ""; }
   function spawnHunter(key, force) {
@@ -11373,7 +11393,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     let bx = ship.x + Math.sin(a) * 150, bz = ship.z + Math.cos(a) * 150;
     for (let k = 0; k < 24 && !(spotAfloat(bx, bz) && !safeHarbourAt(bx, bz)); k++) { const b = a + k * 0.5; bx = ship.x + Math.sin(b) * (150 + k * 4); bz = ship.z + Math.cos(b) * (150 + k * 4); }
     if (!spotAfloat(bx, bz) && !force) return null;
-    const hullId = renownCount() >= 4 ? "frigate" : "brig";
+    const hullId = renownCount() >= (x3.diff === "hard" ? 2 : 4) ? "frigate" : "brig";
     const name = HUNTER_NAMES[key] || "Hunter";
     const root = new THREE.Group();
     root.add(makeShipBody(hullId, HUNTER_PENNANT[key] || 0x333333, foeCrewCount(hullId)));
@@ -11388,10 +11408,17 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       wps: [[bx, bz], [bx + 40, bz], [bx, bz + 40], [bx - 40, bz]], wp: 0, ignore: 0 };
     foes.push(f);
     ensureSeaBlob(f, hullId);
-    hunterFoe = f;
+    hunterFoe = f; hunterSpawns++;
     safeChime(false); setTimeout(function () { safeChime(false); }, 350); buzz([40, 60, 40]);
     say("A bounty hunter, " + name + ", is after you. " + (key === "pirates" ? "The Brethren" : nationWord({ england: "english", spain: "spanish", france: "french" }[key])) + " want you sunk.", 4.5);
     return f;
+  }
+  // The hunter goes home after a wreck, or once you have sheltered in harbour for 45 s.
+  let shelterT = 0;
+  function hunterLeave() {
+    if (!hunterFoe || hunterFoe.gone) return;
+    hunterFoe.gone = true; hunterFoe.alive = false; scene.remove(hunterFoe.root); if (hunterFoe.blob) hunterFoe.blob.visible = false;
+    hunterFoe = null; hunterWait = hunterGap(); hunterWarned = false; shelterT = 0;
   }
   function hunterSunk(f) {
     if (!f || !f.hunter) return;
@@ -11410,6 +11437,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (Math.hypot(hunterFoe.x - ship.x, hunterFoe.z - ship.z) > 260 || mode !== "sea") { hunterFoe.gone = true; hunterFoe.alive = false; scene.remove(hunterFoe.root); if (hunterFoe.blob) hunterFoe.blob.visible = false; hunterFoe = null; hunterWait = hunterGap(); hunterWarned = false; }
       return;
     }
+    if (hunterFoe && !hunterFoe.sinking && playerSafe()) {
+      shelterT += dt;
+      if (shelterT > 45) { say(hunterFoe.name + " gives up waiting and sails off.", 3); hunterLeave(); }
+      return;
+    }
+    shelterT = 0;
     if (hunterFoe || !key || mode !== "sea" || fightOn || playerSafe()) return;
     let bossOn = false;
     for (let i = 0; i < foes.length; i++) if (foes[i].boss && foes[i].hunt && foes[i].alive) bossOn = true;
@@ -11420,7 +11453,27 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (hunterWait <= 0) { hunterWait = hunterGap(); hunterWarned = false; spawnHunter(key); }
   }
   let metTick = 0;
+  const hitVig = document.createElement("div");
+  hitVig.id = "hitvig";
+  hitVig.style.cssText = "position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 90px 30px rgba(200,30,20,.75);transition:opacity .12s";
+  document.getElementById("ui").appendChild(hitVig);
+  let vigT = 0, lastX = null, lastZ = null;
+  function hitFlash(n) { vigT = Math.min(0.6, 0.25 + n * 0.012) * (x3 && x3.calm ? 0.5 : 1); }
+  const portraitTip = document.createElement("div");
+  portraitTip.id = "portraittip";
+  portraitTip.textContent = "\u21BB Best played with the phone sideways";
+  portraitTip.style.cssText = "display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(352px + env(safe-area-inset-top));padding:6px 12px;border-radius:12px;background:rgba(8,20,32,.7);color:#f4efe2;font:600 13px system-ui,sans-serif;pointer-events:none;white-space:nowrap";
+  document.getElementById("ui").appendChild(portraitTip);
   function updateBatch11(dt, t) {
+    portraitTip.style.display = (!titleOn && innerHeight > innerWidth * 1.2) ? "block" : "none";
+    if (x3 && mode === "sea" && !paused && !titleOn) {
+      x3.seaTime += dt;
+      if (lastX !== null) { const d = Math.hypot(ship.x - lastX, ship.z - lastZ); if (d < 20) x3.dist += d; }
+      lastX = ship.x; lastZ = ship.z;
+    } else lastX = null;
+    if (vigT > 0) vigT = Math.max(0, vigT - dt);
+    const low = x3 && mode === "sea" && ship.hull > 0 && ship.hull < ship.hullMax * 0.25 ? 0.18 + 0.08 * Math.sin(t * 4) : 0;
+    hitVig.style.opacity = String(Math.max(vigT * 1.6, low));
     if ((metTick += 1) % 30 === 0) logShipsMet();
     updateHunter(dt);
     if (safeWarnT > 0) safeWarnT -= dt;
@@ -12902,6 +12955,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           if (mode === "sea") ISLANDS.forEach(function (isl) { if (Math.hypot(ship.x - isl.x, ship.z - isl.z) < isl.landR - 4) probs.push("ship inside " + isl.name); });
           return probs;
         };
+        const hs0 = hunterSpawns, hb0 = x3.hunters;
         const steps = Math.round(seconds / dt);
         for (let i = 0; i < steps; i++) {
           report.steps++;
@@ -12942,7 +12996,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
             if (fireCool > 0) fireCool -= dt;
             updateStorms(dt); updateFoes(dt); updateFort(dt); updateShots(dt); updateConsort(dt); updateSkirmish(dt);
             updateSalvage(dt); updateSeaEvents(dt); updateCrew(dt); updateTownWalkers(dt);
-            updateBottles(dt, simT); updateMorale(dt); updateWeather(dt); updateGrapples();
+            updateBottles(dt, simT); updateMorale(dt); updateWeather(dt); updateGrapples(); updateBatch11(dt, simT);
             if (i % 30 === 0) { checkRenown(); checkDeeds(); }
             if (ship.hull < report.minHull) report.minHull = ship.hull;
             if (Math.abs(ship.speed) > report.maxSpeed) report.maxSpeed = Math.abs(ship.speed);
@@ -12960,6 +13014,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         }
         toastQueue.length = 0;
         report.final = { mode: mode, x: Math.round(ship.x), z: Math.round(ship.z), hull: ship.hull, gold: ledger.gold, morale: x3.morale, deeds: x3.deeds, renown: x3.renown };
+        report.hunterSpawns = hunterSpawns - hs0; report.huntersSunk = x3.hunters - hb0;
         return report;
       },
       saveRepairs: function () { return saveRepairs; },
@@ -12973,6 +13028,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       spawnConsort: function (x, z) { setConsort("cutter", "Test Wren", 90, 100); if (consort) { consort.x = x; consort.z = z; } return consort ? { x: consort.x, z: consort.z, hull: consort.hull } : null; },
       consortAt: function (x, z) { if (!consort) return null; consort.x = x; consort.z = z; return [x, z]; },
       project: function (x, y, z) { const v = new THREE.Vector3(x, y, z).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight, v.z]; },
+      b15: function () { return { seaTime: x3.seaTime, dist: x3.dist, bigBtn: x3.bigBtn, vig: hitVig.style.opacity, shelter: shelterT, portrait: portraitTip.style.display, patchCool: patchCool }; },
       hunterState: function () { return { wait: hunterWait, warned: hunterWarned, gap: hunterGap(), foe: hunterFoe ? { name: hunterFoe.name, hunt: hunterFoe.hunt, gone: hunterFoe.gone } : null }; },
       doorsAt: function (id) { return doors.filter(function (d) { return d.port === id; }).map(function (d) { return { label: d.label, x: d.x, z: d.z, stall: !!d.stall }; }); },
       tagScales: function (re) { const r = new RegExp(re); return placeTags.filter(function (s) { return r.test(s.userData.label || ""); }).map(function (s) { return { l: s.userData.label, sy: +s.scale.y.toFixed(2), base: s.userData.baseSY, d: +Math.hypot(s.position.x - camera.position.x, s.position.y - camera.position.y, s.position.z - camera.position.z).toFixed(1), o: +s.material.opacity.toFixed(2) }; }); },
