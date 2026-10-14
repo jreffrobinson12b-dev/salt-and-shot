@@ -7761,8 +7761,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         if (pd > (f.hunter ? 420 : 130)) {
           f.hunt = false;
           f.wp = nearestFoeWp(f);
+          if (f.alive && !f.sinking) floatText(f.x, 10, f.z, "lost you", "#cfe6ff");
         }
-      } else if (pd < (dayU.value < 0.35 && !f.hunter && !f.boss ? 60 : 90)) f.hunt = true;
+      } else if (pd < (dayU.value < 0.35 && !f.hunter && !f.boss ? 60 : 90)) { f.hunt = true; if (f.alive && !f.sinking) floatText(f.x, 10, f.z, "spotted you!", "#ffb4a8"); }
     }
     if (mode === "sea" && f.alive && !f.sinking && f.hunt && f.ignore <= 0 && pd > 0.5) {
       const runAt = foeTemper(f) === "bold" ? 25 : (foeTemper(f) === "wary" ? 60 : 40);
@@ -8474,6 +8475,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   let dayOffset = 0;
   let pauseClock = 0;
   let lastDayT = 0;
+  var wasDark = null;
   function updateDaylight(t) {
     lastDayT = t;
     t += dayOffset;
@@ -8489,6 +8491,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (sunDisc) { sunDisc.visible = d > 0.35; sunDisc.material.color.setRGB(1, clamp(0.55 + (d - 0.35) * 0.9, 0.55, 0.886), clamp(0.3 + (d - 0.35) * 1.2, 0.3, 0.66)); }
     if (typeof sternLamp !== "undefined" && sternLamp) sternLamp.material.emissiveIntensity = 0.2 + 1.4 * clamp((0.65 - d) / 0.3, 0, 1);
     updateLanterns(t);
+    const darkNow = d < 0.35;
+    if (wasDark !== null && darkNow !== wasDark && x3 && !titleOn && noticeT <= 0.2 && x3.tut >= 4) say(darkNow ? "Night. Patrols only spot you up close in the dark." : "Dawn. Patrols can see you from farther off again.", 3);
+    wasDark = darkNow;
   }
   let seaAmb = null;
   function updateAmbience() {
@@ -10496,6 +10501,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (shotBtn) shotBtn.style.display = "";
       glassBtn.style.display = "";
       fireBtn.textContent = fireCool > 0.05 ? ("Reload " + Math.ceil(fireCool)) : ("Fire: " + shotWord());
+      // Reload progress: the button fills left to right as the crew load the guns.
+      if (fireCool > 0.05) { const full = Math.max(1, gunStats().reload || 6); const k = Math.round(100 * clamp(1 - fireCool / full, 0, 1)); fireBtn.style.backgroundImage = "linear-gradient(90deg, rgba(255,255,255,.38) " + k + "%, rgba(0,0,0,0) " + k + "%)"; }
+      else fireBtn.style.backgroundImage = "";
       if (fireCool <= 0.05 && !fightOn) {
         const aimNow = viewBearing();
         fireBtn.textContent = aimNow.bear ? (aimNow.sign > 0 ? "Fire: " + shotWord() + " \u25B6" : "\u25C0 Fire: " + shotWord()) : "Swipe to aim";
@@ -13307,6 +13315,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       hunterWait: function (n) { hunterWait = n; return n; },
       testShot: function (name, heading, dmg) { const f = foes.find(function (o) { return o.name === name; }); if (!f) return null; if (typeof heading === "number") f.heading = heading; const h0 = f.hull; shotHits({ mesh: { position: { x: f.x, y: 3, z: f.z } }, from: "player", dmg: dmg || 30 }); return h0 - f.hull; },
       foeSpot: function (name, dist) { const f = foes.find(function (o) { return o.name === name; }); if (!f) return null; f.hunt = false; f.ignore = 0; f.x = ship.x + dist; f.z = ship.z; foeSteer(f); return f.hunt; },
+      setFireCool: function (n) { fireCool = n; return n; },
       b19: function () { return { glut: JSON.parse(JSON.stringify(glut)), streak: hitStreak, badge: safeBadge.textContent, hull: ship.hull, fireGlow: fireBtn.style.boxShadow, tipAim: x3.tipAim }; },
       sellPrice: function (g) { return sellOf(g); },
       easeGlut: function () { easeGlut(); },
