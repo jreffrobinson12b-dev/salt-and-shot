@@ -12192,8 +12192,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     writeSave();
   }
   const DRILL_NAMES = ["green", "drilled", "sharp", "veteran"];
-  // Batch 27 tune: a long-game check showed 3% per level at 30 hits was too strong; now 2% per level at 40 hits.
-  const DRILL_STEP = 0.02, DRILL_HITS = 40;
+  // Batch 27 tune: a long-game check showed 3% per level (+12 points of cutter wins) was too strong; now 1% per level at 40 hits.
+  const DRILL_STEP = 0.01, DRILL_HITS = 40;
   function drillLevel() { return x3 ? Math.min(3, Math.floor((x3.hits || 0) / DRILL_HITS)) : 0; }
   let drillSeen = -1;
   function updateDrill() {
