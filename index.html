@@ -6330,7 +6330,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
   }
 
+  let simWrecked = false;
   function wreckPlayer() {
+    simWrecked = true;
     ship.x = 18;
     ship.z = 60;
     ship.heading = Math.PI;
@@ -7415,6 +7417,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       f.z = pushed.z;
       const bob = seaBob(waterUniforms.uTime.value, 0.8 + i * 1.37, inSquallAt(f.x, f.z));
       f.root.position.set(f.x, bob.y, f.z);
+      f.root.visible = Math.hypot(f.x - camera.position.x, f.z - camera.position.z) < 560;
       const foeK = Math.min(1, Math.abs(sp) / 5);
       const foeMax = HEEL_MAX * 0.55;
       const foeRoll = clamp((f.turnRate || 0) * 0.7 * foeK, -foeMax, foeMax);
@@ -7494,6 +7497,35 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return { rel: rel, fromLine: fromLine, bear: fromLine >= BEAR_MIN, sign: rel >= 0 ? 1 : -1 };
   }
 
+  // Gun captains lay the broadside on a ship that is roughly abeam on the firing side.
+  function broadsideAssist(sign, sx, sz, gtv) {
+    const rx = Math.cos(ship.heading) * sign, rz = -Math.sin(ship.heading) * sign;
+    const flight = 1.2 * Math.max(0.8, gtv.lift);
+    const maxV = 24 * gtv.speed;
+    const reach = maxV * flight;
+    let best = null, bd = Infinity;
+    const consider = function (o, vx, vz) {
+      const dx = o.x - sx, dz = o.z - sz;
+      const d = Math.hypot(dx, dz);
+      if (d < 6 || d > reach) return;
+      const cos = (dx * rx + dz * rz) / d;
+      if (cos < 0.72) return;
+      if (d < bd) { bd = d; best = { x: o.x + (vx || 0) * flight, z: o.z + (vz || 0) * flight }; }
+    };
+    for (let i = 0; i < foes.length; i++) {
+      const f = foes[i];
+      if (f.gone || !f.alive || f.sinking) continue;
+      const sp = f.way || 0;
+      consider(f, Math.sin(f.heading) * sp, Math.cos(f.heading) * sp);
+    }
+    if (skirmish) skirmish.ships.forEach(function (o) { if (!o.sinking && !o.gone) consider(o, 0, 0); });
+    if (!best) return null;
+    const dx = best.x - sx, dz = best.z - sz;
+    const d = Math.hypot(dx, dz) || 1;
+    const v = Math.min(maxV, d / flight);
+    return { vx: dx / d * v, vz: dz / d * v };
+  }
+
   function fire(forceSign) {
     if (mode !== "sea" || fightOn || !ballTemplate || ship.hull <= 0) return;
     if (fireCool > 0) {
@@ -7518,7 +7550,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const sz = ship.z + rz * sign * 3.2 + fz * 0.6;
     const word = grape ? "Grape shot." : (chain ? "Chain shot." : "Round shot.");
     const gtv = gunType();
-    spawnShot("player", sx, 4.2, sz, (rx * sign * 18 + fx * 6) * gtv.speed, 6.2 * gtv.lift, (rz * sign * 18 + fz * 6) * gtv.speed, grape ? 4 : (chain ? stats.chain : stats.damage), grape ? 0 : (chain ? stats.chainSail : 0), grape ? "grape" : "");
+    let bvx = (rx * sign * 18 + fx * 6) * gtv.speed, bvz = (rz * sign * 18 + fz * 6) * gtv.speed;
+    const assist = broadsideAssist(sign, sx, sz, gtv);
+    if (assist) { bvx = assist.vx; bvz = assist.vz; }
+    spawnShot("player", sx, 4.2, sz, bvx, 6.2 * gtv.lift, bvz, grape ? 4 : (chain ? stats.chain : stats.damage), grape ? 0 : (chain ? stats.chainSail : 0), grape ? "grape" : "");
     batteryFlash(ship.root, sign);
     boom();
     buzz(25);
@@ -7692,7 +7727,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return 20;
   }
   function x3Defaults() {
-    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "" };
+    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "" };
   }
   let x3 = null;
   function x3Load(raw) {
@@ -8147,13 +8182,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const fightAt = consortFightSpot ? consortFightSpot() : null;
     if (fightAt) { tx = fightAt.x; tz = fightAt.z; wantSpeed = 6.2; }
     else { tx = slot.x; tz = slot.z; }
+    const safe = consortAvoid(tx, tz, c);
+    tx = safe.x; tz = safe.z;
     const dx = tx - c.x, dz = tz - c.z;
     const d = Math.hypot(dx, dz);
     if (d > 260) {
       const p = pushShip(slot.x, slot.z);
       c.x = p.x; c.z = p.z; c.heading = ship.heading; c.way = Math.abs(ship.speed);
     } else {
-      if (!fightAt) wantSpeed = mode === "sea" ? Math.max(0, Math.min(MAX_SPEED * 1.05, Math.abs(ship.speed) + (d - 6) * 0.25)) : 0;
+      if (!fightAt) wantSpeed = mode === "sea" ? Math.max(0, Math.min(MAX_SPEED * (d > 50 ? 1.6 : 1.05), Math.abs(ship.speed) + (d - 6) * 0.25)) : 0;
       const want = d > 3 ? Math.atan2(dx, dz) : ship.heading;
       const move = hullSpec(c.hullId);
       c.heading = dampAngle(c.heading, want, dt, 1.6 * move.turn);
@@ -8170,6 +8207,34 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     consortCombat(dt);
   }
   let lastFoeHit = null;
+  // Keep the consort's goal out of squalls and out of the reach of hostile forts.
+  // If her straight line to the goal crosses one, she aims for its edge on her own side.
+  function consortAvoid(tx, tz, c) {
+    const zones = [];
+    for (let i = 0; i < storms.length; i++) zones.push({ x: storms[i].x, z: storms[i].z, r: storms[i].r + 12 });
+    for (let i = 0; i < forts.length; i++) {
+      const g = forts[i];
+      if (standing[g.key] === -1 && !(g.silent > 0)) zones.push({ x: g.x, z: g.z, r: FORT_OUTER + 8 });
+    }
+    for (let i = 0; i < zones.length; i++) {
+      const zn = zones[i];
+      let dx = tx - zn.x, dz = tz - zn.z, d = Math.hypot(dx, dz);
+      if (d < zn.r) {
+        if (d < 0.01) { dx = c.x - zn.x; dz = c.z - zn.z; d = Math.hypot(dx, dz) || 1; }
+        tx = zn.x + dx / d * zn.r; tz = zn.z + dz / d * zn.r;
+      }
+      const lx = tx - c.x, lz = tz - c.z, ll = Math.hypot(lx, lz) || 1;
+      const u = clamp(((zn.x - c.x) * lx + (zn.z - c.z) * lz) / (ll * ll), 0, 1);
+      const px = c.x + lx * u - zn.x, pz = c.z + lz * u - zn.z, pd = Math.hypot(px, pz);
+      if (pd < zn.r && u > 0 && u < 1 && Math.hypot(c.x - zn.x, c.z - zn.z) > zn.r * 0.9) {
+        const k = pd > 0.01 ? 1 / pd : 0;
+        const ex = pd > 0.01 ? px * k : -lz / ll, ez = pd > 0.01 ? pz * k : lx / ll;
+        return { x: zn.x + ex * (zn.r + 6), z: zn.z + ez * (zn.r + 6) };
+      }
+    }
+    return { x: tx, z: tz };
+  }
+
   function consortTarget() {
     if (mode !== "sea" || !consort) return null;
     let best = null, bd = 140;
@@ -8198,10 +8263,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (t && !t.gone && t.alive && !t.sinking && c.cool <= 0) {
       const d = Math.hypot(t.x - c.x, t.z - c.z);
       if (d < 48) {
-        c.cool = 7;
+        c.cool = 8.5;
         puffAt(c.x, 3.5, c.z);
         boom();
-        const dmg = Math.round(hullSpec(c.hullId).damage * 0.6);
+        const dmg = Math.round(hullSpec(c.hullId).damage * 0.45);
         splashAt(t.x, t.z, true);
         damageFoe(t, dmg);
         say(c.name + " fires on " + t.name + ". " + dmg + " hull.", 1.6);
@@ -8291,7 +8356,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   function endSkirmish() {
     if (!skirmish) return;
-    skirmish.ships.forEach(function (o) { scene.remove(o.root); if (o.blob) o.blob.visible = false; });
+    skirmish.ships.forEach(function (o) {
+      scene.remove(o.root);
+      if (o.blob) o.blob.visible = false;
+      if (o.wake) o.wake.parts.forEach(function (p) { scene.remove(p.mesh); p.mesh.material.dispose(); });
+    });
     skirmish = null;
   }
   function skirmishShip(o, dt, i) {
@@ -8299,6 +8368,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (o.sinking) {
       o.sink += dt;
       o.root.position.set(o.x, -o.sink * 1.6, o.z);
+      if (o.blob) o.blob.visible = o.sink < 1.2;
+      if (o.wake) layWake(o.wake, o.x, o.z, o.heading, 0, dt, 0.4, 1.7, 3.8, 0.34);
       if (o.sink > 2.6) { o.gone = true; scene.remove(o.root); }
       return;
     }
@@ -8315,6 +8386,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const bob = seaBob(waterUniforms.uTime.value, 3.1 + i, false);
     o.root.position.set(o.x, bob.y, o.z);
     poseHull(o.root, o.heading, bob.roll, bob.pitch);
+    if (!o.blob) ensureSeaBlob(o, o.hullId || "cutter");
+    o.blob.position.set(o.x, 0.05, o.z);
+    if (!o.wake) o.wake = makeWakeQuads(4);
+    layWake(o.wake, o.x, o.z, o.heading, skirmish.over ? 5 : 2.6, dt, 0.4, 1.7, o.hullId === "brig" ? 5.6 : 3.8, 0.34);
   }
   function hurtSkirmisher(o, n, byPlayer) {
     if (!o || o.sinking || o.gone) return;
@@ -8684,7 +8759,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const flap = Math.sin(t * 5.2 + g.phase) * 0.4;
       g.left.rotation.z = 0.22 + flap;
       g.right.rotation.z = -0.22 - flap;
-      g.group.visible = !underStorm(x, z);
+      g.group.visible = !underStorm(x, z) && (dayU.value > 0.4 || i < 3);
     }
   }
 
@@ -10178,6 +10253,47 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     chartSnap = { labels: labels, storms: stormsDrawn, ships: shipsDrawn, px: ship.x, pz: ship.z };
   }
 
+  // One-time coaching for a new captain: the first hostile ship nearby, and the first time the hull gets low.
+  function firstTips() {
+    if (!x3 || mode !== "sea" || fightOn || paused) return;
+    if (!x3.tipFoe) {
+      for (let i = 0; i < foes.length; i++) {
+        const f = foes[i];
+        if (f.gone || !f.alive || f.sinking || !f.hunt) continue;
+        if (Math.hypot(f.x - ship.x, f.z - ship.z) < 70) {
+          x3.tipFoe = true;
+          say("Enemy closing! Your guns fire sideways: turn side-on to " + f.name + ", get within 25 yards, then tap Fire.", 6);
+          writeSave();
+          break;
+        }
+      }
+    }
+    if (!x3.tipLow && ship.hull > 0 && ship.hull <= ship.hullMax * 0.35) {
+      x3.tipLow = true;
+      say("Hull is low. Sail away with the wind, or reach a friendly port to repair.", 5);
+      writeSave();
+    }
+  }
+
+  // If a phone keeps missing frames, quietly drop the render resolution one step (once or twice).
+  const perfState = { acc: 0, n: 0, prev: 0, steps: 0, wait: 4000 };
+  function perfGuard(now) {
+    const gap = perfState.prev ? now - perfState.prev : 16;
+    perfState.prev = now;
+    if (paused || document.hidden || gap > 250) return;
+    perfState.wait -= gap;
+    if (perfState.wait > 0) return;
+    perfState.acc += gap; perfState.n++;
+    if (perfState.acc < 3000) return;
+    const avg = perfState.acc / perfState.n;
+    perfState.acc = 0; perfState.n = 0;
+    if (avg > 26 && perfState.steps < 2) {
+      const pr = renderer.getPixelRatio();
+      const next = Math.max(1, pr - 0.25);
+      if (next < pr) { renderer.setPixelRatio(next); resize(); perfState.steps++; perfState.wait = 2000; }
+    }
+  }
+
   function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
     layoutHint(now);
@@ -10239,7 +10355,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     updateCamera(dt);
     waterUniforms.uCam.value.set(camera.position.x, camera.position.z);
     updateHud();
+    firstTips();
     renderer.render(scene, camera);
+    perfGuard(now);
     requestAnimationFrame(frame);
   }
 
@@ -11342,6 +11460,56 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       },
       consort: function () { return consort ? { name: consort.name, captain: consort.captain, hullId: consort.hullId, hull: consort.hull, hullMax: consort.hullMax, x: consort.x, z: consort.z, sinking: consort.sinking, target: consort.target ? consort.target.name : "" } : null; },
       consortSpec: function () { return consortSpec(); },
+      simFight: function (foeName, withConsort, startAng, maxT) {
+        const fi = foes.findIndex(function (f) { return f.name === foeName; });
+        const f = foes[fi];
+        if (!f) return null;
+        const px = -300, pz = -150;
+        // park every other foe far away
+        foes.forEach(function (o, i) { if (i !== fi && !o.gone) { o.x = 2000 + i * 50; o.z = 2000; o.hunt = false; } });
+        mountPlayerHull("cutter", "Bramble cutter", false);
+        ship.x = px; ship.z = pz; ship.heading = 0; ship.speed = 3; ship.hull = 100; ship.hullMax = 100; ship.sails = 100;
+        sail = 2; anchored = false; fireCool = 0; x3.crew = crewMaxFor("cutter"); x3.gunner = x3.navigator = x3.surgeon = false; x3.guns = "long"; x3.copper = x3.reinforced = false;
+        f.alive = true; f.gone = false; f.sinking = false; f.sink = 0; f.hull = f.hullMax; f.sails = 100; f.thin = 0; f.ignore = 0; f.cool = 3; f.hunt = true;
+        const a = startAng || 0;
+        f.x = px + Math.sin(a) * 70; f.z = pz + Math.cos(a) * 70; f.heading = a + Math.PI;
+        if (f.root) { scene.add(f.root); f.root.visible = true; }
+        x3.consort = "";
+        dropConsortMesh();
+        if (withConsort) { setConsort("cutter", "Bramble Wren", 100, 100); consort.x = px - 15; consort.z = pz - 15; }
+        simWrecked = false;
+        lastFoeHit = null;
+        const dt = 0.05;
+        let t = 0, shotsFired = 0, boardable = -1;
+        while (t < (maxT || 300)) {
+          const dx = f.x - ship.x, dz = f.z - ship.z;
+          const dist = Math.hypot(dx, dz);
+          const bear = Math.atan2(dx, dz);
+          let rel = bear - ship.heading;
+          while (rel > Math.PI) rel -= Math.PI * 2;
+          while (rel < -Math.PI) rel += Math.PI * 2;
+          const sideSign = rel >= 0 ? 1 : -1;
+          const off = dist > 24 ? Math.PI / 2 - 1.0 : (dist < 16 ? Math.PI / 2 + 0.4 : Math.PI / 2);
+          let want = bear - sideSign * off;
+          let diff = want - ship.heading;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          const steer = -clamp(diff * 2, -1, 1) * (invertHelm ? -1 : 1);
+          updateSea(dt, { steer: steer, forward: 0 });
+          if (fireCool > 0) fireCool -= dt;
+          const abs = Math.abs(rel), fromLine = Math.min(abs, Math.PI - abs);
+          if (fireCool <= 0 && fromLine >= BEAR_MIN && dist < 30) { fire(sideSign); shotsFired++; }
+          updateFoes(dt);
+          updateShots(dt);
+          updateConsort(dt);
+          t += dt;
+          if (boardable < 0 && f.hull < 40 && !f.sinking) boardable = t;
+          if (window.__simTrace && Math.abs(t % 5) < dt) window.__simTrace.push([Math.round(t), Math.round(dist), Math.round(rel * 57), Math.round(ship.speed * 10) / 10, Math.round(f.hull), Math.round(ship.hull), shots.length]);
+          if (simWrecked) return { foe: foeName, consort: !!withConsort, result: "lost", t: Math.round(t), foeHull: Math.round(f.hull), shots: shotsFired, boardableAt: boardable < 0 ? null : Math.round(boardable), consortHull: consort ? Math.round(consort.hull) : null };
+          if (f.sinking || !f.alive) return { foe: foeName, consort: !!withConsort, result: "won", t: Math.round(t), playerHull: Math.round(ship.hull), shots: shotsFired, boardableAt: boardable < 0 ? null : Math.round(boardable), consortHull: consort ? Math.round(consort.hull) : null };
+        }
+        return { foe: foeName, consort: !!withConsort, result: "draw", t: Math.round(t), playerHull: Math.round(ship.hull), foeHull: Math.round(f.hull), shots: shotsFired, boardableAt: boardable < 0 ? null : Math.round(boardable) };
+      },
       skirmish: function (force) { if (force) startSkirmish(true); return skirmish ? { cx: skirmish.cx, cz: skirmish.cz, over: skirmish.over, paid: skirmish.paid, ships: skirmish.ships.map(function (o) { return { name: o.name, nation: o.nation, hull: o.hull, byPlayer: o.byPlayer, sinking: o.sinking, x: o.x, z: o.z }; }) } : null; },
       shootSkirmisher: function (i, n) { if (!skirmish) return null; const o = skirmish.ships[i]; return skirmishShotHit({ mesh: { position: { x: o.x, y: 3, z: o.z } }, dmg: n }); },
       standings: function () { return JSON.parse(JSON.stringify(standing)); },
@@ -11365,6 +11533,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       settings: function (kind) { openSettings(kind || "settings"); return [].map.call(document.querySelectorAll("#setbtns button"), function (b) { return b.textContent; }); },
       setPress: function (part) { const bs = document.querySelectorAll("#setbtns button"); for (let i = 0; i < bs.length; i++) if (bs[i].textContent.indexOf(part) >= 0) { bs[i].dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); return true; } return false; },
       paused: function () { return paused; },
+      perf: function () { const i = renderer.info; return { calls: i.render.calls, tris: i.render.triangles, geos: i.memory.geometries, tex: i.memory.textures, pr: renderer.getPixelRatio(), objs: (function () { let n = 0; scene.traverse(function () { n++; }); return n; })(), gulls: gulls.length, shots: shots.length, splashes: splashes.length, smokes: smokes.length }; },
+      drawTally: function () { const m = {}; scene.traverseVisible(function (o) { if (!o.isMesh && !o.isSprite && !o.isPoints && !o.isLine) return; let top = o; while (top.parent && top.parent !== scene) top = top.parent; const k = (top.userData.tag || top.name || top.type) + "|" + (o.geometry && o.geometry.uuid.slice(0, 4)); m[k] = (m[k] || 0) + 1; }); const a = Object.keys(m).map(function (k) { return [k, m[k]]; }); a.sort(function (x, y) { return y[1] - x[1]; }); const byTop = {}; a.forEach(function (e) { const t = e[0].split("|")[0]; byTop[t] = (byTop[t] || 0) + e[1]; }); return { byTop: byTop, top: a.slice(0, 15) }; },
+      consortAvoid: function (tx, tz, cx, cz) { return consortAvoid(tx, tz, { x: cx, z: cz }); },
+      storms: function () { return storms.map(function (s) { return { x: s.x, z: s.z, r: s.r }; }); },
       forts: function () { return forts.map(function (g) { return { id: g.id, x: g.x, z: g.z, y: g.muzzleY, key: g.key, hp: g.hp == null ? 3 : g.hp, silent: g.silent || 0 }; }); },
       hitFort: function (i) { const g = forts[i]; return fortShotHit({ mesh: { position: { x: g.x, y: g.muzzleY, z: g.z } } }); },
       standing: function (k, v) { standing[k] = v; },
