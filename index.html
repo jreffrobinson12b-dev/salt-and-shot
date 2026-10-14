@@ -3819,6 +3819,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   polishCss.textContent =
     "#hint{left:50%!important;right:auto!important;transform:translateX(-50%);width:max-content;max-width:min(520px,calc(100vw - 24px));box-sizing:border-box;padding:5px 12px;border-radius:12px;background:rgba(6,14,22,.55);font-size:14px!important}" +
     "#hint:empty{display:none}" +
+    "#townmenu{padding:calc(20px + env(safe-area-inset-top)) 18px calc(20px + env(safe-area-inset-bottom))!important;touch-action:pan-y!important}#mpurse{display:inline-block;background:rgba(242,212,138,.14);border:1px solid rgba(242,212,138,.5);border-radius:10px;padding:6px 10px;margin:4px 0}#mbtns button{width:100%;text-align:left;padding:0 14px}" +
+    "@media (min-width:560px){#townmenu>div{max-width:620px!important}#mbtns{display:grid!important;grid-template-columns:1fr 1fr}}" +
+    "#needle{width:36px!important;height:36px!important}#needle i{top:4px!important;border-bottom-width:13px!important;transform-origin:50% 14px!important}#windlabel{font-size:11px;line-height:13px;margin-top:1px}" +
     "#skills,#log,#chart{height:38px!important;font-size:14px!important;min-width:76px!important}#log{top:calc(228px + env(safe-area-inset-top))!important}#logpanel{top:calc(272px + env(safe-area-inset-top))!important}" +
     "#mbtns button,#fight button,#skillpanel button,#logclose,#chartclose{min-height:46px;font-size:16px}" +
     "@media (max-height:520px){#btns{display:grid!important;grid-template-columns:auto auto;gap:6px!important;align-items:end;justify-items:end}#btns button{height:44px;min-width:96px;font-size:14px}#stick{width:112px;height:112px}#knob{width:48px;height:48px;margin:-24px 0 0 -24px}#hint{font-size:13px!important}#log{top:calc(184px + env(safe-area-inset-top))!important;right:96px!important}#logpanel{top:calc(228px + env(safe-area-inset-top))!important;max-height:calc(100vh - 240px)!important}}";
@@ -3986,6 +3989,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const WIND_TURN = 480;
   let windAngle = WIND_HOME;
   let fireCool = 0;
+  let fireReady = true;
   let last = performance.now();
   let audioCtx = null;
 
@@ -5929,6 +5933,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     g.strokeStyle = "#ffffff";
     g.lineWidth = 2;
     g.strokeRect(2, 8, 124, 16);
+    g.font = "bold 14px system-ui, sans-serif";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.lineWidth = 3;
+    g.strokeStyle = "rgba(0,0,0,0.8)";
+    const label = Math.max(0, Math.round(hull)) + " / " + Math.round(maxHull);
+    g.strokeText(label, 64, 17);
+    g.fillStyle = "#ffffff";
+    g.fillText(label, 64, 17);
     sprite.userData.tex.needsUpdate = true;
   }
 
@@ -6055,6 +6068,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     function hitsHud(sx, sy, ww, hw) {
       const x0 = sx - ww * 0.5;
       const y0 = sy - hw * 0.5;
+      if (x0 < 4 || y0 < 4 || x0 + ww > w - 4 || y0 + hw > h - 4) return true;
       for (let r = 0; r < hud.length; r++) {
         const box = hud[r];
         if (x0 < box.x + box.w && x0 + ww > box.x && y0 < box.y + box.h && y0 + hw > box.y) return true;
@@ -7513,6 +7527,25 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     else say("A sail on the horizon.", 3.2);
   }
 
+  const fadeEl = document.createElement("div");
+  fadeEl.id = "fade";
+  fadeEl.style.cssText = "position:fixed;inset:0;background:#071018;opacity:0;pointer-events:none;z-index:4;transition:opacity 0.35s ease-out";
+  document.body.appendChild(fadeEl);
+  function flashFade() {
+    fadeEl.style.transition = "none";
+    fadeEl.style.opacity = "0.85";
+    void fadeEl.offsetWidth;
+    fadeEl.style.transition = "opacity 0.45s ease-out";
+    fadeEl.style.opacity = "0";
+  }
+
+  function chartFont(px) {
+    const cv = document.getElementById("chartcvs");
+    const shown = cv ? cv.getBoundingClientRect().width : 0;
+    const k = shown > 40 ? Math.min(1.8, Math.max(1, cv.width / shown)) : 1;
+    return "600 " + Math.round(px * k) + "px system-ui, sans-serif";
+  }
+
   function goAshore() {
     const beach = beachHere();
     const port = beach ? portById(beach.port) : harbourHere();
@@ -7537,6 +7570,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     setMoving(false);
     chartBtn.style.display = "none";
     chartPanel.style.display = "none";
+    flashFade();
     writeSave();
   }
 
@@ -7548,6 +7582,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     person.group.visible = false;
     setMoving(false);
     chartBtn.style.display = "";
+    flashFade();
     writeSave();
   }
 
@@ -8476,6 +8511,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       person.yaw = dampAngle(person.yaw, face, dt, 4);
       const n = Math.min(1, (Math.min(1, mag) - 0.18) / 0.82);
       const sp = 2.6 * Math.pow(n, 1.55);
+      if (person.walk) person.walk.timeScale = 0.55 + 0.45 * Math.pow(n, 1.55);
       const nx = person.x + Math.sin(person.yaw) * sp * dt;
       const nz = person.z + Math.cos(person.yaw) * sp * dt;
       const tryMove = function (x, z) {
@@ -8797,6 +8833,19 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       fireBtn.style.display = "";
       if (shotBtn) shotBtn.style.display = "";
       fireBtn.textContent = fireCool > 0.05 ? ("Reload " + Math.ceil(fireCool)) : ("Fire: " + shotWord());
+      if (fireCool <= 0.05 && !fightOn) {
+        const aimNow = viewBearing();
+        fireBtn.textContent = aimNow.bear ? (aimNow.sign > 0 ? "Fire: " + shotWord() + " \u25B6" : "\u25C0 Fire: " + shotWord()) : "Swipe to aim";
+        fireBtn.style.opacity = aimNow.bear ? "" : "0.6";
+      } else fireBtn.style.opacity = "";
+      if (fireCool > 0.05) {
+        const done = Math.round(100 * (1 - fireCool / Math.max(0.1, gunStats().reload)));
+        fireBtn.style.background = "linear-gradient(90deg, rgba(242,212,138,0.55) " + done + "%, rgba(8,20,32,0.55) " + done + "%)";
+        fireReady = false;
+      } else {
+        fireBtn.style.background = "";
+        if (!fireReady) { fireReady = true; fireBtn.animate([{ transform: "scale(1.12)" }, { transform: "scale(1)" }], { duration: 220 }); }
+      }
       actBtn.textContent = "Ashore";
       actBtn.disabled = (!(inHarbour() || beachHere()) || fightOn);
       if (fightOn && fight && fight.choosing) hint.textContent = "Take the ship, or take the prize.";
@@ -9119,7 +9168,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       ctx.fillRect(X(f.x) - side / 2, Y(f.z) - side / 2, side, side);
     }
     ctx.fillStyle = "#f2d48a";
-    ctx.font = "13px system-ui, sans-serif";
+    ctx.font = chartFont(13);
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
     for (let i = 0; i < PORTS.length; i++) {
@@ -9157,7 +9206,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = "#f2d48a";
-    ctx.font = "12px system-ui, sans-serif";
+    ctx.font = chartFont(12);
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     ctx.fillText("N", w / 2, 8);
@@ -9172,7 +9221,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     ctx.lineWidth = 2;
     drawWindArrow(ctx, 78, 64, 26);
     ctx.fillStyle = "#f4efe2";
-    ctx.font = "12px system-ui, sans-serif";
+    ctx.font = chartFont(12);
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillText("Wind", 108, 64);
@@ -9670,6 +9719,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function dismissTitle() {
     titleOn = false;
+    boot.style.background = "";
     boot.classList.add("hide");
     boot.innerHTML = "";
   }
@@ -9751,10 +9801,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boot.style.flexDirection = "column";
     const h = document.createElement("div");
     h.textContent = "Salt & Shot";
-    h.style.cssText = "font-size:28px;margin-bottom:8px";
+    h.style.cssText = "font-family:Palatino,Georgia,serif;font-size:42px;color:#f2d48a;letter-spacing:0.04em;text-shadow:0 3px 0 #000,0 0 18px rgba(242,212,138,0.35);margin-bottom:4px";
+    boot.style.background = "radial-gradient(ellipse at 50% 35%, #1d4a63 0%, #0b2333 55%, #071018 100%)";
+    const tag = document.createElement("div");
+    tag.textContent = "Sail, trade, and fight the Caribbean";
+    tag.style.cssText = "font-style:italic;opacity:0.85;margin-bottom:18px;font-size:15px";
     const note = document.createElement("div");
-    note.textContent = "A voyage is saved on this phone. Play starts a new game.";
-    note.style.cssText = "margin-bottom:16px;max-width:340px";
+    note.textContent = "A voyage is saved on this phone. Continue picks it up. Play starts a new game.";
+    note.style.cssText = "margin-bottom:18px;max-width:340px;font-size:14px;opacity:0.9";
     const row = document.createElement("div");
     row.style.cssText = "display:flex;gap:10px;justify-content:center;flex-wrap:wrap";
     let picked = false;
@@ -9762,6 +9816,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = label;
+      b.style.cssText = "min-width:140px;height:54px;font-size:18px";
       b.addEventListener("pointerdown", function (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -9780,6 +9835,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     row.appendChild(choice("Play", startNew));
     row.appendChild(choice("Continue", function () { startContinue(data); }));
     boot.appendChild(h);
+    boot.appendChild(tag);
     boot.appendChild(note);
     boot.appendChild(row);
   }
