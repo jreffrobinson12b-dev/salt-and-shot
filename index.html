@@ -3828,7 +3828,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     "#needle{width:36px!important;height:36px!important}#needle i{top:4px!important;border-bottom-width:13px!important;transform-origin:50% 14px!important}#windlabel{font-size:11px;line-height:13px;margin-top:1px}" +
     "#skills,#glass,#log,#chart,#settings,#pause{height:38px!important;font-size:14px!important;min-width:76px!important}#log{top:calc(228px + env(safe-area-inset-top))!important}#logpanel{top:calc(272px + env(safe-area-inset-top))!important}" +
     "#mbtns button,#fight button,#skillpanel button,#logclose,#chartclose{min-height:46px;font-size:16px}" +
-    "@media (max-height:520px){#btns{display:grid!important;grid-template-columns:auto auto;gap:6px!important;align-items:end;justify-items:end}#btns button{height:44px;min-width:96px;font-size:14px}#stick{width:112px;height:112px}#knob{width:48px;height:48px;margin:-24px 0 0 -24px}#hint{font-size:13px!important}#aimtip{width:max(160px,calc(100vw - 530px))!important;left:50%!important;margin-left:calc(max(160px,calc(100vw - 530px)) / -2);top:calc(8px + env(safe-area-inset-top))!important;font-size:13px!important}#chart{top:calc(64px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}#log{top:calc(108px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}#logpanel{top:calc(64px + env(safe-area-inset-top))!important;right:calc(220px + env(safe-area-inset-right))!important;max-height:calc(100vh - 90px)!important}}";
+    "@media (max-height:520px){#btns{display:grid!important;grid-template-columns:auto auto;gap:6px!important;align-items:end;justify-items:end}#btns button{height:44px;min-width:96px;font-size:14px}#stick{width:112px;height:112px}#knob{width:48px;height:48px;margin:-24px 0 0 -24px}#hint{font-size:13px!important}#aimtip{width:max(160px,calc(100vw - 530px))!important;left:50%!important;margin-left:calc(max(160px,calc(100vw - 530px)) / -2);top:calc(8px + env(safe-area-inset-top))!important;font-size:13px!important}#chartcvs{width:auto!important;max-width:100%;height:calc(100vh - 118px)!important;margin:0 auto}#chartpanel{width:auto!important;max-width:94vw;top:50%!important}#chartpanel>div:last-child{display:none}#chart{top:calc(64px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}#log{top:calc(108px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}#logpanel{top:calc(64px + env(safe-area-inset-top))!important;right:calc(220px + env(safe-area-inset-right))!important;max-height:calc(100vh - 90px)!important}}";
   document.head.appendChild(polishCss);
   let hintLayoutAt = 0;
   function layoutHint(nowMs) {
@@ -6309,6 +6309,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function damageFoe(foe, n) {
     if (!foe || !foe.alive || foe.sinking) return;
+    lastFoeHit = foe;
     foe.hull = Math.max(0, foe.hull - n);
     paintHullSprite(foe.bar, foe.hull, foe.hullMax);
     floatText(foe.x, 9, foe.z, "-" + n, "#ffe08a");
@@ -7020,6 +7021,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     html += "<div style=\"display:flex;gap:8px;flex-wrap:wrap\">";
     html += "<button type=\"button\" data-take=\"ship\" style=\"font:inherit;padding:10px 14px;background:#f4efe2;color:#1c140c;border:0\">Take the ship</button>";
     html += "<button type=\"button\" data-take=\"prize\" style=\"font:inherit;padding:10px 14px;background:#c4553a;color:#fff;border:0\">Take the prize</button>";
+    if (!consortSpec() && !foe.galleon) html += "<button type=\"button\" data-take=\"consort\" style=\"font:inherit;padding:10px 14px;background:#5fd18b;color:#10200f;border:0\">Keep her as consort (captain 30 gold)</button>";
     html += "</div>";
     fightPanel.innerHTML = html;
     const buttons = fightPanel.querySelectorAll("button");
@@ -7027,6 +7029,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       buttons[i].addEventListener("click", function (e) {
         const which = e.currentTarget.getAttribute("data-take");
         if (which === "ship") takeShip();
+        else if (which === "consort") keepConsort();
         else takePrize();
       });
     }
@@ -7076,6 +7079,23 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       say("You take " + name + ". Hull " + kept + ". No coin — the ship is the prize." + tail, 4.2);
       writeSave();
     }
+  }
+
+  function keepConsort() {
+    if (!fight || !fight.choosing || !fight.foe) return;
+    const foe = fight.foe;
+    if (ledger.gold < 30) { say("A captain wants 30 gold. Take the ship or the prize.", 2.6); return; }
+    ledger.gold -= 30;
+    const kept = Math.max(35, Math.round(foe.hull));
+    const name = foe.name;
+    const hullId = foe.hullId;
+    const offense = offend(foe);
+    const fx = foe.x, fz = foe.z;
+    removeFoeNow(foe);
+    closeFight();
+    const cap = setConsort(hullId, name, kept, Math.max(kept, hullPoints(hullId)));
+    if (consort) { const p = pushShip(fx, fz); consort.x = p.x; consort.z = p.z; }
+    say(cap + " takes " + name + " as your consort. Hull " + kept + "." + (offense ? " " + offense : ""), 4.2);
   }
 
   function takePrize() {
@@ -7672,7 +7692,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return 20;
   }
   function x3Defaults() {
-    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0 };
+    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "" };
   }
   let x3 = null;
   function x3Load(raw) {
@@ -7802,6 +7822,23 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const score = Math.abs(a) * 300 + d;
       if (score < bestScore) { bestScore = score; best = { f: f, d: d }; }
     }
+    if (skirmish) skirmish.ships.forEach(function (o) {
+      if (o.sinking || o.gone) return;
+      const d = Math.hypot(o.x - ship.x, o.z - ship.z);
+      if (d > 420) return;
+      let a = Math.atan2(o.x - ship.x, o.z - ship.z) - vy;
+      while (a > Math.PI) a -= Math.PI * 2;
+      while (a < -Math.PI) a += Math.PI * 2;
+      if (Math.abs(a) > 0.6) return;
+      const score = Math.abs(a) * 300 + d;
+      if (score < bestScore) { bestScore = score; best = { f: o, d: d, skirm: true }; }
+    });
+    if (best && best.skirm) {
+      const o = best.f;
+      const foeOf = skirmish.ships[0] === o ? skirmish.ships[1] : skirmish.ships[0];
+      say(o.name + ", cutter, " + nationWord(o.nation) + " colours. Hull " + Math.round(o.hull) + " of 100. " + Math.round(best.d) + " yards. Fighting " + foeOf.name + ".", 5);
+      return;
+    }
     if (!best) { say("Nothing in the glass that way. Look toward a sail and try again.", 3); return; }
     const f = best.f;
     const colours = nationWord(f.nation);
@@ -7900,6 +7937,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     sternHost = ship.root;
   }
   let dayOffset = 0;
+  let pauseClock = 0;
   function updateDaylight(t) {
     t += dayOffset;
     const c = Math.cos((t / DAY_LEN) * Math.PI * 2);
@@ -8029,8 +8067,332 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (squallBanner.style.display === "block" && (toastT > 0 || storyBanner.style.display === "block")) squallBanner.style.visibility = "hidden";
     else squallBanner.style.visibility = "";
     const bannerUp = storyBanner.style.display === "block" || squallBanner.style.display === "block";
-    const show = !bannerUp && toastT <= 0 && !x3.aimed && mode === "sea" && !titleOn && !fightOn && !menuOpen && !document.getElementById("howto");
+    const show = chartPanel.style.display !== "block" && !bannerUp && toastT <= 0 && !x3.aimed && mode === "sea" && !titleOn && !fightOn && !menuOpen && !document.getElementById("howto");
     aimTip.style.display = show ? "block" : "none";
+  }
+
+  // ---- Squadron consort (batch 6). Saved as JSON text in x3.consort; "" means none.
+  let consort = null;
+  const CONSORT_CAPTAINS = ["Captain Ned Harlow", "Captain Rosa Quill", "Captain Amos Pike"];
+  function consortSpec() {
+    if (!x3 || !x3.consort) return null;
+    try {
+      const d = JSON.parse(x3.consort);
+      if (!d || !HULLS[d.hullId]) return null;
+      return { hullId: d.hullId, name: String(d.name || "Consort"), captain: String(d.captain || CONSORT_CAPTAINS[0]), hull: Math.max(1, Number(d.hull) || 100), hullMax: Math.max(1, Number(d.hullMax) || hullPoints(d.hullId)) };
+    } catch (e) { return null; }
+  }
+  function storeConsort() {
+    if (!x3 || !consort) return;
+    x3.consort = !consort.sinking ? JSON.stringify({ hullId: consort.hullId, name: consort.name, captain: consort.captain, hull: Math.round(consort.hull), hullMax: consort.hullMax }) : "";
+  }
+  function dropConsortMesh() {
+    if (!consort) return;
+    scene.remove(consort.root);
+    if (consort.blob) consort.blob.visible = false;
+    if (consort.wake) layWake(consort.wake, consort.x, consort.z, consort.heading, 0, 3, 0.4, 1.7, 4, 0.34);
+    consort = null;
+  }
+  function buildConsort(spec, x, z, heading) {
+    dropConsortMesh();
+    const root = new THREE.Group();
+    root.add(makeShipBody(spec.hullId, 0x2e8b57, foeCrewCount(spec.hullId)));
+    const rig = rigHeight(spec.hullId);
+    const bar = hullSprite();
+    bar.position.y = rig.bar;
+    root.add(bar);
+    root.add(nameSprite(spec.name + " · consort", rig.name));
+    scene.add(root);
+    consort = { hullId: spec.hullId, name: spec.name, captain: spec.captain, hull: spec.hull, hullMax: spec.hullMax, root: root, bar: bar, x: x, z: z, heading: heading, way: 0, cool: 3, sinking: false, sink: 0, target: null };
+    paintHullSprite(bar, consort.hull, consort.hullMax);
+    ensureSeaBlob(consort, spec.hullId);
+    root.position.set(x, 0, z);
+    root.rotation.y = heading;
+  }
+  function consortSlot() {
+    const back = 20, side = 12;
+    const fx = Math.sin(ship.heading), fz = Math.cos(ship.heading);
+    const rx = Math.cos(ship.heading), rz = -Math.sin(ship.heading);
+    return { x: ship.x - fx * back + rx * side, z: ship.z - fz * back + rz * side };
+  }
+  function syncConsort() {
+    const spec = consortSpec();
+    if (!spec) { if (consort && !consort.sinking) dropConsortMesh(); return; }
+    if (consort) return;
+    const slot = consortSlot();
+    const p = pushShip(slot.x, slot.z);
+    buildConsort(spec, p.x, p.z, ship.heading);
+  }
+  function setConsort(hullId, name, hull, hullMax) {
+    const captain = CONSORT_CAPTAINS[Math.floor(Math.random() * CONSORT_CAPTAINS.length)];
+    x3.consort = JSON.stringify({ hullId: hullId, name: name, captain: captain, hull: hull, hullMax: hullMax || hullPoints(hullId) });
+    dropConsortMesh();
+    syncConsort();
+    writeSave();
+    return captain;
+  }
+  function updateConsort(dt) {
+    syncConsort();
+    const c = consort;
+    if (!c) return;
+    if (c.sinking) {
+      c.sink += dt;
+      c.root.position.set(c.x, -c.sink * 1.6, c.z);
+      if (c.bar) c.bar.material.opacity = Math.max(0, 1 - c.sink / 2);
+      if (c.sink > 2.6) dropConsortMesh();
+      return;
+    }
+    let tx, tz, wantSpeed;
+    const slot = consortSlot();
+    const fightAt = consortFightSpot ? consortFightSpot() : null;
+    if (fightAt) { tx = fightAt.x; tz = fightAt.z; wantSpeed = 6.2; }
+    else { tx = slot.x; tz = slot.z; }
+    const dx = tx - c.x, dz = tz - c.z;
+    const d = Math.hypot(dx, dz);
+    if (d > 260) {
+      const p = pushShip(slot.x, slot.z);
+      c.x = p.x; c.z = p.z; c.heading = ship.heading; c.way = Math.abs(ship.speed);
+    } else {
+      if (!fightAt) wantSpeed = mode === "sea" ? Math.max(0, Math.min(MAX_SPEED * 1.05, Math.abs(ship.speed) + (d - 6) * 0.25)) : 0;
+      const want = d > 3 ? Math.atan2(dx, dz) : ship.heading;
+      const move = hullSpec(c.hullId);
+      c.heading = dampAngle(c.heading, want, dt, 1.6 * move.turn);
+      c.way = damp(c.way, wantSpeed, dt, 0.8);
+      const p = pushShip(c.x + Math.sin(c.heading) * c.way * dt, c.z + Math.cos(c.heading) * c.way * dt);
+      c.x = p.x; c.z = p.z;
+    }
+    const bob = seaBob(waterUniforms.uTime.value, 2.3, inSquallAt(c.x, c.z));
+    c.root.position.set(c.x, bob.y, c.z);
+    poseHull(c.root, c.heading, bob.roll, bob.pitch);
+    if (c.blob) c.blob.position.set(c.x, 0.05, c.z);
+    if (!c.wake) c.wake = makeWakeQuads(4);
+    layWake(c.wake, c.x, c.z, c.heading, Math.abs(c.way), dt, 0.4, 1.7, hullSpec(c.hullId).wake, 0.34);
+    consortCombat(dt);
+  }
+  let lastFoeHit = null;
+  function consortTarget() {
+    if (mode !== "sea" || !consort) return null;
+    let best = null, bd = 140;
+    for (let i = 0; i < foes.length; i++) {
+      const f = foes[i];
+      if (f.gone || !f.alive || f.sinking) continue;
+      if (!(f.hunt || f === lastFoeHit)) continue;
+      const d = Math.hypot(f.x - ship.x, f.z - ship.z);
+      if (f === lastFoeHit) { if (d < 160) return f; continue; }
+      if (d < bd) { bd = d; best = f; }
+    }
+    return best;
+  }
+  function consortFightSpot() {
+    const t = consortTarget();
+    if (consort) consort.target = t;
+    if (!t) return null;
+    const ang = Math.atan2(consort.x - t.x, consort.z - t.z);
+    return { x: t.x + Math.sin(ang) * 26, z: t.z + Math.cos(ang) * 26 };
+  }
+  function consortCombat(dt) {
+    const c = consort;
+    if (!c || c.sinking || fightOn) return;
+    c.cool -= dt;
+    const t = c.target;
+    if (t && !t.gone && t.alive && !t.sinking && c.cool <= 0) {
+      const d = Math.hypot(t.x - c.x, t.z - c.z);
+      if (d < 48) {
+        c.cool = 7;
+        puffAt(c.x, 3.5, c.z);
+        boom();
+        const dmg = Math.round(hullSpec(c.hullId).damage * 0.6);
+        splashAt(t.x, t.z, true);
+        damageFoe(t, dmg);
+        say(c.name + " fires on " + t.name + ". " + dmg + " hull.", 1.6);
+      }
+    }
+    // a hunting foe will also trade shots with the consort when it is close
+    for (let i = 0; i < foes.length; i++) {
+      const f = foes[i];
+      if (f.gone || !f.alive || f.sinking || !f.hunt) continue;
+      f.consortCool = (f.consortCool == null ? 4 : f.consortCool) - dt;
+      if (f.consortCool > 0) continue;
+      const d = Math.hypot(f.x - c.x, f.z - c.z);
+      if (d > 46) continue;
+      f.consortCool = 9;
+      puffAt(f.x, 3.4, f.z);
+      splashAt(c.x, c.z, true);
+      hurtConsort(18);
+    }
+  }
+  function hurtConsort(n) {
+    const c = consort;
+    if (!c || c.sinking) return;
+    c.hull = Math.max(0, c.hull - n);
+    paintHullSprite(c.bar, c.hull, c.hullMax);
+    floatText(c.x, 9, c.z, "-" + n, "#ffb4a8");
+    if (c.hull <= 0) {
+      c.sinking = true;
+      c.sink = 0;
+      x3.consort = "";
+      if (c.blob) c.blob.visible = false;
+      say(c.name + " is lost with " + c.captain + ". Buy another consort at a shipyard.", 4.5);
+      writeSave();
+    } else storeConsort();
+  }
+  function paintSquadMarks(ctx, X, Y, k) {
+    if (consort && !consort.sinking) {
+      ctx.fillStyle = "#5fd18b";
+      const px = X(consort.x), py = Y(consort.z);
+      const fx = Math.sin(consort.heading), fz = Math.cos(consort.heading);
+      const s = k * 0.5 * chartMarkScale(consort.hullId);
+      ctx.beginPath();
+      ctx.moveTo(px + fx * 7 * s, py + fz * 7 * s);
+      ctx.lineTo(px - fz * 4 * s - fx * 4 * s, py + fx * 4 * s - fz * 4 * s);
+      ctx.lineTo(px + fz * 4 * s - fx * 4 * s, py - fx * 4 * s - fz * 4 * s);
+      ctx.closePath();
+      ctx.fill();
+    }
+    paintSkirmishMarks(ctx, X, Y, k);
+  }
+  // ---- Sea skirmish between two NPC ships (batch 6). Not saved.
+  const SKIRMISH_SIDES = [
+    [{ nation: "spanish", name: "San Telmo", pennant: 0xf1c40f }, { nation: "pirate", name: "Black Gull", pennant: 0x141414 }],
+    [{ nation: "english", name: "Kestrel", pennant: 0xc8102e }, { nation: "french", name: "Belle Aube", pennant: 0x1f4e89 }],
+    [{ nation: "french", name: "Mistral", pennant: 0x1f4e89 }, { nation: "pirate", name: "Red Hand", pennant: 0x141414 }],
+    [{ nation: "english", name: "Plover", pennant: 0xc8102e }, { nation: "spanish", name: "Santa Rita", pennant: 0xf1c40f }]
+  ];
+  let skirmish = null;
+  let skirmishWait = 240 + Math.random() * 180;
+  let skirmishT = 0;
+  function startSkirmish(force) {
+    if (skirmish || mode !== "sea") return false;
+    let cx = 0, cz = 0, ok = false;
+    for (let n = 0; n < 24; n++) {
+      const a = Math.random() * Math.PI * 2;
+      const d = force ? 70 + Math.random() * 30 : 120 + Math.random() * 60;
+      cx = ship.x + Math.sin(a) * d; cz = ship.z + Math.cos(a) * d;
+      let good = spotAfloat(cx, cz);
+      for (let k = 0; k < 8 && good; k++) good = spotAfloat(cx + Math.sin(k) * 26, cz + Math.cos(k) * 26);
+      if (good) { ok = true; break; }
+    }
+    if (!ok) return false;
+    const pair = SKIRMISH_SIDES[Math.floor(Math.random() * SKIRMISH_SIDES.length)];
+    const ships = pair.map(function (side, i) {
+      const root = new THREE.Group();
+      root.add(makeShipBody("cutter", side.pennant, 2));
+      const rig = rigHeight("cutter");
+      const bar = hullSprite(); bar.position.y = rig.bar; root.add(bar);
+      root.add(nameSprite(side.name + " · " + nationWord(side.nation), rig.name));
+      scene.add(root);
+      const o = { name: side.name, nation: side.nation, hullId: "cutter", hull: 100, hullMax: 100, root: root, bar: bar, ang: i * Math.PI, x: cx, z: cz, heading: 0, cool: 2 + i * 2.5, byPlayer: 0, sinking: false, sink: 0, gone: false };
+      paintHullSprite(bar, 100, 100);
+      return o;
+    });
+    skirmish = { cx: cx, cz: cz, ships: ships, t: 0, over: false, overT: 0, paid: false };
+    say("Gunfire on the horizon: " + ships[0].name + " (" + nationWord(ships[0].nation) + ") and " + ships[1].name + " (" + nationWord(ships[1].nation) + ") are fighting. Help one side.", 5);
+    return true;
+  }
+  function endSkirmish() {
+    if (!skirmish) return;
+    skirmish.ships.forEach(function (o) { scene.remove(o.root); if (o.blob) o.blob.visible = false; });
+    skirmish = null;
+  }
+  function skirmishShip(o, dt, i) {
+    if (o.gone) return;
+    if (o.sinking) {
+      o.sink += dt;
+      o.root.position.set(o.x, -o.sink * 1.6, o.z);
+      if (o.sink > 2.6) { o.gone = true; scene.remove(o.root); }
+      return;
+    }
+    if (!skirmish.over) {
+      o.ang += dt * 0.12;
+      o.x = skirmish.cx + Math.sin(o.ang) * 22;
+      o.z = skirmish.cz + Math.cos(o.ang) * 22;
+      o.heading = o.ang + Math.PI / 2;
+    } else {
+      o.heading = dampAngle(o.heading, windAngle, dt, 0.8);
+      o.x += Math.sin(o.heading) * 5 * dt;
+      o.z += Math.cos(o.heading) * 5 * dt;
+    }
+    const bob = seaBob(waterUniforms.uTime.value, 3.1 + i, false);
+    o.root.position.set(o.x, bob.y, o.z);
+    poseHull(o.root, o.heading, bob.roll, bob.pitch);
+  }
+  function hurtSkirmisher(o, n, byPlayer) {
+    if (!o || o.sinking || o.gone) return;
+    o.hull = Math.max(0, o.hull - n);
+    if (byPlayer) o.byPlayer += n;
+    paintHullSprite(o.bar, o.hull, o.hullMax);
+    floatText(o.x, 9, o.z, "-" + n, byPlayer ? "#ffe08a" : "#ffffff");
+    if (o.hull <= 0) {
+      o.sinking = true;
+      skirmish.over = true;
+      const winner = skirmish.ships[0] === o ? skirmish.ships[1] : skirmish.ships[0];
+      if (o.byPlayer > 0 && winner.byPlayer === 0 && !skirmish.paid) {
+        skirmish.paid = true;
+        const key = { english: "england", spanish: "spain", french: "france", pirate: "pirates" }[winner.nation];
+        if (key && standing[key] < 3) standing[key] += 1;
+        ledger.gold += 60;
+        if (x3) x3.sunk += 1;
+        say(winner.name + " dips her colours to you. " + (winner.nation === "pirate" ? "The pirates" : { english: "England", spanish: "Spain", french: "France" }[winner.nation]) + " will remember: +1 standing and 60 gold.", 5);
+        writeSave();
+      } else say(o.name + " goes down. " + winner.name + " sails off.", 3.5);
+    }
+  }
+  function updateSkirmish(dt) {
+    if (!skirmish) {
+      if (mode !== "sea" || fightOn || menuOpen || titleOn) return;
+      skirmishT += dt;
+      if (skirmishT >= skirmishWait) { skirmishT = 0; skirmishWait = 240 + Math.random() * 180; startSkirmish(false); }
+      return;
+    }
+    skirmish.t += dt;
+    const a = skirmish.ships[0], b = skirmish.ships[1];
+    skirmish.ships.forEach(function (o, i) { skirmishShip(o, dt, i); });
+    if (!skirmish.over) {
+      [a, b].forEach(function (o, i) {
+        const other = i === 0 ? b : a;
+        o.cool -= dt;
+        if (o.cool <= 0 && !o.sinking && !other.sinking) {
+          o.cool = 6 + Math.random() * 2;
+          puffAt(o.x, 3.4, o.z);
+          splashAt(other.x + (Math.random() - 0.5) * 3, other.z + (Math.random() - 0.5) * 3, true);
+          if (Math.hypot(o.x - ship.x, o.z - ship.z) < 200) boom();
+          hurtSkirmisher(other, 8 + Math.floor(Math.random() * 7), false);
+        }
+      });
+      if (skirmish.t > 200) skirmish.over = true;
+    } else {
+      skirmish.overT += dt;
+      if (skirmish.overT > 30) endSkirmish();
+    }
+    if (Math.hypot(skirmish.cx - ship.x, skirmish.cz - ship.z) > 600) endSkirmish();
+  }
+  function skirmishShotHit(s) {
+    if (!skirmish) return false;
+    const p = s.mesh.position;
+    for (let i = 0; i < skirmish.ships.length; i++) {
+      const o = skirmish.ships[i];
+      if (o.sinking || o.gone) continue;
+      if (Math.hypot(p.x - o.x, p.z - o.z) < 8 && p.y < 10) { hurtSkirmisher(o, s.dmg || 30, true); return true; }
+    }
+    return false;
+  }
+  function paintSkirmishMarks(ctx, X, Y, k) {
+    if (!skirmish) return;
+    skirmish.ships.forEach(function (o) {
+      if (o.gone) return;
+      ctx.fillStyle = "#ff9a3c";
+      ctx.beginPath();
+      ctx.arc(X(o.x), Y(o.z), k * 1.6, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+  function buyConsort() {
+    if (consortSpec()) return;
+    if (ledger.gold < 180) { say("A cutter and a captain cost 180 gold.", 2.4); return; }
+    ledger.gold -= 180;
+    const cap = setConsort("cutter", "Bramble Wren", 100, 100);
+    say(cap + " takes Bramble Wren. She will follow you and fight your target.", 4);
+    renderMenu();
   }
 
   const fadeEl = document.createElement("div");
@@ -8686,8 +9048,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       box.appendChild(menuButton("Sell silk (" + sellOf("silk") + ")", function () { trade("silk", -1); }));
       if (cargoCount() > 0) {
         let total = 0;
-        ["sugar", "rum", "coffee", "tobacco", "silk"].forEach(function (g) { total += ledger[g] * sellOf(g); });
-        box.insertBefore(menuButton("Sell all cargo (about " + total + " gold)", function () {
+        const realTrade = skills.trade;
+        ["sugar", "rum", "coffee", "tobacco", "silk"].forEach(function (g) {
+          for (let u = 0; u < ledger[g]; u++) { total += sellOf(g); if (skills.trade < 5) skills.trade += 1; }
+        });
+        skills.trade = realTrade;
+        box.insertBefore(menuButton("Sell all cargo (" + total + " gold)", function () {
           ["sugar", "rum", "coffee", "tobacco", "silk"].forEach(function (g) { while (ledger[g] > 0) { const before = ledger[g]; trade(g, -1); if (ledger[g] >= before) break; } });
           renderMenu();
         }), box.firstChild);
@@ -8873,6 +9239,17 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const need = cmax - x3.crew;
       body.textContent += " This hull wants " + cmax + " hands and you have " + x3.crew + "." + (crewShort() ? " Short-handed, she reloads slow and steers lazy." : "");
       box.appendChild(menuButton("Hire " + need + " hands to fill her (" + (need * 2) + " gold)", function () { hireHands(cmax); }));
+    }
+    const cs = consortSpec();
+    if (!cs) box.appendChild(menuButton("Buy a consort: a cutter and a hired captain (180 gold)", buyConsort));
+    else {
+      body.textContent += " Consort: " + cs.name + " (" + hullWord(cs.hullId) + "), " + cs.captain + ", hull " + Math.round(consort ? consort.hull : cs.hull) + " of " + cs.hullMax + ".";
+      const miss = cs.hullMax - Math.round(consort ? consort.hull : cs.hull);
+      if (miss > 0) box.appendChild(menuButton("Patch the consort (" + Math.ceil(miss / 4) + " gold)", function () {
+        const cost = Math.ceil(miss / 4);
+        if (ledger.gold < cost) { say("Not enough gold.", 2); return; }
+        ledger.gold -= cost; if (consort) { consort.hull = consort.hullMax; paintHullSprite(consort.bar, consort.hull, consort.hullMax); } storeConsort(); if (!consort) { const d = JSON.parse(x3.consort); d.hull = d.hullMax; x3.consort = JSON.stringify(d); } writeSave(); renderMenu();
+      }));
     }
     if (!x3.copper) box.appendChild(menuButton("Copper-sheathe the bottom (180 gold): 8% faster", function () { buyUpgrade("copper", 180, "Copper sheathing on. She runs cleaner."); }));
     if (!x3.reinforced) box.appendChild(menuButton("Reinforce the hull (200 gold): take 15% less shot damage", function () { buyUpgrade("reinforced", 200, "Oak knees and iron straps. She takes a hit better."); }));
@@ -9172,6 +9549,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       s.age = (s.age || 0) + dt;
       let hit = s.age > 0.28 && shotHits(s);
       if (!hit && s.from === "player" && s.age > 0.28 && fortShotHit(s)) hit = true;
+      if (!hit && s.from === "player" && s.age > 0.28 && skirmishShotHit(s)) hit = true;
       if (s.chain) s.mesh.rotation.z += dt * 1.8;
       if (hit || s.mesh.position.y <= 0.2 || s.life <= 0) {
         if (hit || s.mesh.position.y <= 0.35) splashAt(s.mesh.position.x, s.mesh.position.z, !!hit);
@@ -9648,6 +10026,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     paintSalvageMarks(mapCtx, X, Y, 2);
     paintFortMarks(mapCtx, X, Y, 4);
+    paintSquadMarks(mapCtx, X, Y, 2);
     mapCtx.fillStyle = "#f4efe2";
     mapCtx.beginPath();
     const hx = X(ship.x);
@@ -9748,6 +10127,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     paintSalvageMarks(ctx, X, Y, 3);
     paintFortMarks(ctx, X, Y, 5);
+    paintSquadMarks(ctx, X, Y, 3);
     const hx = X(ship.x);
     const hy = Y(ship.z);
     const fx = Math.sin(ship.heading);
@@ -9811,6 +10191,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     watchQuests();
     last = now;
     waterUniforms.uTime.value = now / 1000;
+    if (paused) dayOffset -= (now - pauseClock) / 1000;
+    pauseClock = now;
     updateDaylight(now / 1000);
     if (!paused) windAngle += dt * (Math.PI * 2 / WIND_TURN);
     if (fireCool > 0 && !paused) fireCool -= dt;
@@ -9828,6 +10210,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       updateFoes(dt);
       updateFort(dt);
       updateShots(dt);
+      updateConsort(dt);
+      updateSkirmish(dt);
       updateSalvage(dt);
       updateSeaEvents(dt);
       updateDuelist(dt);
@@ -10191,7 +10575,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       invertHelm: !!invertHelm,
       tobacco: ledger.tobacco,
       silk: ledger.silk,
-      x3: x3
+      x3: (storeConsort(), x3)
     };
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (err) {}
   }
@@ -10956,12 +11340,23 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         ship.x = driftCrate.x; ship.z = driftCrate.z;
         return true;
       },
+      consort: function () { return consort ? { name: consort.name, captain: consort.captain, hullId: consort.hullId, hull: consort.hull, hullMax: consort.hullMax, x: consort.x, z: consort.z, sinking: consort.sinking, target: consort.target ? consort.target.name : "" } : null; },
+      consortSpec: function () { return consortSpec(); },
+      skirmish: function (force) { if (force) startSkirmish(true); return skirmish ? { cx: skirmish.cx, cz: skirmish.cz, over: skirmish.over, paid: skirmish.paid, ships: skirmish.ships.map(function (o) { return { name: o.name, nation: o.nation, hull: o.hull, byPlayer: o.byPlayer, sinking: o.sinking, x: o.x, z: o.z }; }) } : null; },
+      shootSkirmisher: function (i, n) { if (!skirmish) return null; const o = skirmish.ships[i]; return skirmishShotHit({ mesh: { position: { x: o.x, y: 3, z: o.z } }, dmg: n }); },
+      standings: function () { return JSON.parse(JSON.stringify(standing)); },
+      hurtConsort: function (n) { hurtConsort(n); return consort ? consort.hull : null; },
+      hitFoe: function (name, n) { for (let i = 0; i < foes.length; i++) if (foes[i].name === name) { damageFoe(foes[i], n); return foes[i].hull; } return null; },
+      offerCapture: function (name) { for (let i = 0; i < foes.length; i++) if (foes[i].name === name) { fightOn = true; fight = { foe: foes[i], choosing: false }; fightPanel.style.display = "block"; offerCapture(); return [].map.call(fightPanel.querySelectorAll("button"), function (b) { return b.textContent; }); } return null; },
+      keepConsort: function () { keepConsort(); return consortSpec(); },
       foeIndex: function (name) { for (let i = 0; i < foes.length; i++) if (foes[i].name === name) return i; return -1; },
       lookAt: function (x, z) {
         lookYaw = Math.atan2(x - ship.x, z - ship.z) - ship.heading;
         lookHeld = true;
+        lookIdle = 0;
       },
       setLookHeld: function (v) { lookHeld = v; },
+      dusk: function () { dayOffset = DAY_LEN * 0.33 - performance.now() / 1000; },
       night: function () { dayOffset = DAY_LEN / 2 - performance.now() / 1000; },
       day: function () { return dayU.value; },
       toast: function () { return toastEl.style.display !== "none" ? toastEl.textContent : ""; },
