@@ -7272,10 +7272,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     PORTS.forEach(function (p) { const r = tradeFrom(p.id); if (r && (!top || r.gain > top.gain)) top = Object.assign({ from: p.id }, r); });
     if (t && t.gain > 0) out.push("A full hold (" + holdCap(playerHull.id) + ") of " + t.good + " nets about +" + t.gain * holdCap(playerHull.id) + " gold.");
     const flooded = [];
-    Object.keys(glut).forEach(function (id) { Object.keys(glut[id]).forEach(function (g) { if (glut[id][g] > 4) flooded.push(g + " at " + portById(id).name); }); });
+    Object.keys(glut).forEach(function (id) { Object.keys(glut[id]).forEach(function (g) { if (glut[id][g] > 8) flooded.push(g + " at " + portById(id).name); }); });
     if (flooded.length) out.push("Flooded markets (prices recover with time): " + flooded.join(", ") + ".");
     const dear = [];
-    Object.keys(scarce).forEach(function (id) { Object.keys(scarce[id]).forEach(function (g) { if (scarce[id][g] > 4) dear.push(g + " at " + portById(id).name); }); });
+    Object.keys(scarce).forEach(function (id) { Object.keys(scarce[id]).forEach(function (g) { if (scarce[id][g] > 8) dear.push(g + " at " + portById(id).name); }); });
     if (dear.length) out.push("Bought up (buy prices raised for now): " + dear.join(", ") + ".");
     if (top) out.push("Best run in the islands: " + top.good + " from " + portById(top.from).name + " to " + portById(top.to).name + ", +" + top.gain + " a crate.");
     return out;
@@ -9610,7 +9610,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return 0;
   }
 
-  // Flooding a market: after 4 of one good sold at a port, each further 2 knock 1 gold off, down to 60%.
+  // Flooding a market: after 8 of one good sold at a port, each further 4 knock 1 gold off, down to 80%.
   // The glut eases by one unit every 30 s, so spreading cargo across ports pays.
   const glut = {};
   function glutOf(good) { const id = ashorePort ? ashorePort.id : "bramble"; return (glut[id] && glut[id][good]) || 0; }
@@ -9618,14 +9618,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const scarce = {};
   function scarceOf(good) { const id = ashorePort ? ashorePort.id : "bramble"; return (scarce[id] && scarce[id][good]) || 0; }
   function addScarce(good, n) { const id = ashorePort ? ashorePort.id : "bramble"; scarce[id] = scarce[id] || {}; scarce[id][good] = Math.max(0, (scarce[id][good] || 0) + n); }
-  // Buying up a port: after 4 of one good, every 2 more add 1 gold to its price there, up to +40%.
-  function buyOf(good) { const base = portPrices()[good].buy; return base + Math.min(Math.floor(Math.max(0, scarceOf(good) - 4) / 2), Math.ceil(base * 0.4)); }
+  // Buying up a port: after 8 of one good, every 4 more add 1 gold to its price there, up to +20%.
+  function buyOf(good) { const base = portPrices()[good].buy; return base + Math.min(Math.floor(Math.max(0, scarceOf(good) - 8) / 4), Math.ceil(base * 0.2)); }
   function easeGlut() { Object.keys(scarce).forEach(function (id) { Object.keys(scarce[id]).forEach(function (g) { if (scarce[id][g] > 0) scarce[id][g] -= 1; }); }); Object.keys(glut).forEach(function (id) { Object.keys(glut[id]).forEach(function (g) { if (glut[id][g] > 0) glut[id][g] -= 1; }); }); }
   function sellOf(good) {
     const base = portPrices()[good].sell;
     let price = base + standingHere();
     if (skills.trade >= 3) price += 1;
-    const drop = Math.min(Math.floor(Math.max(0, glutOf(good) - 4) / 2), Math.floor(base * 0.4));
+    const drop = Math.min(Math.floor(Math.max(0, glutOf(good) - 8) / 4), Math.floor(base * 0.2));
     return Math.max(1, price - drop);
   }
 
@@ -9647,7 +9647,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       ledger.gold -= buy;
       ledger[good] += 1;
       addGlut(good, -1); addScarce(good, 1);
-      tradeNote = "Bought 1 " + good + " for " + buy + " gold." + (scarceOf(good) > 4 ? " Prices are rising here." : "");
+      tradeNote = "Bought 1 " + good + " for " + buy + " gold." + (scarceOf(good) > 8 ? " Prices are rising here." : "");
       buzz(10);
       writeSave();
     } else {
@@ -9660,7 +9660,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       gainSkill("trade");
       addGlut(good, 1);
       if (x3) { const sid = ashorePort ? ashorePort.id : "bramble"; if (x3.soldAt.indexOf("|" + sid + "|") < 0) x3.soldAt += "|" + sid + "|"; }
-      tradeNote = "Sold 1 " + good + " for " + sell + " gold." + (glutOf(good) > 4 ? " The " + good + " market here is getting flooded." : "");
+      tradeNote = "Sold 1 " + good + " for " + sell + " gold." + (glutOf(good) > 8 ? " The " + good + " market here is getting flooded." : "");
       if (!quiet) buzz(10);
       writeSave();
     }
@@ -9727,11 +9727,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         if (buyOf(g) <= lowBuy) bestBuy = g;
       });
       goods.forEach(function (g) {
-        const buy = menuButton("Buy " + g + " (" + buyOf(g) + (scarceOf(g) > 4 ? " \u2191" : "") + ")" + (bestBuy === g ? " \u2605 cheapest" : ""), function () { trade(g, 1); });
+        const buy = menuButton("Buy " + g + " (" + buyOf(g) + (scarceOf(g) > 8 ? " \u2191" : "") + ")" + (bestBuy === g ? " \u2605 cheapest" : ""), function () { trade(g, 1); });
         if (bestBuy === g) buy.style.background = "#c8f0c0";
         if (ledger.gold < buyOf(g) || cargoCount() >= holdCap()) { buy.style.opacity = "0.5"; buy.dataset.dim = "1"; }
         box.appendChild(buy);
-        const sell = menuButton("Sell " + g + " (" + sellOf(g) + (glutOf(g) > 4 ? " \u2193" : "") + ")" + (bestSell === g && ledger[g] > 0 ? " \u2605 best here" : ""), function () { trade(g, -1); });
+        const sell = menuButton("Sell " + g + " (" + sellOf(g) + (glutOf(g) > 8 ? " \u2193" : "") + ")" + (bestSell === g && ledger[g] > 0 ? " \u2605 best here" : ""), function () { trade(g, -1); });
         if (bestSell === g && ledger[g] > 0) { sell.style.background = "#ffd65a"; sell.style.borderColor = "#fff"; }
         if (ledger[g] <= 0) { sell.style.opacity = "0.5"; sell.dataset.dim = "1"; }
         box.appendChild(sell);
