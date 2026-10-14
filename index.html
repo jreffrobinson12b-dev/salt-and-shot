@@ -6567,14 +6567,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return true;
   }
 
-  const SALVAGE_GOLD = 18;
+  const SALVAGE_GOLD = 18, CRATE_GOLD = 45;
   const SALVAGE_RANGE = 8;
   const SALVAGE_LIFE = 90;
   const salvage = [];
 
-  function dropSalvage(x, z) {
-    const mesh = spawn("barrel.glb", x, 0.15, z, Math.random() * Math.PI * 2, 1.15);
-    salvage.push({ mesh: mesh, x: x, z: z, age: 0, phase: Math.random() * Math.PI * 2 });
+  function dropSalvage(x, z, kind) {
+    const crate = kind === "crate";
+    const mesh = spawn(crate ? "crate.glb" : "barrel.glb", x, 0.15, z, Math.random() * Math.PI * 2, crate ? 1.0 : 1.15);
+    salvage.push({ mesh: mesh, x: x, z: z, age: 0, phase: Math.random() * Math.PI * 2, gold: crate ? CRATE_GOLD : SALVAGE_GOLD, s0: mesh ? mesh.scale.x : 1 });
   }
 
   function clearSalvage(i) {
@@ -6588,14 +6589,20 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const b = salvage[i];
       b.age += dt;
       if (b.mesh) b.mesh.position.y = 0.15 + Math.sin(waterUniforms.uTime.value * 1.8 + b.phase) * 0.12;
+      // Last 10 seconds: the piece bobs smaller and larger so you know it is about to sink.
+      if (b.mesh && b.s0) b.mesh.scale.setScalar(SALVAGE_LIFE - b.age < 10 ? b.s0 * (0.8 + 0.2 * Math.abs(Math.sin(b.age * 6))) : b.s0);
       if (b.age >= SALVAGE_LIFE) {
         clearSalvage(i);
         continue;
       }
       if (mode === "sea" && !fightOn && Math.hypot(ship.x - b.x, ship.z - b.z) <= SALVAGE_RANGE) {
-        ledger.gold += SALVAGE_GOLD;
+        const g = b.gold || SALVAGE_GOLD;
+        ledger.gold += g;
+        if (x3) x3.salvaged += 1;
+        floatText(b.x, 3, b.z, "+" + g, "#ffd76a");
+        chime(g > SALVAGE_GOLD ? [784, 988, 1175] : [784, 988], 0.08, 0.04);
         clearSalvage(i);
-        say("Salvage, 18 gold.", 3.2);
+        say(g > SALVAGE_GOLD ? "A sea chest crate, " + g + " gold." : "Salvage, " + g + " gold.", 3.2);
         writeSave();
       }
     }
@@ -7321,7 +7328,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3) lines.push("Time at sea: " + Math.floor(x3.seaTime / 60) + " min \u00B7 Sailed: " + (x3.dist / 185).toFixed(1) + " nautical miles");
     if (hunterFoe && !hunterFoe.gone && !hunterFoe.sinking) lines.push("A bounty hunter, " + hunterFoe.name + ", is on your trail.");
     if (x3) lines.push("Ships sunk or taken: " + x3.sunk + " \u00B7 Gold earned: " + x3.earned + " \u00B7 Crew morale: " + x3.morale);
-    if (x3 && x3.posting) lines.push("Wanted: " + x3.posting + " \u00B7 " + POSTING_PAY + " gold \u00B7 about " + Math.max(1, Math.ceil((POSTING_LIFE - x3.postingAge) / 60)) + " min left");
+    if (x3 && x3.posting) lines.push("Wanted: " + x3.posting + " \u00B7 " + postingPay() + " gold \u00B7 about " + Math.max(1, Math.ceil((POSTING_LIFE - x3.postingAge) / 60)) + " min left");
+    if (x3) lines.push("Bounties claimed: " + x3.postings + " \u00B7 Salvage picked up: " + x3.salvaged);
     if (x3) lines.push("Gunnery: " + x3.hits + " hits \u00B7 " + x3.rakes + " raking \u00B7 best streak " + x3.bestStreak + " \u00B7 slipped past " + x3.shadow + " patrols at night");
     if (x3) {
       lines.push("");
@@ -8221,7 +8229,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return 20;
   }
   function x3Defaults() {
-    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, tipSafe: false, tipGoods: false, tipWind: false, tipAshore: false, tipBeam: false, tipDusk: false, tipFull: false, tipAim: false, tipSlip: false, tipCross: false, tipShort: false, posting: "", postingAge: 0, postings: 0, rakes: 0, shadow: 0, soldAt: "", bestStreak: 0, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false, met: "", metSunk: "", hunters: 0, seaTime: 0, dist: 0, bigBtn: false, flash: true };
+    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, tipSafe: false, tipGoods: false, tipWind: false, tipAshore: false, tipBeam: false, tipDusk: false, tipFull: false, tipAim: false, tipSlip: false, tipCross: false, tipShort: false, posting: "", postingAge: 0, postings: 0, salvaged: 0, rakes: 0, shadow: 0, soldAt: "", bestStreak: 0, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false, met: "", metSunk: "", hunters: 0, seaTime: 0, dist: 0, bigBtn: false, flash: true };
   }
   let x3 = null;
   function x3Load(raw) {
@@ -8428,7 +8436,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     say(f.name + ", " + hullWord(f.hullId) + ", " + (colours ? colours + " colours" : "no colours") + ". Hull " + Math.round(f.hull) + " of " + f.hullMax + ". " + Math.round(best.d) + " yards. " + (temper === "bold" ? "A bold captain." : temper === "wary" ? "A wary captain." : "A steady captain.") + (f.thin > 0 ? " Her crew is thin." : ""), 5);
   }
   // Tavern bounties: a posted reward for sinking one named patrol. One at a time, lasts 15 minutes once taken.
-  const POSTING_PAY = 150, POSTING_LIFE = 900;
+  const POSTING_PAY = 150, POSTING_LIFE = 900, POSTING_SWIFT = 300, SWIFT_BONUS = 30;
+  // Pay rises by 25 for each bounty already claimed, up to +100.
+  function postingPay() { return POSTING_PAY + 25 * Math.min(4, (x3 && x3.postings) || 0); }
+  function chime(freqs, gap, vol) {
+    try { if (audioCtx && x3 && x3.volume > 0) { const t = audioCtx.currentTime; freqs.forEach(function (fq, i) { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = "triangle"; o.frequency.setValueAtTime(fq, t + i * gap); g.gain.setValueAtTime(0.0001, t + i * gap); g.gain.exponentialRampToValueAtTime(vol, t + i * gap + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + i * gap + 0.35); o.connect(g); g.connect(audioOut()); o.start(t + i * gap); o.stop(t + i * gap + 0.4); }); } } catch (e) { /* optional */ }
+  }
   function postingTarget() {
     const ok = foes.filter(function (f) { return f.alive && !f.gone && !f.sinking && !f.boss && !f.hunter && PATROLS.indexOf(f.name) >= 0; });
     if (!ok.length) return null;
@@ -8440,26 +8453,28 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3.posting) {
       const f = postingFoe();
       if (!f) { x3.posting = ""; x3.postingAge = 0; }
-      else { body.textContent += " Wanted: " + x3.posting + ", " + POSTING_PAY + " gold on her (about " + Math.max(1, Math.ceil((POSTING_LIFE - x3.postingAge) / 60)) + " min left)."; return; }
+      else { body.textContent += " Wanted: " + x3.posting + ", " + postingPay() + " gold on her (about " + Math.max(1, Math.ceil((POSTING_LIFE - x3.postingAge) / 60)) + " min left)."; return; }
     }
     const name = postingTarget();
     if (!name) return;
-    box.appendChild(menuButton("Take bounty: sink " + name + " (" + POSTING_PAY + " gold)", function () {
-      x3.posting = name; x3.postingAge = 0; wantedSaid = false;
-      toast("Wanted: " + name + ". Sink her for " + POSTING_PAY + " gold. The Log keeps the notice.", "Bounty taken");
+    box.appendChild(menuButton("Take bounty: sink " + name + " (" + postingPay() + " gold)", function () {
+      x3.posting = name; x3.postingAge = 0; wantedSaid = false; lapseWarned = false;
+      toast("Wanted: " + name + ", last seen near " + nearestPortName(postingFoe()) + ". Sink her for " + postingPay() + " gold, or " + SWIFT_BONUS + " more within 5 minutes.", "Bounty taken");
       writeSave(); renderMenu();
     }));
   }
   function claimPosting(foe) {
     if (!x3 || !x3.posting || !foe || foe.name !== x3.posting) return;
     tintTag(foe, false);
+    const swift = x3.postingAge <= POSTING_SWIFT, pay = postingPay() + (swift ? SWIFT_BONUS : 0);
     x3.posting = ""; x3.postingAge = 0; x3.postings += 1;
-    ledger.gold += POSTING_PAY;
-    toast(foe.name + " is sunk. The tavern pays the " + POSTING_PAY + " gold bounty.", "Bounty claimed");
+    ledger.gold += pay;
+    chime([660, 880, 1100], 0.12, 0.05);
+    toast(foe.name + " is sunk. The tavern pays " + pay + " gold" + (swift ? ", with a bonus for a swift job." : "."), "Bounty claimed");
     checkDeeds();
     writeSave();
   }
-  let wantedSaid = false;
+  let wantedSaid = false, lapseWarned = false;
   function updatePosting(dt) {
     if (!x3 || !x3.posting || paused || titleOn) return;
     x3.postingAge += dt;
@@ -8469,14 +8484,17 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       tintTag(f, false);
       x3.posting = ""; x3.postingAge = 0; writeSave(); return;
     }
-    if (mode === "sea" && !wantedSaid && Math.hypot(f.x - ship.x, f.z - ship.z) < 60) { wantedSaid = true; floatText(f.x, 11, f.z, "wanted!", "#ff8a7a"); }
+    const wd = Math.hypot(f.x - ship.x, f.z - ship.z);
+    if (mode === "sea" && !wantedSaid && wd < 60) { wantedSaid = true; floatText(f.x, 11, f.z, "wanted!", "#ff8a7a"); }
+    if (wantedSaid && wd > 120) wantedSaid = false;
+    if (!lapseWarned && POSTING_LIFE - x3.postingAge < 120) { lapseWarned = true; say("Two minutes left on the bounty for " + x3.posting + ".", 3.5); }
     tintTag(f, true);
   }
   function tintTag(f, on) {
     if (f && f.root) f.root.children.forEach(function (c) { if (c.isSprite && c.userData.label && c.material && c.material.color) { if (on) c.material.color.setRGB(1, 0.62, 0.55); else c.material.color.setRGB(1, 1, 1); } });
   }
   // Wreckage at sea: every 4-7 minutes, floating salvage appears ahead of you (not in harbour, fights or lessons).
-  let wreckT = 240 + Math.random() * 180;
+  let wreckT = 240 + Math.random() * 180, wreckN = 0;
   function updateWreckage(dt) {
     if (!x3 || paused || titleOn || mode !== "sea" || fightOn || x3.tut < 4) return;
     wreckT -= dt;
@@ -8484,7 +8502,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     wreckT = 240 + Math.random() * 180;
     if (playerSafe()) return;
     const ax = ship.x + Math.sin(ship.heading) * 70, az = ship.z + Math.cos(ship.heading) * 70;
-    for (let k = 0; k < 3; k++) dropSalvage(ax + (Math.random() - 0.5) * 14, az + (Math.random() - 0.5) * 14);
+    const crateAt = (wreckN++ % 3 === 0) ? 0 : -1;
+    for (let k = 0; k < 3; k++) dropSalvage(ax + (Math.random() - 0.5) * 14, az + (Math.random() - 0.5) * 14, k === crateAt ? "crate" : "barrel");
+    floatText(ax, 6, az, "wreckage", "#cfe8ff");
     say("Wreckage ahead. Sail through it for salvage.", 3.5);
   }
   // Tavern talk: one rumour per visit, drawn from what is really happening at sea and in the markets.
@@ -8499,6 +8519,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const pool = [];
     if (shortage) pool.push("Rumour: " + portById(shortage.port).name + " is short of " + shortage.good + ". They'll pay well.");
     const rakers = foes.filter(function (f) { return f.alive && !f.gone && !f.boss && !f.hunter && foeRakes(f); }).map(function (f) { return f.name; });
+    if (x3 && x3.salvaged < 3) pool.push("Rumour: wrecks drift in open water. Sail through the barrels before they sink.");
     if (x3 && x3.posting) pool.push("Rumour: " + x3.posting + " was seen near " + nearestPortName(postingFoe()) + ". Mind the bounty.");
     if (rakers.length) pool.push("Rumour: the captain of " + rakers[rumourN % rakers.length] + " likes to cross your bow and rake. Turn toward her.");
     const wary = foes.filter(function (f) { return f.alive && !f.gone && foeTemper(f) === "wary"; }).map(function (f) { return f.name; });
@@ -8736,7 +8757,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 22";
+    ver.textContent = "Version: batch 23";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -10985,6 +11006,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       mapCtx.strokeStyle = "#e15a4a";
       mapCtx.strokeRect(X(COVE.x) - 4, Y(COVE.z) - 4, 8, 8);
     }
+    mapCtx.fillStyle = "#ffd76a";
+    salvage.forEach(function (b) { mapCtx.fillRect(X(b.x) - 1.5, Y(b.z) - 1.5, 3, 3); });
     mapCtx.fillStyle = "#e15a4a";
     for (let i = 0; i < foes.length; i++) {
       const f = foes[i];
@@ -10996,6 +11019,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const ffz = Math.cos(f.heading);
       const fs = chartMarkScale(f.hullId);
       mapCtx.fillStyle = f.hunter ? "#ff9f1a" : "#e15a4a";
+      if (x3 && x3.posting === f.name && !f.sinking) { mapCtx.save(); mapCtx.strokeStyle = "#ff6a5a"; mapCtx.lineWidth = 2; mapCtx.beginPath(); mapCtx.arc(px, py, 9, 0, Math.PI * 2); mapCtx.stroke(); mapCtx.restore(); mapCtx.beginPath(); }
       if (f.hunter) { mapCtx.save(); mapCtx.strokeStyle = "#ffffff"; mapCtx.lineWidth = 1.5; mapCtx.beginPath(); mapCtx.arc(px, py, 7, 0, Math.PI * 2); mapCtx.stroke(); mapCtx.restore(); mapCtx.beginPath(); }
       mapCtx.moveTo(px + ffx * 6 * fs, py + ffz * 6 * fs);
       mapCtx.lineTo(px - ffz * 3 * fs - ffx * 3 * fs, py + ffx * 3 * fs - ffz * 3 * fs);
@@ -11234,7 +11258,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     { id: "raker", text: "Land a raking shot", reward: "" },
     { id: "shadow", text: "Slip past a patrol at night", reward: "" },
     { id: "trader", text: "Sell cargo in all four ports", reward: "" },
-    { id: "bounty", text: "Claim a tavern bounty", reward: "" }
+    { id: "bounty", text: "Claim a tavern bounty", reward: "" },
+    { id: "salvager", text: "Pick up 12 pieces of salvage", reward: "" }
   ];
   const SAILS = {
     white: { name: "Canvas white", hex: 0, cost: 0 },
@@ -11271,6 +11296,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       voyager: x3.dist >= 20 * 185,
       raker: x3.rakes > 0,
       bounty: x3.postings > 0,
+      salvager: x3.salvaged >= 12,
       shadow: x3.shadow > 0,
       trader: ["bramble", "salt", "lorenzo", "belle"].every(function (id) { return x3.soldAt.indexOf("|" + id + "|") >= 0; }),
       spotter: PATROLS.every(function (n) { return x3.met.indexOf("|" + n + "|") >= 0; })
@@ -12725,14 +12751,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boot.appendChild(tag);
     boot.appendChild(note);
     if (savedRenown >= 0) {
-      const TIPS = ["Tip: fire from her bow or stern to rake for extra damage.", "Tip: at night, patrols only spot you up close.", "Tip: selling lots of one good in one port floods it. Spread your cargo.", "Tip: lie still in a safe harbour and the crew patch the hull.", "Tip: three hits in a row lift crew morale.", "Tip: if a ship tries to cross your bow, turn toward her.", "Tip: patrols can't see far in fog.", "Tip: market news in the Log tells you which port is short of what.", "Tip: taverns post bounties on named patrol ships."];
+      const TIPS = ["Tip: fire from her bow or stern to rake for extra damage.", "Tip: at night, patrols only spot you up close.", "Tip: selling lots of one good in one port floods it. Spread your cargo.", "Tip: lie still in a safe harbour and the crew patch the hull.", "Tip: three hits in a row lift crew morale.", "Tip: if a ship tries to cross your bow, turn toward her.", "Tip: patrols can't see far in fog.", "Tip: market news in the Log tells you which port is short of what.", "Tip: taverns post bounties on named patrol ships.", "Tip: wreckage sometimes hides a crate worth more gold."];
       tip.textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
     }
     boot.appendChild(tip);
     boot.appendChild(row);
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 22";
+    tv.textContent = "Version: batch 23";
     tv.style.cssText = "margin-top:14px;font-size:12px;opacity:.55";
     boot.appendChild(tv);
   }
@@ -13589,6 +13615,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       b22: function () { return { posting: x3.posting, age: x3.postingAge, postings: x3.postings, wreckT: wreckT, salvage: salvage.length, foam: bowFoam.material.color.getHexString() }; },
       wreckNow: function () { wreckT = 0.01; return true; },
       postingAgeSet: function (n) { x3.postingAge = n; return n; },
+      b23: function () { return { pay: postingPay(), salvaged: x3.salvaged, kinds: salvage.map(function (b) { return b.gold; }), lapseWarned: lapseWarned, deeds: DEEDS.length }; },
+      setPostings: function (n) { x3.postings = n; return postingPay(); },
+      salvageAtShip: function (kind) { dropSalvage(ship.x, ship.z, kind); return salvage.length; },
       b21: function () { return { shortage: shortage, shortT: shortT, tips: { tipCross: x3.tipCross, tipShort: x3.tipShort }, lamps: foes.filter(function (f) { return f.lamp && f.lamp.visible; }).length }; },
       setShortage: function (port, good) { shortage = port ? { port: port, good: good } : null; return shortage; },
       shortNow: function () { shortT = 0.01; return true; },
