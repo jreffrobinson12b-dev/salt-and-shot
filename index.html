@@ -3824,7 +3824,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     "#needle{width:36px!important;height:36px!important}#needle i{top:4px!important;border-bottom-width:13px!important;transform-origin:50% 14px!important}#windlabel{font-size:11px;line-height:13px;margin-top:1px}" +
     "#skills,#glass,#log,#chart{height:38px!important;font-size:14px!important;min-width:76px!important}#log{top:calc(228px + env(safe-area-inset-top))!important}#logpanel{top:calc(272px + env(safe-area-inset-top))!important}" +
     "#mbtns button,#fight button,#skillpanel button,#logclose,#chartclose{min-height:46px;font-size:16px}" +
-    "@media (max-height:520px){#btns{display:grid!important;grid-template-columns:auto auto;gap:6px!important;align-items:end;justify-items:end}#btns button{height:44px;min-width:96px;font-size:14px}#stick{width:112px;height:112px}#knob{width:48px;height:48px;margin:-24px 0 0 -24px}#hint{font-size:13px!important}#log{top:calc(184px + env(safe-area-inset-top))!important;right:96px!important}#logpanel{top:calc(228px + env(safe-area-inset-top))!important;max-height:calc(100vh - 240px)!important}}";
+    "@media (max-height:520px){#btns{display:grid!important;grid-template-columns:auto auto;gap:6px!important;align-items:end;justify-items:end}#btns button{height:44px;min-width:96px;font-size:14px}#stick{width:112px;height:112px}#knob{width:48px;height:48px;margin:-24px 0 0 -24px}#hint{font-size:13px!important}#aimtip{top:calc(62px + env(safe-area-inset-top))!important;width:220px!important;left:calc(50% - 110px)!important}#chart{top:calc(64px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}#log{top:calc(108px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}#logpanel{top:calc(64px + env(safe-area-inset-top))!important;right:calc(220px + env(safe-area-inset-right))!important;max-height:calc(100vh - 90px)!important}}";
   document.head.appendChild(polishCss);
   let hintLayoutAt = 0;
   function layoutHint(nowMs) {
@@ -3837,6 +3837,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (stick) { const r = stick.getBoundingClientRect(); if (r.height > 2) top = Math.min(top, r.top); }
     const bottom = Math.max(120, Math.round(window.innerHeight - top + 10));
     hint.style.bottom = Math.min(bottom, Math.round(window.innerHeight * 0.62)) + "px";
+    const hh = document.getElementById("hullhud");
+    const row = document.getElementById("hudrow");
+    if (hh && row) {
+      const hb = Math.round(hh.getBoundingClientRect().bottom + 6);
+      row.style.top = hb + "px";
+      const sp = document.getElementById("skillpanel");
+      if (sp) sp.style.top = (hb + 44) + "px";
+    }
   }
   const hullHud = document.createElement("div");
   hullHud.id = "hullhud";
@@ -7378,13 +7386,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return { rel: rel, fromLine: fromLine, bear: fromLine >= BEAR_MIN, sign: rel >= 0 ? 1 : -1 };
   }
 
-  function fire() {
+  function fire(forceSign) {
     if (mode !== "sea" || fightOn || !ballTemplate || ship.hull <= 0) return;
     if (fireCool > 0) {
       say("Guns reloading. " + Math.ceil(fireCool) + "s.", 0.9);
       return;
     }
-    const aim = viewBearing();
+    const aim = forceSign ? { bear: true, sign: forceSign } : viewBearing();
     if (!aim.bear) {
       say("The guns can't bear.", 1.6);
       return;
@@ -7574,9 +7582,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const aimTip = document.createElement("div");
   aimTip.id = "aimtip";
   aimTip.textContent = "\u21C6 Swipe here to look port or starboard, then Fire";
-  aimTip.style.cssText = "display:none;position:absolute;right:calc(18px + env(safe-area-inset-right));top:42%;max-width:170px;padding:10px 12px;border-radius:14px;background:rgba(242,212,138,.92);color:#1a1208;font-family:system-ui,sans-serif;font-weight:700;font-size:14px;line-height:1.3;pointer-events:none;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.4);animation:aimpulse 1.2s ease-in-out infinite";
+  aimTip.style.cssText = "display:none;position:absolute;left:calc(50% - 90px);top:30%;width:180px;box-sizing:border-box;padding:10px 12px;border-radius:14px;background:rgba(242,212,138,.92);color:#1a1208;font-family:system-ui,sans-serif;font-weight:700;font-size:14px;line-height:1.3;pointer-events:none;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.4);animation:aimpulse 1.2s ease-in-out infinite";
   document.getElementById("ui").appendChild(aimTip);
-  polishCss.textContent += "@keyframes aimpulse{0%,100%{transform:translateX(0)}50%{transform:translateX(-10px)}}";
+  polishCss.textContent += "@keyframes aimpulse{0%,100%{transform:translateX(-8px)}50%{transform:translateX(8px)}}";
   function crewFrac() {
     if (!x3) return 1;
     return x3.crew / crewMaxFor(playerHull.id);
@@ -10525,6 +10533,56 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           return { name: f.name, hullId: f.hullId, stays: count(f.root) };
         })
       };
+    },
+    b4: {
+      x3: function () { return JSON.parse(JSON.stringify(x3)); },
+      setGold: function (n) { ledger.gold = n; },
+      setGoods: function (k, n) { ledger[k] = n; },
+      setCrew: function (n) { x3.crew = n; },
+      setX3: function (k, v) { x3[k] = v; },
+      openMenu: function (kind, portId) { if (portId) ashorePort = portById(portId); openMenu(kind); },
+      closeMenu: function () { closeMenu(); },
+      buttons: function () { return [].map.call(document.querySelectorAll("#mbtns button"), function (b) { return b.textContent; }); },
+      body: function () { return document.getElementById("mbody").textContent; },
+      press: function (part) {
+        const bs = document.querySelectorAll("#mbtns button");
+        for (let i = 0; i < bs.length; i++) if (bs[i].textContent.indexOf(part) >= 0) { bs[i].dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); return bs[i].textContent; }
+        return null;
+      },
+      notice: function () { return notice; },
+      glass: function () { spyglass(); return notice; },
+      gun: function () { const g = gunStats(); return { damage: g.damage, chain: g.chain, reload: g.reload, type: x3.guns }; },
+      fireTrack: function () {
+        fireCool = 0;
+        const before = shots.length;
+        fire(1);
+        const s = shots[shots.length - 1];
+        if (shots.length === before || !s) return Promise.resolve(null);
+        const ox = ship.x, oz = ship.z;
+        let far = 0;
+        return new Promise(function (res) {
+          const iv = setInterval(function () {
+            far = Math.max(far, Math.hypot(s.mesh.position.x - ox, s.mesh.position.z - oz));
+            if (shots.indexOf(s) < 0) { clearInterval(iv); res({ range: far, dmg: s.dmg }); }
+          }, 10);
+        });
+      },
+      sinkFoe: function (name) {
+        for (let i = 0; i < foes.length; i++) if (foes[i].name === name && foes[i].alive && !foes[i].gone) { damageFoe(foes[i], 9999); return true; }
+        return false;
+      },
+      castaways: function () {
+        spawnDriftCrate("castaway");
+        if (!driftCrate) return false;
+        ship.x = driftCrate.x; ship.z = driftCrate.z;
+        return true;
+      },
+      foeIndex: function (name) { for (let i = 0; i < foes.length; i++) if (foes[i].name === name) return i; return -1; },
+      lookAt: function (x, z) {
+        lookYaw = Math.atan2(x - ship.x, z - ship.z) - ship.heading;
+        lookHeld = true;
+      },
+      setLookHeld: function (v) { lookHeld = v; }
     },
     foeAt: function (i) {
       const f = foes[i];
