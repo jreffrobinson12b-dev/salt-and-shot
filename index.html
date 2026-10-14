@@ -8667,7 +8667,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 21";
+    ver.textContent = "Version: batch 22";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -11761,8 +11761,49 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         const wpp = (2 * Math.tan(camera.fov * Math.PI / 360) * d3) / Math.max(200, innerHeight);
         const kk = Math.min(k, 24 * wpp / (c.userData.baseSY * 0.62));
         c.scale.set(c.userData.baseSX * kk, c.userData.baseSY * kk, 1);
-        if (c.material) c.material.opacity = d < 8 ? clamp((d - 3) / 5, 0, 1) : (dayU.value < 0.35 && d > 60 && !f.hunt && f !== consort ? 0 : 1);
+        const pxH = c.userData.baseSY * kk * 0.62 / wpp;
+        if (c.material) c.material.opacity = d < 8 ? clamp((d - 3) / 5, 0, 1) : (pxH < 6 ? 0 : (dayU.value < 0.35 && d > 60 && !f.hunt && f !== consort ? 0 : 1));
       });
+    }
+  }
+  // Keep ship name tags apart on screen: the nearest ship keeps its tag where it is, and any farther tag that
+  // would overlap is lifted just clear of it (2 px gap), checked against every tag already placed.
+  function deoverlapShipTags(list) {
+    const w = innerWidth, h = innerHeight, v = new THREE.Vector3(), wp = new THREE.Vector3(), tags = [];
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i];
+      if (!f.root || f.gone) continue;
+      f.root.children.forEach(function (c) {
+        if (!c.isSprite || !c.userData.label) return;
+        if (c.userData.baseY == null) c.userData.baseY = c.position.y;
+        c.position.y = c.userData.baseY;
+        if (!c.material || c.material.opacity < 0.05 || !f.alive) return;
+        c.updateMatrixWorld(true);
+        c.getWorldPosition(wp);
+        v.copy(wp).project(camera);
+        if (v.z < -1 || v.z > 1) return;
+        const d = Math.max(0.5, wp.distanceTo(camera.position));
+        const wpp = (2 * Math.tan(camera.fov * Math.PI / 360) * d) / h;
+        const tw = Math.min(1, (c.userData.textW || 160) / 512);
+        const hh = c.scale.y * 0.62 / wpp, ww = c.scale.x * tw / wpp;
+        tags.push({ c: c, root: f.root, d: d, wpp: wpp, x: (v.x * 0.5 + 0.5) * w - ww / 2, y: (-v.y * 0.5 + 0.5) * h - hh / 2, w: ww, h: hh });
+      });
+    }
+    tags.sort(function (a, b) { return a.d - b.d; });
+    const placed = [];
+    for (let i = 0; i < tags.length; i++) {
+      const t = tags[i];
+      let y = t.y, moved = true, guard = 0;
+      while (moved && guard++ < 12) {
+        moved = false;
+        for (let j = 0; j < placed.length; j++) {
+          const o = placed[j];
+          if (t.x < o.x + o.w + 2 && o.x < t.x + t.w + 2 && y < o.y + o.h + 4 && o.y < y + t.h + 4) { y = o.y - t.h - 4; moved = true; }
+        }
+      }
+      placed.push({ x: t.x, y: y, w: t.w, h: t.h });
+      const lift = t.y - y;
+      if (lift > 0.5) t.c.position.y = t.c.userData.baseY + (lift * 1.15 * t.wpp) / Math.max(0.001, t.root.scale.y || 1);
     }
   }
   function shipTagRects() {
@@ -11787,6 +11828,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   function updateBatch11(dt, t) {
     if ((metTick & 3) === 0) shrinkShipTags();
+    if (mode === "sea" && !titleOn) deoverlapShipTags(foes.concat(consort ? [consort] : []));
     portraitTip.style.display = (!titleOn && innerHeight > innerWidth * 1.2) ? "block" : "none";
     if (x3 && mode === "sea" && !paused && !titleOn) {
       x3.seaTime += dt;
@@ -12612,7 +12654,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boot.appendChild(row);
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 21";
+    tv.textContent = "Version: batch 22";
     tv.style.cssText = "margin-top:14px;font-size:12px;opacity:.55";
     boot.appendChild(tv);
   }
@@ -13465,6 +13507,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       testShot: function (name, heading, dmg) { const f = foes.find(function (o) { return o.name === name; }); if (!f) return null; if (typeof heading === "number") f.heading = heading; const h0 = f.hull; shotHits({ mesh: { position: { x: f.x, y: 3, z: f.z } }, from: "player", dmg: dmg || 30 }); return h0 - f.hull; },
       foeSpot: function (name, dist) { const f = foes.find(function (o) { return o.name === name; }); if (!f) return null; f.hunt = false; f.ignore = 0; f.x = ship.x + dist; f.z = ship.z; foeSteer(f); return f.hunt; },
       setFireCool: function (n) { fireCool = n; return n; },
+      camFwd: function () { const v = new THREE.Vector3(); camera.getWorldDirection(v); const l = Math.hypot(v.x, v.z) || 1; return { x: v.x / l, z: v.z / l, cx: camera.position.x, cz: camera.position.z }; },
       b21: function () { return { shortage: shortage, shortT: shortT, tips: { tipCross: x3.tipCross, tipShort: x3.tipShort }, lamps: foes.filter(function (f) { return f.lamp && f.lamp.visible; }).length }; },
       setShortage: function (port, good) { shortage = port ? { port: port, good: good } : null; return shortage; },
       shortNow: function () { shortT = 0.01; return true; },
