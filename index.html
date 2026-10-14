@@ -7612,7 +7612,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const pdz = ship.z - f.z;
     const pd = Math.hypot(pdx, pdz);
     if (mode !== "sea" || !f.alive) f.hunt = false;
-    else if (playerSafe()) { if (f.hunt) { f.hunt = false; f.wp = nearestFoeWp(f); } }
+    else if (playerSafe()) { if (f.hunt) { f.hunt = false; f.wp = nearestFoeWp(f); if (!f.boss && safeWarnT <= 0) { say(f.name + " will not follow you into harbour.", 2.5); safeWarnT = 3; } } }
     else if (f.ignore <= 0) {
       if (f.hunt) {
         if (pd > 130) {
@@ -8342,7 +8342,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     fill.intensity = 0.52 * k;
     fogTmp.copy(HAZE_NIGHT).lerp(HAZE, d);
     scene.fog.color.copy(fogTmp);
-    if (sunDisc) sunDisc.visible = d > 0.35;
+    if (sunDisc) { sunDisc.visible = d > 0.35; sunDisc.material.color.setRGB(1, clamp(0.55 + (d - 0.35) * 0.9, 0.55, 0.886), clamp(0.3 + (d - 0.35) * 1.2, 0.3, 0.66)); }
     if (typeof sternLamp !== "undefined" && sternLamp) sternLamp.material.emissiveIntensity = d < 0.6 ? 1.6 : 0.2;
   }
   let seaAmb = null;
@@ -8412,13 +8412,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const info = document.createElement("div");
       info.id = "pauserenown";
       info.style.cssText = "font-size:14px;line-height:1.35;opacity:.92;margin:0 0 8px;max-width:320px;text-align:center";
-      info.textContent = RENOWN_TITLES[rn] + " \u00B7 renown " + rn + " of 8 \u00B7 deeds " + deedCount() + " of " + DEEDS.length + ". Next: " + nextGoal().text;
+      info.textContent = RENOWN_TITLES[rn] + " \u00B7 renown " + rn + " of 8 \u00B7 deeds " + deedCount() + " of " + DEEDS.length + " \u00B7 " + DIFF_WORD[x3.diff] + ". Next: " + nextGoal().text;
       box.appendChild(info);
     }
     box.appendChild(setRow("Sound: " + ["off", "low", "full"][x3.volume], function () { x3.volume = (x3.volume + 2) % 3; if (audioCtx) audioOut(); writeSave(); renderSettings(); }));
     box.appendChild(setRow("Vibration: " + (x3.vibrate ? "on" : "off"), function () { x3.vibrate = !x3.vibrate; if (x3.vibrate) buzz(40); writeSave(); renderSettings(); }));
     box.appendChild(setRow("Invert helm: " + (invertHelm ? "on" : "off"), function () { invertHelm = !invertHelm; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Difficulty: " + DIFF_WORD[x3.diff], function () { const o = ["easy", "normal", "hard"]; x3.diff = o[(o.indexOf(x3.diff) + 1) % 3]; writeSave(); renderSettings(); }));
+    if (x3.tut < 4) box.appendChild(setRow("Skip the lessons", function () { x3.tut = 9; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Large text: " + (x3.bigText ? "on" : "off"), function () { x3.bigText = !x3.bigText; applyBigText(); writeSave(); renderSettings(); }));
     if (pauseKind === "pause") box.appendChild(setRow("Photo mode (tap to bring buttons back)", photoMode));
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
@@ -10286,10 +10287,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         if (!fireReady) { fireReady = true; fireBtn.animate([{ transform: "scale(1.12)" }, { transform: "scale(1)" }], { duration: 220 }); }
       }
       if (canPatch()) { actBtn.textContent = "Patch " + patchCost() + "g"; actBtn.disabled = false; }
+      else if (mode === "sea" && patchCool > 3 && ship.hull < ship.hullMax * 0.6 && !(inHarbour() || beachHere()) && !fightOn) { actBtn.textContent = "Patch " + Math.ceil(patchCool) + "s"; actBtn.disabled = true; }
       else { actBtn.textContent = "Ashore"; actBtn.disabled = (!(inHarbour() || beachHere()) || fightOn); }
       if (fightOn && fight && fight.choosing) hint.textContent = "Take the ship, or take the prize.";
       else if (fightOn) hint.textContent = "Captain fight. High, mid, or low.";
       else if (noticeT > 0) hint.textContent = notice;
+      else if (canPatch() && ship.hull < ship.hullMax * 0.35) hint.textContent = "Hull low. Tap Patch, or run for a harbour: nothing can hurt you inside.";
       else if (canBoard) hint.textContent = canBoard.name + (canBoard.nation ? ", " + nationWord(canBoard.nation) : "") + " is low and you are slow enough. Board.";
       else if (inHarbour()) {
         const port = harbourHere();
