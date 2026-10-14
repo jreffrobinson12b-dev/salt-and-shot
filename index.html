@@ -3819,12 +3819,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   polishCss.textContent =
     "#hint{left:50%!important;right:auto!important;transform:translateX(-50%);width:max-content;max-width:min(520px,calc(100vw - 24px));box-sizing:border-box;padding:5px 12px;border-radius:12px;background:rgba(6,14,22,.55);font-size:14px!important}" +
     "#hint:empty{display:none}" +
+    "#story,#squall{white-space:normal!important;max-width:min(520px,86vw);text-align:center;box-sizing:border-box}" +
+    "@media (max-height:520px){#story,#squall,#toast{max-width:max(160px,calc(100vw - 530px))!important;top:calc(8px + env(safe-area-inset-top))!important}#toast{font-size:15px!important}}" +
+    "@media (max-width:440px){#skills,#glass{min-width:62px!important;padding:0 8px!important}}" +
+    "#hudrow{flex-wrap:wrap;max-width:min(250px,calc(100vw - 150px))}" +
     "#townmenu{padding:calc(20px + env(safe-area-inset-top)) 18px calc(20px + env(safe-area-inset-bottom))!important;touch-action:pan-y!important}#mpurse{display:inline-block;background:rgba(242,212,138,.14);border:1px solid rgba(242,212,138,.5);border-radius:10px;padding:6px 10px;margin:4px 0}#mbtns button{width:100%;text-align:left;padding:0 14px}" +
     "@media (min-width:560px){#townmenu>div{max-width:620px!important}#mbtns{display:grid!important;grid-template-columns:1fr 1fr}}" +
     "#needle{width:36px!important;height:36px!important}#needle i{top:4px!important;border-bottom-width:13px!important;transform-origin:50% 14px!important}#windlabel{font-size:11px;line-height:13px;margin-top:1px}" +
-    "#skills,#glass,#log,#chart{height:38px!important;font-size:14px!important;min-width:76px!important}#log{top:calc(228px + env(safe-area-inset-top))!important}#logpanel{top:calc(272px + env(safe-area-inset-top))!important}" +
+    "#skills,#glass,#log,#chart,#settings,#pause{height:38px!important;font-size:14px!important;min-width:76px!important}#log{top:calc(228px + env(safe-area-inset-top))!important}#logpanel{top:calc(272px + env(safe-area-inset-top))!important}" +
     "#mbtns button,#fight button,#skillpanel button,#logclose,#chartclose{min-height:46px;font-size:16px}" +
-    "@media (max-height:520px){#btns{display:grid!important;grid-template-columns:auto auto;gap:6px!important;align-items:end;justify-items:end}#btns button{height:44px;min-width:96px;font-size:14px}#stick{width:112px;height:112px}#knob{width:48px;height:48px;margin:-24px 0 0 -24px}#hint{font-size:13px!important}#aimtip{top:calc(62px + env(safe-area-inset-top))!important;width:220px!important;left:calc(50% - 110px)!important}#chart{top:calc(64px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}#log{top:calc(108px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}#logpanel{top:calc(64px + env(safe-area-inset-top))!important;right:calc(220px + env(safe-area-inset-right))!important;max-height:calc(100vh - 90px)!important}}";
+    "@media (max-height:520px){#btns{display:grid!important;grid-template-columns:auto auto;gap:6px!important;align-items:end;justify-items:end}#btns button{height:44px;min-width:96px;font-size:14px}#stick{width:112px;height:112px}#knob{width:48px;height:48px;margin:-24px 0 0 -24px}#hint{font-size:13px!important}#aimtip{width:max(160px,calc(100vw - 530px))!important;left:50%!important;margin-left:calc(max(160px,calc(100vw - 530px)) / -2);top:calc(8px + env(safe-area-inset-top))!important;font-size:13px!important}#chart{top:calc(64px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}#log{top:calc(108px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}#logpanel{top:calc(64px + env(safe-area-inset-top))!important;right:calc(220px + env(safe-area-inset-right))!important;max-height:calc(100vh - 90px)!important}}";
   document.head.appendChild(polishCss);
   let hintLayoutAt = 0;
   function layoutHint(nowMs) {
@@ -3843,7 +3847,18 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const hb = Math.round(hh.getBoundingClientRect().bottom + 6);
       row.style.top = hb + "px";
       const sp = document.getElementById("skillpanel");
-      if (sp) sp.style.top = (hb + 44) + "px";
+      if (sp) sp.style.top = Math.round(row.getBoundingClientRect().bottom + 6) + "px";
+      if (window.innerHeight > 520) {
+        const mapEl = document.getElementById("map");
+        const rb = Math.round(Math.max(row.getBoundingClientRect().bottom, mapEl ? mapEl.getBoundingClientRect().bottom : 0) + 8);
+        ["story", "squall", "toast"].forEach(function (id) { const el = document.getElementById(id); if (el) el.style.top = rb + "px"; });
+      }
+    }
+    const tip = document.getElementById("aimtip");
+    if (tip && tip.style.display !== "none" && window.innerHeight > 520) {
+      const hr = hint.getBoundingClientRect();
+      const base = hr.height > 2 ? hr.top : window.innerHeight - bottom;
+      tip.style.top = Math.max(8, Math.round(base - tip.offsetHeight - 10)) + "px";
     }
   }
   const hullHud = document.createElement("div");
@@ -3887,6 +3902,25 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   glassBtn.textContent = "Glass";
   glassBtn.style.cssText = "pointer-events:auto;min-width:72px;height:32px;font-size:13px;padding:0 10px";
   hudRow.appendChild(glassBtn);
+  const setBtn = document.createElement("button");
+  setBtn.id = "settings";
+  setBtn.type = "button";
+  setBtn.textContent = "\u2699";
+  setBtn.setAttribute("aria-label", "Settings");
+  setBtn.style.cssText = "pointer-events:auto;min-width:44px!important;width:44px;height:38px;font-size:20px;padding:0";
+  hudRow.appendChild(setBtn);
+  const pauseBtn = document.createElement("button");
+  pauseBtn.id = "pause";
+  pauseBtn.type = "button";
+  pauseBtn.textContent = "II";
+  pauseBtn.setAttribute("aria-label", "Pause");
+  pauseBtn.style.cssText = "pointer-events:auto;min-width:44px!important;width:44px;height:38px;font-size:16px;padding:0";
+  hudRow.appendChild(pauseBtn);
+  const setPanel = document.createElement("div");
+  setPanel.id = "setpanel";
+  setPanel.style.cssText = "display:none;position:fixed;inset:0;z-index:9;background:rgba(4,12,20,.6);align-items:center;justify-content:center;font-family:system-ui,sans-serif;color:#f4efe2";
+  setPanel.innerHTML = '<div style="background:rgba(10,26,40,.97);border:2px solid #f2d48a;border-radius:16px;padding:14px 16px;width:min(320px,90vw);max-height:90vh;overflow:auto;box-sizing:border-box"><div id="settitle" style="font-family:Georgia,serif;font-size:22px;color:#f2d48a;margin-bottom:10px">Settings</div><div id="setbtns" style="display:flex;flex-direction:column;gap:8px"></div></div>';
+  document.body.appendChild(setPanel);
   document.getElementById("ui").appendChild(hudRow);
   document.getElementById("ui").appendChild(logBtn);
   const skillPanel = document.createElement("div");
@@ -4117,7 +4151,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   scene.fog = new THREE.Fog(HAZE, 180, 900);
   const dayU = { value: 1 };
   const DAY_LEN = 720;
-  const HAZE_NIGHT = new THREE.Color(0x1a2a40);
+  const HAZE_NIGHT = new THREE.Color(0x30445e);
   const fogTmp = new THREE.Color();
 
   const camera = new THREE.PerspectiveCamera(60, 1, 0.2, 1800);
@@ -4171,7 +4205,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         "  vec3 haze = vec3(0.86, 0.93, 0.90);",
         "  vec3 high = vec3(0.239, 0.494, 0.761);",
         "  vec3 dayc = mix(haze, high, t);",
-        "  vec3 night = mix(vec3(0.10, 0.16, 0.26), vec3(0.03, 0.05, 0.12), t);",
+        "  vec3 night = mix(vec3(0.20, 0.28, 0.40), vec3(0.07, 0.11, 0.22), t);",
         "  vec3 dusk = mix(vec3(0.98, 0.62, 0.42), high * 0.7, t);",
         "  vec3 c = uDay > 0.5 ? mix(dusk, dayc, (uDay - 0.5) * 2.0) : mix(night, dusk, uDay * 2.0);",
         "  gl_FragColor = vec4(c, 1.0);",
@@ -4247,7 +4281,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         "  float glitter = band * reach * (0.72 + 0.28 * sin(along * 0.42 - uTime * 1.3));",
         "  col = mix(col, vec3(0.93, 0.78, 0.48), glitter * 0.22);",
         "  col = mix(col, haze, horizon);",
-        "  gl_FragColor = vec4(col * mix(0.38, 1.0, uDay), 1.0);",
+        "  gl_FragColor = vec4(col * mix(0.55, 1.0, uDay), 1.0);",
         "}"
       ].join("\n")
     })
@@ -5899,7 +5933,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       o.frequency.exponentialRampToValueAtTime(45, t + 0.28);
       g.gain.setValueAtTime(0.18, t);
       g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-      o.connect(g); g.connect(audioCtx.destination);
+      o.connect(g); g.connect(audioOut());
       o.start(t); o.stop(t + 0.36);
       noiseBurst(0.22, 0.4, 900);
     } catch (e) { /* audio optional */ }
@@ -5923,9 +5957,17 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const g = audioCtx.createGain();
       g.gain.setValueAtTime(vol, t);
       g.gain.exponentialRampToValueAtTime(0.001, t + len);
-      src.connect(f); f.connect(g); g.connect(audioCtx.destination);
+      src.connect(f); f.connect(g); g.connect(audioOut());
       src.start(t); src.stop(t + len + 0.02);
     } catch (e) { /* audio optional */ }
+  }
+
+  let masterGain = null;
+  function audioOut() {
+    if (!masterGain) { masterGain = audioCtx.createGain(); masterGain.connect(audioCtx.destination); }
+    const v = x3 ? [0, 0.4, 1][x3.volume] : 1;
+    masterGain.gain.value = v == null ? 1 : v;
+    return masterGain;
   }
 
   function say(msg, seconds) {
@@ -6072,6 +6114,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     addHud(document.getElementById("skills"));
     addHud(document.getElementById("glass"));
+    addHud(document.getElementById("settings"));
+    addHud(document.getElementById("pause"));
     addHud(document.getElementById("log"));
     addHud(document.getElementById("hullhud"));
     addHud(document.getElementById("map"));
@@ -6224,6 +6268,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     contract.galleonPaid = true;
     ledger.gold += how === "capture" ? 80 : 200;
     showStoryBanner();
+    storyBanner.textContent = "Santa Miseria is done. Nell Voss has one more errand at Bramble.";
     writeSave();
     return true;
   }
@@ -6268,6 +6313,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     paintHullSprite(foe.bar, foe.hull, foe.hullMax);
     floatText(foe.x, 9, foe.z, "-" + n, "#ffe08a");
     if (foe.hull <= 0) {
+      if (x3) x3.sunk += 1;
       foe.thin = 0;
       showThinCrew(foe);
       foe.sinking = true;
@@ -6332,6 +6378,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     for (let i = 0; i < forts.length; i++) {
       const gun = forts[i];
       if (gun.cool > 0) gun.cool = Math.max(0, gun.cool - dt);
+      if (gun.silent > 0) { gun.silent = Math.max(0, gun.silent - dt); gun.tracking = false; continue; }
       if (!fortArmed(gun)) {
         gun.tracking = false;
         continue;
@@ -6354,6 +6401,31 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
   }
 
+  function fortShotHit(s) {
+    const p = s.mesh.position;
+    if (p.y > 9) return false;
+    for (let i = 0; i < forts.length; i++) {
+      const gun = forts[i];
+      if (gun.silent > 0 || standing[gun.key] !== -1) continue;
+      if (Math.hypot(p.x - gun.x, p.z - gun.z) > 6) continue;
+      gun.hp = (gun.hp == null ? 3 : gun.hp) - 1;
+      floatText(gun.x, gun.muzzleY + 3, gun.z, gun.hp > 0 ? "Hit! " + gun.hp + " more" : "Silenced", "#ffe08a");
+      if (gun.hp <= 0) {
+        gun.hp = 3;
+        gun.silent = 180;
+        const tag = "|" + gun.id + "|";
+        if (x3 && x3.forts.indexOf(tag) < 0) {
+          x3.forts += tag;
+          ledger.gold += 40;
+          say("The battery is silenced. Your boats bring back 40 gold of plunder.", 4);
+          writeSave();
+        } else say("The battery is silenced for a while.", 3);
+      }
+      return true;
+    }
+    return false;
+  }
+
   let shakeT = 0;
   let shakeMag = 0;
   function shakeCam(mag) {
@@ -6362,6 +6434,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
 
   function buzz(pattern) {
+    if (x3 && !x3.vibrate) return;
     try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* optional */ }
   }
 
@@ -6815,6 +6888,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (coffeeErrand.accepted && !coffeeErrand.delivered) lines.push("Cleo Vann wants 4 coffee at Belleisle.");
     if (x3 && x3.bountyAccepted && !x3.bountyPaid) lines.push(x3.bountyDown ? "Claim Grey Nun's bounty from Hob at Bramble." : "Sink or take Grey Nun, south of Belleisle.");
     if (x3 && x3.wrightAccepted && !x3.wrightPaid) lines.push("Bess Corley wants 6 tobacco at the Bramble shipyard.");
+    if (x3 && contract.galleonPaid && !x3.silkAccepted) lines.push("Nell Voss has one more errand at Bramble.");
     if (x3 && x3.silkAccepted && !x3.silkPaid) lines.push("Take 4 silk to the Belleisle church for Nell.");
     if (x3 && crewShort()) lines.push("Short-handed. Hire hands at a tavern.");
     if (willaErrand.accepted && !willaErrand.seen) lines.push("Sail close to Resolute, then back to Willa at Salt Cay.");
@@ -7538,6 +7612,20 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     say(castaway ? "Castaways cling to a barrel nearby. Sail over to pick them up." : "A crate drifts nearby.", 3.2);
   }
 
+  let gustT = 0;
+  const BOTTLE_LINES = [
+    "A bottle: 'Salt Cay pays well for rum, if the pirates like you.'",
+    "A bottle: 'Copper on the hull and the wind is yours.'",
+    "A bottle: 'Grape shot thins a crew before a boarding.'",
+    "A bottle: 'Silk sells best at Belleisle.'",
+    "A bottle: 'A wary captain runs early. Keep your guns ready.'"
+  ];
+  function seaGust() { gustT = 25; say("A fair gust fills the sails.", 3.2); }
+  function seaBottle() {
+    ledger.gold += 25;
+    say(BOTTLE_LINES[Math.floor(Math.random() * BOTTLE_LINES.length)] + " Tucked inside: 25 gold.", 5);
+    writeSave();
+  }
   function startCalm() {
     if (driftCrate || calmT > 0) return;
     calmT = 20;
@@ -7546,6 +7634,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function updateSeaEvents(dt) {
     if (calmT > 0) calmT = Math.max(0, calmT - dt);
+    if (gustT > 0) gustT = Math.max(0, gustT - dt);
     if (driftCrate) {
       driftCrate.age += dt;
       if (driftCrate.mesh) driftCrate.mesh.position.y = 0.22 + Math.sin(waterUniforms.uTime.value * 1.4) * 0.08;
@@ -7566,8 +7655,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (seaEventT < seaEventWait) return;
     seaEventT = 0;
     seaEventWait = 180 + Math.random() * 180;
-    const roll = Math.floor(Math.random() * 4);
-    if (roll === 3) spawnDriftCrate("castaway");
+    const roll = Math.floor(Math.random() * 6);
+    if (roll === 4) seaGust();
+    else if (roll === 5) seaBottle();
+    else if (roll === 3) spawnDriftCrate("castaway");
     else if (roll === 0) spawnDriftCrate();
     else if (roll === 1) startCalm();
     else say("A sail on the horizon.", 3.2);
@@ -7581,7 +7672,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return 20;
   }
   function x3Defaults() {
-    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false };
+    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0 };
   }
   let x3 = null;
   function x3Load(raw) {
@@ -7728,7 +7819,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   toastEl.style.cssText = "display:none;position:absolute;left:50%;top:calc(52px + env(safe-area-inset-top));transform:translateX(-50%);z-index:9;padding:10px 18px;border-radius:14px;background:rgba(28,22,12,.92);border:2px solid #f2d48a;color:#f2d48a;font-family:Palatino,Georgia,serif;font-size:18px;text-align:center;pointer-events:none;max-width:86vw;box-shadow:0 4px 18px rgba(0,0,0,.5)";
   document.getElementById("ui").appendChild(toastEl);
   let toastT = 0;
+  const toastQueue = [];
   function toast(line) {
+    if (toastT > 0) { toastQueue.push(line); return; }
+    showToast(line);
+  }
+  function showToast(line) {
     toastEl.innerHTML = "<div style='font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.8'>Quest complete</div>" + line;
     toastEl.style.display = "block";
     toastEl.animate([{ transform: "translateX(-50%) scale(0.7)", opacity: 0 }, { transform: "translateX(-50%) scale(1)", opacity: 1 }], { duration: 260, easing: "ease-out" });
@@ -7748,7 +7844,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         g.gain.setValueAtTime(0.0001, t);
         g.gain.exponentialRampToValueAtTime(0.06, t + 0.02);
         g.gain.exponentialRampToValueAtTime(0.0001, t + (i === 3 ? 0.5 : 0.16));
-        o.connect(g); g.connect(audioCtx.destination);
+        o.connect(g); g.connect(audioOut());
         o.start(t); o.stop(t + 0.55);
       }
     } catch (e) { /* audio optional */ }
@@ -7772,7 +7868,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const nowMs = performance.now();
     const dt = questClock ? Math.min(0.1, (nowMs - questClock) / 1000) : 0;
     questClock = nowMs;
-    if (toastT > 0) { toastT -= dt; if (toastT <= 0) toastEl.style.display = "none"; }
+    if (toastT > 0) {
+      toastT -= dt;
+      if (toastT <= 0) {
+        toastEl.style.display = "none";
+        if (toastQueue.length) showToast(toastQueue.shift());
+      }
+    }
     if (titleOn || !worldReady || !x3) { questSnap = null; return; }
     const now = questFlags();
     if (questSnap) for (const k in now) if (now[k] && !questSnap[k]) toast(k);
@@ -7803,9 +7905,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const c = Math.cos((t / DAY_LEN) * Math.PI * 2);
     const d = Math.max(0, Math.min(1, 0.5 + c * 0.9));
     dayU.value = d;
-    const k = 0.45 + 0.55 * d;
+    const k = 0.58 + 0.42 * d;
     hemi.intensity = 0.72 * k;
-    sun.intensity = 1.85 * (0.25 + 0.75 * d);
+    sun.intensity = 1.85 * (0.4 + 0.6 * d);
     fill.intensity = 0.52 * k;
     fogTmp.copy(HAZE_NIGHT).lerp(HAZE, d);
     scene.fog.color.copy(fogTmp);
@@ -7823,7 +7925,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         src.buffer = noiseBuf; src.loop = true;
         const f = audioCtx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 420;
         const g = audioCtx.createGain(); g.gain.value = 0;
-        src.connect(f); f.connect(g); g.connect(audioCtx.destination);
+        src.connect(f); f.connect(g); g.connect(audioOut());
         src.start();
         seaAmb = { g: g, f: f };
       }
@@ -7839,6 +7941,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (titleOn || !worldReady) { goldSeen = null; return; }
     if (goldSeen !== null && ledger.gold > goldSeen) {
       const gain = ledger.gold - goldSeen;
+      if (x3) x3.earned += gain;
       const at = mode === "land" ? person : ship;
       floatText(at.x, mode === "land" ? 3 : 9, at.z, "+" + gain + " gold", "#ffd86a");
       try {
@@ -7848,7 +7951,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
             o.type = "triangle"; o.frequency.setValueAtTime(fq, t + i * 0.07);
             g.gain.setValueAtTime(0.0001, t + i * 0.07); g.gain.exponentialRampToValueAtTime(0.07, t + i * 0.07 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.07 + 0.25);
-            o.connect(g); g.connect(audioCtx.destination); o.start(t + i * 0.07); o.stop(t + i * 0.07 + 0.3);
+            o.connect(g); g.connect(audioOut()); o.start(t + i * 0.07); o.stop(t + i * 0.07 + 0.3);
           });
         }
       } catch (e) { /* optional */ }
@@ -7860,10 +7963,73 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     try { if (audioCtx) { if (document.hidden) audioCtx.suspend(); else audioCtx.resume(); } } catch (e) { /* optional */ }
   });
   window.addEventListener("pagehide", function () { if (worldReady && !titleOn) writeSave(); });
+  let paused = false;
+  let pauseKind = "";
+  function setRow(label, fn) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = label;
+    b.style.cssText = "height:48px;font-size:16px;width:100%";
+    b.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); fn(); });
+    return b;
+  }
+  function renderSettings() {
+    const box = document.getElementById("setbtns");
+    document.getElementById("settitle").textContent = pauseKind === "pause" ? "Paused" : "Settings";
+    box.innerHTML = "";
+    box.appendChild(setRow("Sound: " + ["off", "low", "full"][x3.volume], function () { x3.volume = (x3.volume + 2) % 3; if (audioCtx) audioOut(); writeSave(); renderSettings(); }));
+    box.appendChild(setRow("Vibration: " + (x3.vibrate ? "on" : "off"), function () { x3.vibrate = !x3.vibrate; if (x3.vibrate) buzz(40); writeSave(); renderSettings(); }));
+    box.appendChild(setRow("Invert helm: " + (invertHelm ? "on" : "off"), function () { invertHelm = !invertHelm; writeSave(); renderSettings(); }));
+    box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
+  }
+  function openSettings(kind) {
+    if (titleOn || !x3) return;
+    pauseKind = kind;
+    paused = true;
+    setPanel.style.display = "flex";
+    renderSettings();
+  }
+  function closeSettings() {
+    setPanel.style.display = "none";
+    paused = false;
+    last = performance.now();
+  }
+  let gullWait = 6;
+  let gullClock = 0;
+  function gullCry() {
+    try {
+      const t = audioCtx.currentTime;
+      const n = 1 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < n; i++) {
+        const t0 = t + i * 0.32;
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); const f = audioCtx.createBiquadFilter();
+        o.type = "sawtooth"; f.type = "bandpass"; f.frequency.value = 2200; f.Q.value = 3;
+        const top = 1700 + Math.random() * 500;
+        o.frequency.setValueAtTime(top, t0); o.frequency.exponentialRampToValueAtTime(top * 0.62, t0 + 0.24);
+        g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.035, t0 + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.26);
+        o.connect(f); f.connect(g); g.connect(audioOut()); o.start(t0); o.stop(t0 + 0.3);
+      }
+    } catch (e) { /* optional */ }
+  }
+  function updateGulls() {
+    if (!audioCtx || audioCtx.state !== "running" || titleOn || paused) return;
+    const nowMs = performance.now();
+    const dt = gullClock ? Math.min(0.1, (nowMs - gullClock) / 1000) : 0;
+    gullClock = nowMs;
+    let near = mode === "land";
+    if (!near) for (let i = 0; i < PORTS.length; i++) { const h = PORTS[i].harbour; if (Math.hypot(ship.x - h.x, ship.z - h.z) < 120) { near = true; break; } }
+    if (!near) return;
+    gullWait -= dt;
+    if (gullWait <= 0) { gullWait = 6 + Math.random() * 9; gullCry(); }
+  }
   function updateAimTip() {
     if (!x3) return;
     if (mode === "sea" && lookHeld && !x3.aimed) { x3.aimed = true; writeSave(); }
-    const show = toastT <= 0 && !x3.aimed && mode === "sea" && !titleOn && !fightOn && !menuOpen && !document.getElementById("howto");
+    if (toastT > 0 && storyBanner.style.display === "block") storyBanner.style.visibility = "hidden";
+    else storyBanner.style.visibility = "";
+    if (squallBanner.style.display === "block" && (toastT > 0 || storyBanner.style.display === "block")) squallBanner.style.visibility = "hidden";
+    else squallBanner.style.visibility = "";
+    const bannerUp = storyBanner.style.display === "block" || squallBanner.style.display === "block";
+    const show = !bannerUp && toastT <= 0 && !x3.aimed && mode === "sea" && !titleOn && !fightOn && !menuOpen && !document.getElementById("howto");
     aimTip.style.display = show ? "block" : "none";
   }
 
@@ -8205,6 +8371,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const cloth = ship.sails <= 0 ? 0.07 : ship.sails / 100;
       const hurt = ship.hull < 35 ? 0.85 : 1;
       if (calmT > 0) set *= 0.5;
+      if (gustT > 0) set *= 1.25;
       const target = set * cloth * MAX_SPEED * windFactor * shallowFactor(ship.x, ship.z) * hurt * (x3 && x3.copper ? 1.08 : 1);
       const move = hullSpec(playerHull.id);
       ship.speed = damp(ship.speed, target, dt, 0.55 * move.accel);
@@ -8517,6 +8684,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       box.appendChild(menuButton("Sell tobacco (" + sellOf("tobacco") + ")", function () { trade("tobacco", -1); }));
       box.appendChild(menuButton("Buy silk", function () { trade("silk", 1); }));
       box.appendChild(menuButton("Sell silk (" + sellOf("silk") + ")", function () { trade("silk", -1); }));
+      if (cargoCount() > 0) {
+        let total = 0;
+        ["sugar", "rum", "coffee", "tobacco", "silk"].forEach(function (g) { total += ledger[g] * sellOf(g); });
+        box.insertBefore(menuButton("Sell all cargo (about " + total + " gold)", function () {
+          ["sugar", "rum", "coffee", "tobacco", "silk"].forEach(function (g) { while (ledger[g] > 0) { const before = ledger[g]; trade(g, -1); if (ledger[g] >= before) break; } });
+          renderMenu();
+        }), box.firstChild);
+      }
       box.appendChild(menuButton("Repair sails (" + REPAIR_COST + " gold)", repairSails));
       if (ashorePort && ashorePort.id === "lorenzo" && letter.accepted && !letter.delivered) {
         box.appendChild(menuButton("Deliver the letter", deliverLetter));
@@ -8995,7 +9170,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       s.mesh.position.z += s.vz * dt;
       s.life -= dt;
       s.age = (s.age || 0) + dt;
-      const hit = s.age > 0.28 && shotHits(s);
+      let hit = s.age > 0.28 && shotHits(s);
+      if (!hit && s.from === "player" && s.age > 0.28 && fortShotHit(s)) hit = true;
       if (s.chain) s.mesh.rotation.z += dt * 1.8;
       if (hit || s.mesh.position.y <= 0.2 || s.life <= 0) {
         if (hit || s.mesh.position.y <= 0.35) splashAt(s.mesh.position.x, s.mesh.position.z, !!hit);
@@ -9629,15 +9805,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     updateAimTip();
     syncSternLamp();
     updateAmbience();
+    updateGulls();
     watchGold();
     crewTick();
     watchQuests();
     last = now;
     waterUniforms.uTime.value = now / 1000;
     updateDaylight(now / 1000);
-    windAngle += dt * (Math.PI * 2 / WIND_TURN);
-    if (fireCool > 0) fireCool -= dt;
-    if (!titleOn) {
+    if (!paused) windAngle += dt * (Math.PI * 2 / WIND_TURN);
+    if (fireCool > 0 && !paused) fireCool -= dt;
+    if (!titleOn && !paused) {
       const input = readSteer();
       if (mode === "sea" && !fightOn) updateSea(dt, input);
       else {
@@ -9738,7 +9915,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
     function paintSkills() {
       const n = document.getElementById("skillnums");
-      if (n) n.textContent = "Fence " + skills.fence + " / 5\nSail " + skills.sail + " / 5\nTrade " + skills.trade + " / 5\nEngland " + standing.england + "\nSpain " + standing.spain + "\nFrance " + standing.france + "\nPirates " + standing.pirates + "\nInvert helm " + (invertHelm ? "on" : "off") + (x3 ? "\nCrew " + x3.crew + " / " + crewMaxFor(playerHull.id) + "\nGuns: " + gunType().name + "\nOfficers: " + ([x3.gunner ? "gunner" : "", x3.navigator ? "navigator" : "", x3.surgeon ? "surgeon" : ""].filter(Boolean).join(", ") || "none") : "");
+      if (n) n.textContent = "Fence " + skills.fence + " / 5\nSail " + skills.sail + " / 5\nTrade " + skills.trade + " / 5\nEngland " + standing.england + "\nSpain " + standing.spain + "\nFrance " + standing.france + "\nPirates " + standing.pirates + "\nInvert helm " + (invertHelm ? "on" : "off") + (x3 ? "\nCrew " + x3.crew + " / " + crewMaxFor(playerHull.id) + "\nGuns: " + gunType().name + "\nShips sunk " + x3.sunk + " · Gold earned " + x3.earned + "\nOfficers: " + ([x3.gunner ? "gunner" : "", x3.navigator ? "navigator" : "", x3.surgeon ? "surgeon" : ""].filter(Boolean).join(", ") || "none") : "");
     }
     function stopChartTap(e) {
       e.preventDefault();
@@ -9756,6 +9933,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       chartPanel.style.display = "none";
     });
     chartPanel.addEventListener("pointerdown", stopChartTap);
+    pauseBtn.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openSettings("pause");
+    });
+    setBtn.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openSettings("settings");
+    });
     glassBtn.addEventListener("pointerdown", function (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -9891,7 +10078,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
     function lookBlocked(target) {
       if (!target || !target.closest) return false;
-      return !!target.closest("button, #stick, #btns, #boot, #howto, #townmenu, #fight, #skillpanel, #logpanel, #chartpanel, #chart");
+      return !!target.closest("button, #stick, #btns, #boot, #howto, #setpanel, #townmenu, #fight, #skillpanel, #logpanel, #chartpanel, #chart");
     }
     window.addEventListener("pointerdown", function (e) {
       if (titleOn || fightOn || menuOpen) return;
@@ -10778,6 +10965,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       night: function () { dayOffset = DAY_LEN / 2 - performance.now() / 1000; },
       day: function () { return dayU.value; },
       toast: function () { return toastEl.style.display !== "none" ? toastEl.textContent : ""; },
+      toastQueue: function () { return toastQueue.slice(); },
+      fakeToast: function (line) { toast(line); },
+      settings: function (kind) { openSettings(kind || "settings"); return [].map.call(document.querySelectorAll("#setbtns button"), function (b) { return b.textContent; }); },
+      setPress: function (part) { const bs = document.querySelectorAll("#setbtns button"); for (let i = 0; i < bs.length; i++) if (bs[i].textContent.indexOf(part) >= 0) { bs[i].dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); return true; } return false; },
+      paused: function () { return paused; },
+      forts: function () { return forts.map(function (g) { return { id: g.id, x: g.x, z: g.z, y: g.muzzleY, key: g.key, hp: g.hp == null ? 3 : g.hp, silent: g.silent || 0 }; }); },
+      hitFort: function (i) { const g = forts[i]; return fortShotHit({ mesh: { position: { x: g.x, y: g.muzzleY, z: g.z } } }); },
+      standing: function (k, v) { standing[k] = v; },
+      gust: function () { seaGust(); return gustT; },
+      bottle: function () { seaBottle(); return notice; },
       galleonPaid: function () { contract.galleonPaid = true; },
       hull: function () { return { hull: ship.hull, max: ship.hullMax }; },
       hurt: function (n) { damagePlayer(n); return ship.hull; },
