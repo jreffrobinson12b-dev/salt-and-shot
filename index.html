@@ -6659,6 +6659,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   let shakeT = 0;
   let shakeMag = 0;
   function shakeCam(mag) {
+    if (x3 && x3.calm) mag *= 0.25;
     shakeMag = Math.max(shakeMag * (shakeT > 0 ? 1 : 0), mag);
     shakeT = 0.35;
   }
@@ -8030,7 +8031,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return 20;
   }
   function x3Defaults() {
-    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0 };
+    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false };
   }
   let x3 = null;
   function x3Load(raw) {
@@ -8412,7 +8413,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const info = document.createElement("div");
       info.id = "pauserenown";
       info.style.cssText = "font-size:14px;line-height:1.35;opacity:.92;margin:0 0 8px;max-width:320px;text-align:center";
-      info.textContent = RENOWN_TITLES[rn] + " \u00B7 renown " + rn + " of 8 \u00B7 deeds " + deedCount() + " of " + DEEDS.length + " \u00B7 " + DIFF_WORD[x3.diff] + ". Next: " + nextGoal().text;
+      info.textContent = RENOWN_TITLES[rn] + " \u00B7 renown " + rn + " of 8 \u00B7 deeds " + deedCount() + " of " + DEEDS.length + " \u00B7 " + DIFF_WORD[x3.diff] + ". Next: " + (x3.tut < 4 ? TUT[x3.tut] : nextGoal().text);
       box.appendChild(info);
     }
     box.appendChild(setRow("Sound: " + ["off", "low", "full"][x3.volume], function () { x3.volume = (x3.volume + 2) % 3; if (audioCtx) audioOut(); writeSave(); renderSettings(); }));
@@ -8420,9 +8421,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow("Invert helm: " + (invertHelm ? "on" : "off"), function () { invertHelm = !invertHelm; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Difficulty: " + DIFF_WORD[x3.diff], function () { const o = ["easy", "normal", "hard"]; x3.diff = o[(o.indexOf(x3.diff) + 1) % 3]; writeSave(); renderSettings(); }));
     if (x3.tut < 4) box.appendChild(setRow("Skip the lessons", function () { x3.tut = 9; writeSave(); renderSettings(); }));
+    box.appendChild(setRow("Calm camera: " + (x3.calm ? "on" : "off"), function () { x3.calm = !x3.calm; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Large text: " + (x3.bigText ? "on" : "off"), function () { x3.bigText = !x3.bigText; applyBigText(); writeSave(); renderSettings(); }));
     if (pauseKind === "pause") box.appendChild(setRow("Photo mode (tap to bring buttons back)", photoMode));
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
+    const ver = document.createElement("div");
+    ver.id = "setver";
+    ver.textContent = "Version: batch 12";
+    ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
+    box.appendChild(ver);
   }
   function photoMode() {
     closeSettings();
@@ -10177,7 +10184,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       camLook.lerp(look, k);
     }
     if (mode === "sea") {
-      camLean = damp(camLean, ((ship.roll || 0) + (ship.list || 0)) * 0.22, dt, 2.5);
+      camLean = damp(camLean, (x3 && x3.calm) ? 0 : ((ship.roll || 0) + (ship.list || 0)) * 0.22, dt, 2.5);
       const lean = camLean;
       camera.up.set(Math.cos(ship.heading) * Math.sin(lean), Math.cos(lean), -Math.sin(ship.heading) * Math.sin(lean));
     } else {
@@ -10511,8 +10518,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       mapCtx.fill();
     }
     mapCtx.fillStyle = "#f2d48a";
+    mapCtx.strokeStyle = "rgba(191,232,255,0.7)";
+    mapCtx.lineWidth = 1;
     for (let i = 0; i < PORTS.length; i++) {
       mapCtx.fillRect(X(PORTS[i].harbour.x) - 2, Y(PORTS[i].harbour.z) - 2, 4, 4);
+      mapCtx.beginPath(); mapCtx.arc(X(PORTS[i].harbour.x), Y(PORTS[i].harbour.z), Math.max(5, PORTS[i].harbour.r * scale), 0, Math.PI * 2); mapCtx.stroke();
     }
     if (contract.delivered) {
       mapCtx.strokeStyle = "#e15a4a";
@@ -11127,9 +11137,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   };
   // Short (sideways) screens: settings become a two-column grid so seven rows fit without scrolling.
   polishCss.textContent += "@media (max-height:500px){#setbtns{display:grid!important;grid-template-columns:1fr 1fr;gap:6px!important}#setbtns>button{height:42px!important;font-size:15px!important}#setbtns>div{grid-column:1/-1}#settitle{font-size:18px!important;margin-bottom:6px!important}#setbtns{width:min(540px,92vw)}}#setbtns:has(>div){}";
+  polishCss.textContent += "@media (max-height:380px){#setbtns>button{height:38px!important}#setbtns{gap:4px!important}#settitle{margin-bottom:4px!important}}@media (max-aspect-ratio:1/1){#safebadge{top:calc(274px + env(safe-area-inset-top))!important}}";
   const DIFF_WORD = { easy: "Easy", normal: "Normal", hard: "Hard" };
   function applyBigText() { document.body.classList.toggle("bigtext", !!(x3 && x3.bigText)); }
-  polishCss.textContent += "body.bigtext button{font-size:18px!important}body.bigtext #hint{font-size:16px!important}body.bigtext #mbody,body.bigtext #setbtns{font-size:17px!important;line-height:1.4!important}body.bigtext #sub,body.bigtext #windbox{font-size:14px!important}";
+  polishCss.textContent += "body.bigtext button{font-size:18px!important}body.bigtext #hint{font-size:16px!important}body.bigtext #mbody,body.bigtext #setbtns{font-size:17px!important;line-height:1.4!important}body.bigtext #sub,body.bigtext #windbox{font-size:14px!important}body.bigtext #toast,body.bigtext #story{font-size:16px!important}body.bigtext #boot{font-size:17px!important}body.bigtext #safebadge,body.bigtext #bossbar{font-size:14px!important}";
   // Field patch (batch 11): at sea, when the hull is below 60%, the carpenter can patch 30% back for gold and morale.
   let patchCool = 0;
   function patchCost() { return Math.ceil(ship.hullMax * 0.3 / 4 * 1.5 * diffK("repair")); }
@@ -11143,6 +11154,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     ledger.gold -= cost;
     ship.hull = Math.min(ship.hullMax, ship.hull + Math.round(ship.hullMax * 0.3));
     patchCool = 40; addMorale(-5);
+    floatText(ship.x, 8, ship.z, "+" + Math.round(ship.hullMax * 0.3), "#b8f5b0");
+    if (consort && !consort.sinking && Math.hypot(consort.x - ship.x, consort.z - ship.z) < 40) { consort.hull = Math.min(consort.hullMax, consort.hull + Math.round(consort.hullMax * 0.15)); paintHullSprite(consort.bar, consort.hull, consort.hullMax); }
     say("The carpenter patches the hull (" + cost + " gold). Next patch in 40 s.", 3);
     noiseBurst(0.2, 0.1, 700); buzz(30); writeSave();
     return true;
@@ -11177,6 +11190,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (tutDone(x3.tut)) {
       x3.tut++;
       tutWait = 1.2;
+      buzz(25);
       if (x3.tut >= 4) { x3.tut = 9; ledger.gold += 25; toast("You know the ropes. The harbour master sends 25 gold.", "Lessons done"); writeSave(); }
       else writeSave();
       return;
@@ -11207,16 +11221,54 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     bowFoam.rotation.z = ship.heading + Math.PI;
     const w = H.shadow * 0.45 * (0.8 + 0.08 * Math.sin(t * 6));
     bowFoam.scale.set(w, w * (0.9 + sp * 0.06), 1);
-    bowFoam.material.opacity = clamp((sp - 0.6) / 5, 0, 0.8);
+    bowFoam.material.opacity = clamp((sp - 0.6) / 5, 0, 0.8) * (0.45 + 0.55 * clamp(dayU.value * 1.6, 0, 1));
+    const c = consort;
+    consortFoam.visible = !!(c && !c.sinking && c.root);
+    if (consortFoam.visible) {
+      const ch = HULLS[c.hullId] || HULLS.cutter, cl = ch.shadow * 0.5, cs = Math.abs(c.speed || 0);
+      consortFoam.position.set(c.x + Math.sin(c.heading) * cl, 0.12, c.z + Math.cos(c.heading) * cl);
+      consortFoam.rotation.z = c.heading + Math.PI;
+      const cw = ch.shadow * 0.45; consortFoam.scale.set(cw, cw * (0.9 + cs * 0.06), 1);
+      consortFoam.material.opacity = clamp((cs - 0.6) / 5, 0, 0.7) * (0.45 + 0.55 * clamp(dayU.value * 1.6, 0, 1));
+    }
   }
+  const consortFoam = bowFoam.clone(); consortFoam.material = bowFoam.material.clone(); consortFoam.name = "consort-foam"; scene.add(consortFoam);
   const safeBadge = document.createElement("div");
   safeBadge.id = "safebadge";
   safeBadge.textContent = "\u2693 Safe harbour";
   safeBadge.style.cssText = "display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(52px + env(safe-area-inset-top));padding:3px 10px;border-radius:10px;background:rgba(8,20,32,.6);color:#bfe8ff;font:700 12px system-ui,sans-serif;pointer-events:none;white-space:nowrap";
   document.getElementById("ui").appendChild(safeBadge);
+  const bossBar = document.createElement("div");
+  bossBar.id = "bossbar";
+  bossBar.innerHTML = '<div id="bossname">Leviathan</div><div style="height:6px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden"><div id="bossfill" style="height:100%;width:100%;background:#c0392b"></div></div>';
+  bossBar.style.cssText = "display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(74px + env(safe-area-inset-top));width:min(180px,28vw);padding:3px 8px 5px;border-radius:10px;background:rgba(8,20,32,.6);color:#f4efe2;font:700 12px system-ui,sans-serif;text-align:center;pointer-events:none";
+  document.getElementById("ui").appendChild(bossBar);
+  let wasSafe = null;
+  function safeChime(up) {
+    try {
+      if (!audioCtx || audioCtx.state !== "running") return;
+      const t0 = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(up ? 880 : 660, t0); o.frequency.exponentialRampToValueAtTime(up ? 1320 : 440, t0 + 0.25);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.05, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.6);
+      o.connect(g); g.connect(audioOut()); o.start(t0); o.stop(t0 + 0.65);
+    } catch (e) { /* optional */ }
+  }
   function updateBatch11(dt, t) {
     if (safeWarnT > 0) safeWarnT -= dt;
-    safeBadge.style.display = (x3 && !titleOn && mode === "sea" && !menuOpen && playerSafe()) ? "block" : "none";
+    const safeP = x3 && mode === "sea" ? safeHarbourAt(ship.x, ship.z) : null;
+    safeBadge.style.display = (x3 && !titleOn && mode === "sea" && !menuOpen && safeP) ? "block" : "none";
+    if (safeP) safeBadge.textContent = "\u2693 Safe harbour \u00B7 " + safeP.name;
+    if (x3 && !titleOn && mode === "sea") {
+      const now = !!safeP;
+      if (wasSafe !== null && now !== wasSafe) { safeChime(now); if (now) buzz(15); else say("Leaving safe waters.", 1.8); }
+      wasSafe = now;
+    } else wasSafe = null;
+    let boss = null;
+    for (let i = 0; i < foes.length; i++) { const f = foes[i]; if (f.boss && f.alive && !f.sinking && !f.gone) boss = f; }
+    const showBoss = !!(boss && mode === "sea" && !titleOn && !menuOpen && (boss.hunt || Math.hypot(boss.x - ship.x, boss.z - ship.z) < 140));
+    bossBar.style.display = showBoss ? "block" : "none";
+    if (showBoss) bossBar.style.top = (safeBadge.style.display === "block" ? safeBadge.offsetTop + safeBadge.offsetHeight + 4 : safeBadge.offsetTop) + "px";
+    if (showBoss) document.getElementById("bossfill").style.width = Math.max(0, Math.round(100 * boss.hull / boss.hullMax)) + "%";
     if (patchCool > 0 && !paused) patchCool -= dt;
     updateBossRest(dt);
     updateTutorial(dt);
@@ -11924,7 +11976,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const savedRenown = data && data.x3 && typeof data.x3.renown === "string" ? (data.x3.renown.match(/\|[a-z]+\|/g) || []).length : -1;
     if (savedRenown >= 0) {
       const savedDeeds = typeof data.x3.deeds === "string" ? (data.x3.deeds.match(/\|[a-z]+\|/g) || []).length : 0;
-      note.textContent = "Your saved captain: " + RENOWN_TITLES[savedRenown] + ", renown " + savedRenown + " of 8, deeds " + savedDeeds + " of " + DEEDS.length + ". Continue picks it up. Play starts a new game.";
+      note.textContent = "Your saved captain: " + RENOWN_TITLES[savedRenown] + ", renown " + savedRenown + " of 8, deeds " + savedDeeds + " of " + DEEDS.length + (typeof data.x3.diff === "string" && DIFF_WORD[data.x3.diff] && data.x3.diff !== "normal" ? ", " + DIFF_WORD[data.x3.diff] : "") + ". Continue picks it up. Play starts a new game.";
     }
     note.style.cssText = "margin-bottom:18px;max-width:340px;font-size:14px;opacity:0.9";
     const row = document.createElement("div");
@@ -12749,6 +12801,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       foeHunt: function () { const f = foes.find(function (o) { return !o.boss && o.alive && !o.sinking && !o.gone; }); return f ? !!f.hunt : null; },
       fortPort: function (i) { const h = PORTS[forts[i].port].harbour; return { x: h.x, z: h.z, r: h.r, id: PORTS[forts[i].port].id }; },
       shotCount: function () { return shots.filter(function (s) { return s.from === "fort" || s.from === "foe"; }).length; },
+      spawnConsort: function (x, z) { setConsort("cutter", "Test Wren", 90, 100); if (consort) { consort.x = x; consort.z = z; } return consort ? { x: consort.x, z: consort.z, hull: consort.hull } : null; },
+      consortAt: function (x, z) { if (!consort) return null; consort.x = x; consort.z = z; return [x, z]; },
+      project: function (x, y, z) { const v = new THREE.Vector3(x, y, z).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight, v.z]; },
+      b12: function () { return { calm: x3.calm, badge: safeBadge.textContent, badgeOn: safeBadge.style.display, bossBar: bossBar.style.display, bossFill: document.getElementById("bossfill").style.width, cfoam: consortFoam.visible, ver: !!document.getElementById("setver") }; },
+      bossNear: function () { spawnBoss(); const f = foes.find(function (o) { return o.boss && !o.gone; }); if (f) { f.x = ship.x + 40; f.z = ship.z; f.hunt = true; } return !!f; },
+      foeNames: function () { return foes.filter(function (f) { return !f.boss && !f.gone; }).map(function (f) { return f.name + ":" + f.hullId; }); },
+      setInvert: function (v) { invertHelm = !!v; return invertHelm; },
+      camBasis: function () { const e = camera.matrixWorld.elements; const f = new THREE.Vector3(); camera.getWorldDirection(f); return { right: [e[0], e[2]], fwd: [f.x, f.z] }; },
+      personAt: function () { return { x: person.x, z: person.z, y: person.group ? person.group.position.y : 0, mode: mode }; },
       shipAt: function (x, z) { ship.x = x; ship.z = z; ship.speed = 0; return [x, z]; },
       setBoss: function (h, c) { LEVIATHAN_HULL = h; LEVIATHAN_COOL = c; return [h, c]; },
       quickBattle: function () { quickBattle(); return { sail: sail, gold: ledger.gold }; },
