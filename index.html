@@ -7757,6 +7757,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     fl.name = "gunsmoke"; fl.position.set(x, y, z); fl.scale.setScalar(2.6); scene.add(fl);
     smokes.push({ mesh: fl, life: 0.14, max: 0.14, y0: y, flash: true });
   }
+  let rainTexC = null;
+  function rainTex() {
+    if (rainTexC) return rainTexC;
+    const c = document.createElement("canvas"); c.width = 16; c.height = 64;
+    const g = c.getContext("2d"); const gr = g.createLinearGradient(0, 0, 0, 64);
+    gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.6, "rgba(255,255,255,0.9)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr; g.fillRect(7, 0, 2, 64);
+    rainTexC = new THREE.CanvasTexture(c);
+    return rainTexC;
+  }
   let softTexC = null;
   function softTex() {
     if (softTexC) return softTexC;
@@ -9448,7 +9458,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     const rain = new THREE.Points(geo, new THREE.PointsMaterial({
-      color: 0xdbe8f2, size: 0.46, transparent: true, opacity: 0.82, depthWrite: false
+      color: 0xdbe8f2, size: 1.1, map: rainTex(), alphaTest: 0.02, transparent: true, opacity: 0.85, depthWrite: false
     }));
     group.add(rain);
     group.position.set(x, 0, z);
@@ -12108,7 +12118,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // Wind streaks: faint white lines drifting over the water by day.
   let windStreaks = null;
   function updateWindStreaks(t) {
-    const on = !!(x3 && !x3.lowGfx && mode === "sea" && dayU.value > 0.4);
+    const on = !!(x3 && !x3.lowGfx && mode === "sea" && dayU.value > 0.4 && !underStorm(ship.x, ship.z));
     if (!windStreaks) {
       windStreaks = [];
       for (let k = 0; k < 10; k++) {
