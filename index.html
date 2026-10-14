@@ -3845,7 +3845,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     // buttons and step its font down (not below 12 px) until it clears.
     hint.style.removeProperty("font-size");
     if (hint.textContent && window.innerHeight < 420) {
-      const tops = [].slice.call(document.querySelectorAll("#hudrow button, #log, #glass, #settings")).filter(function (e) { return e.offsetParent !== null; });
+      const tops = [].slice.call(document.querySelectorAll("#hudrow button, #log, #glass, #settings, #map")).filter(function (e) { return e.offsetParent !== null; });
       const clash = function () {
         const hr = hint.getBoundingClientRect();
         if (hr.height < 2) return false;
@@ -11352,6 +11352,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   polishCss.textContent += "@media (max-height:500px){#setbtns{display:grid!important;grid-template-columns:1fr 1fr;gap:6px!important}#setbtns>button{height:42px!important;font-size:15px!important}#setbtns>div{grid-column:1/-1}#settitle{font-size:18px!important;margin-bottom:6px!important}#setbtns{width:min(540px,92vw)}}#setbtns:has(>div){}";
   polishCss.textContent += "@media (max-height:380px){#setbtns>button{height:38px!important}#setbtns{gap:4px!important}#settitle{margin-bottom:4px!important}}@media (max-aspect-ratio:1/1){#safebadge{top:calc(274px + env(safe-area-inset-top))!important}}";
   polishCss.textContent += "@media (max-height:500px) and (min-width:640px){#setbtns{grid-template-columns:1fr 1fr 1fr!important;width:min(720px,94vw)!important}}";
+  polishCss.textContent += "@media (max-width:639px){#setbtns{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;width:min(540px,94vw)!important}#setbtns>div{grid-column:1/-1}#setbtns>button{min-height:44px;height:auto!important;font-size:14px!important;line-height:1.2!important}}";
   const DIFF_WORD = { easy: "Easy", normal: "Normal", hard: "Hard" };
   function applyBigText() { document.body.classList.toggle("bigtext", !!(x3 && x3.bigText)); document.body.classList.toggle("bigbtn", !!(x3 && x3.bigBtn)); }
   polishCss.textContent += "body.bigbtn #btns button{min-width:112px!important;height:54px!important;font-size:17px!important}body.bigbtn #stick{width:140px!important;height:140px!important}body.bigbtn #knob{width:60px!important;height:60px!important;margin:-30px 0 0 -30px!important}@media (max-height:420px){body.bigbtn #btns button{height:50px!important;min-width:106px!important}body.bigbtn #stick{width:128px!important;height:128px!important}}";
