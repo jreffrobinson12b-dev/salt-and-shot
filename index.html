@@ -3841,6 +3841,22 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (stick) { const r = stick.getBoundingClientRect(); if (r.height > 2) top = Math.min(top, r.top); }
     const bottom = Math.max(120, Math.round(window.innerHeight - top + 10));
     hint.style.bottom = Math.min(bottom, Math.round(window.innerHeight * 0.62)) + "px";
+    // Short landscape screens with large text: if the hint reaches the top button row, tuck it closer to the
+    // buttons and step its font down (not below 12 px) until it clears.
+    hint.style.removeProperty("font-size");
+    if (hint.textContent && window.innerHeight < 420) {
+      const tops = [].slice.call(document.querySelectorAll("#hudrow button, #log, #glass, #settings")).filter(function (e) { return e.offsetParent !== null; });
+      const clash = function () {
+        const hr = hint.getBoundingClientRect();
+        if (hr.height < 2) return false;
+        return tops.some(function (e) { const r = e.getBoundingClientRect(); return r.left < hr.right - 1 && hr.left < r.right - 1 && r.top < hr.bottom - 1 && hr.top < r.bottom + 3; });
+      };
+      if (clash()) {
+        hint.style.bottom = Math.max(4, Math.round(window.innerHeight - top + 4)) + "px";
+        const base = parseFloat(getComputedStyle(hint).fontSize) || 16;
+        for (let fs = base - 1; fs >= 12 && clash(); fs--) hint.style.setProperty("font-size", fs + "px", "important");
+      }
+    }
     const hh = document.getElementById("hullhud");
     const row = document.getElementById("hudrow");
     if (hh && row) {
@@ -8556,7 +8572,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 17";
+    ver.textContent = "Version: batch 18";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -12372,7 +12388,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boot.appendChild(row);
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 17";
+    tv.textContent = "Version: batch 18";
     tv.style.cssText = "margin-top:14px;font-size:12px;opacity:.55";
     boot.appendChild(tv);
   }
@@ -13222,6 +13238,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       b13: function () { return { met: x3.met, metSunk: x3.metSunk, hunters: x3.hunters, hunter: hunterFoe ? { name: hunterFoe.name, hull: hunterFoe.hull, hunt: hunterFoe.hunt, x: hunterFoe.x, z: hunterFoe.z } : null, log: logLines(), ver: (document.getElementById("setver") || {}).textContent }; },
       spawnHunter: function (key) { standing[key] = -1; const f = spawnHunter(key, true); return f ? f.name : null; },
       hunterWait: function (n) { hunterWait = n; return n; },
+      clearHunter: function () { if (hunterFoe) { hunterFoe.gone = true; hunterFoe.alive = false; scene.remove(hunterFoe.root); if (hunterFoe.blob) hunterFoe.blob.visible = false; hunterFoe = null; } hunterWarned = false; return true; },
+      stepHunter: function (sec) { const n = Math.round(sec / 0.05); for (let i = 0; i < n; i++) updateHunter(0.05); return { shelterT: shelterT, foe: hunterFoe ? hunterFoe.name : null }; },
       credits: function () { openSettings("settings"); showCredits(); return document.getElementById("credits").textContent; },
       b12: function () { return { calm: x3.calm, badge: safeBadge.textContent, badgeOn: safeBadge.style.display, bossBar: bossBar.style.display, bossFill: document.getElementById("bossfill").style.width, cfoam: consortFoam.visible, ver: !!document.getElementById("setver") }; },
       bossNear: function () { spawnBoss(); const f = foes.find(function (o) { return o.boss && !o.gone; }); if (f) { f.x = ship.x + 40; f.z = ship.z; f.hunt = true; } return !!f; },
