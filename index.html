@@ -12287,7 +12287,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // ---- Batch 30: rank and experience, daily orders, critical hits, hot gun crews, top speed, sail trim ----
   const CRIT_CHANCE = 0.04;
   const RANKS = ["Deckhand", "Bosun", "Mate", "Captain", "Commodore", "Admiral"];
-  const RANK_XP = [0, 80, 250, 500, 900, 1500];
+  const RANK_XP = [0, 120, 400, 900, 1700, 2600];
   let hotT = 0, sessionXp0 = null;
   function rankOf() { if (!x3) return 0; let r = 0; for (let i = 0; i < RANK_XP.length; i++) if (x3.xp >= RANK_XP[i]) r = i; return r; }
   function addXp(n) {
@@ -12308,8 +12308,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const sc = sightCount(), dc = deedCount();
     if (xpSeen.sights == null) { xpSeen.sights = sc; xpSeen.deeds = dc; }
     let gain = 0;
-    if (sc > xpSeen.sights && sc - xpSeen.sights <= 2) gain += 10 * (sc - xpSeen.sights);
-    if (dc > xpSeen.deeds && dc - xpSeen.deeds <= 3) gain += 15 * (dc - xpSeen.deeds);
+    if (sc > xpSeen.sights && sc - xpSeen.sights <= 2) gain += 5 * (sc - xpSeen.sights);
+    if (dc > xpSeen.deeds && dc - xpSeen.deeds <= 3) gain += 10 * (dc - xpSeen.deeds);
     xpSeen.sights = sc; xpSeen.deeds = dc;
     for (const k in XP_SRC) { const d = x3[k] - xpSeen[k]; if (d > 0 && d <= 20) gain += d * XP_SRC[k]; xpSeen[k] = x3[k]; }
     if (gain) addXp(gain);
