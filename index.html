@@ -7435,7 +7435,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3) { const r = rankOf(); lines.push("Rank: " + RANKS[r] + " \u00B7 " + x3.xp + " XP" + (r < 5 ? " \u00B7 " + (RANK_XP[r + 1] - x3.xp) + " to " + RANKS[r + 1] : "") + (r ? " \u00B7 repairs " + (3 * r) + "% cheaper" : "") + (sessionXp0 != null && x3.xp > sessionXp0 ? " \u00B7 +" + (x3.xp - sessionXp0) + " XP this session" : "")); }
     if (x3) lines.push(orderLine());
     if (x3) lines.push("Galley: " + (x3.ate ? x3.ate.split("||").length : 0) + " of 4 port dishes tasted \u00B7 " + x3.meals + " meals bought");
-    if (x3) lines.push("Treasure: " + (x3.hasMap ? "a map, " + Math.round(Math.hypot(x3.mapX - ship.x, x3.mapZ - ship.z)) + " yards " + ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"][((Math.round(Math.atan2(x3.mapX - ship.x, -(x3.mapZ - ship.z)) / (Math.PI / 4)) % 8) + 8) % 8] : "no map") + " \u00B7 found " + x3.maps + " \u00B7 flawless battles " + x3.flawless + " \u00B7 squalls ridden reefed " + x3.reefed + (glint && !glint.treasure ? " \u00B7 a golden shimmer " + Math.round(Math.hypot(glint.x - ship.x, glint.z - ship.z)) + " yards off" : ""));
+    if (x3) lines.push("Treasure: " + (x3.hasMap ? "a map, " + Math.round(Math.hypot(x3.mapX - ship.x, x3.mapZ - ship.z)) + " yards away to the " + ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"][((Math.round(Math.atan2(x3.mapX - ship.x, -(x3.mapZ - ship.z)) / (Math.PI / 4)) % 8) + 8) % 8] : "no map") + " \u00B7 found " + x3.maps + " \u00B7 flawless battles " + x3.flawless + " \u00B7 squalls ridden reefed " + x3.reefed + (glint && !glint.treasure ? " \u00B7 a golden shimmer " + Math.round(Math.hypot(glint.x - ship.x, glint.z - ship.z)) + " yards off" : ""));
     if (x3) lines.push("Shots fired: " + x3.shots + " \u00B7 accuracy " + (x3.shots ? Math.round(100 * Math.min(x3.hits, x3.shots) / x3.shots) : 0) + "% \u00B7 critical hits: " + x3.crits + " \u00B7 top speed: " + x3.topSpeed + " knots" + (hotT > 0 ? " \u00B7 gun crews on fire" : ""));
     if (x3) lines.push("Gunnery: " + x3.hits + " hits \u00B7 " + x3.rakes + " raking \u00B7 best streak " + x3.bestStreak + " \u00B7 slipped past " + x3.shadow + " patrols at night");
     if (x3) {
@@ -11606,7 +11606,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!x3 || x3.hintsOff || x3.tut < 4 || titleOn || fightOn) return;
     if (x3.hints.indexOf("|" + id + "|") >= 0) return;
     x3.hints += "|" + id + "|";
-    toast(text, "Captain's tip");
+    say("Captain's tip: " + text, 6); // a notice, so tips never push important toasts back in the queue
   }
   function updateHints() {
     if (!x3 || mode !== "sea" || titleOn || paused) return;
