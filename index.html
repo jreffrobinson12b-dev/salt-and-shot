@@ -3969,7 +3969,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   logPanel.className = "book";
   logPanel.innerHTML = '<div id="booktabs"><button type="button" data-tab="voyage">Voyage</button><button type="button" data-tab="deeds">Deeds</button><button type="button" data-tab="sights">Sights</button><button type="button" data-tab="rank">Rank</button><button type="button" data-tab="errands">Errands</button><button type="button" id="bookx" aria-label="Close">\u2715</button></div><div id="loglines" style="white-space:pre-line;line-height:1.45"></div><div id="bookbody"></div><button type="button" id="logclose" style="margin-top:8px;height:40px;min-width:88px">Close</button>';
   const bookCss = document.createElement("style");
-  bookCss.textContent = "#ui #logpanel.book{left:50%!important;right:auto!important;transform:translateX(-50%);top:calc(8px + env(safe-area-inset-top))!important;bottom:calc(8px + env(safe-area-inset-bottom));background:rgba(12,18,28,.985)!important;width:min(600px,calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)));max-width:none!important;max-height:none!important;box-sizing:border-box;overflow:auto;-webkit-overflow-scrolling:touch;z-index:10!important}body.bookopen #toast{top:auto!important;bottom:calc(14px + env(safe-area-inset-bottom));z-index:12!important;max-width:min(560px,calc(100vw - 40px))}" +
+  bookCss.textContent = "#ui #logpanel.book{left:50%!important;right:auto!important;transform:translateX(-50%);top:calc(8px + env(safe-area-inset-top))!important;bottom:calc(8px + env(safe-area-inset-bottom));background:rgba(12,18,28,.985)!important;width:min(600px,calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)));max-width:none!important;max-height:none!important;box-sizing:border-box;overflow:auto;-webkit-overflow-scrolling:touch;z-index:10!important}body.bookopen #toast{display:none!important}" +
     "@media (max-width:560px){#booktabs button{flex:1 1 0;min-width:0!important;font-size:12px!important;padding:0 2px!important}}#booktabs #bookx{flex:0 0 44px;min-width:44px}" +
     "#booktabs{position:sticky;top:-12px;margin:-12px -14px 10px;padding:8px 10px;background:rgba(12,18,28,.98);display:flex;gap:6px;overflow-x:auto;z-index:1}#booktabs button{flex:1 0 auto;min-height:44px;min-width:76px;font-size:14px;padding:0 8px;border-radius:10px;position:relative}#booktabs button{background:rgba(255,255,255,.1)!important;color:#f4efe2!important;border:1px solid rgba(255,255,255,.3)!important}#booktabs button.on{background:#f2d48a!important;color:#1a1208!important;border-color:#f2d48a!important}#booktabs button.dot::after{content:'';position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:#ff6a4a}" +
     "#bookbody .bar{height:10px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden;margin:4px 0 10px}#bookbody .bar i{display:block;height:100%;background:#f2d48a}#bookbody .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}#bookbody .card{border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:8px;font-size:14px;line-height:1.3;color:#cfd6df;background:rgba(255,255,255,.03)}#bookbody .card.done{opacity:1;border-color:#f2d48a;background:rgba(242,212,138,.12)}#bookbody .card small{display:block;opacity:.8;margin-top:3px}#bookbody h4{margin:12px 0 6px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;opacity:.8}#bookbody .sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:4px;border:1px solid rgba(255,255,255,.5)}#bookbody .rk{padding:8px;border-radius:10px;margin-bottom:6px;border:1px solid rgba(255,255,255,.2)}#bookbody .rk.on{border-color:#f2d48a;background:rgba(242,212,138,.12)}#bookbody .filter{min-height:40px;margin-bottom:8px}" +
@@ -8747,10 +8747,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   let toastT = 0;
   const toastQueue = [];
   function toast(line, head) {
-    if (toastT > 0) { toastQueue.push(head ? { line: line, head: head } : line); return; }
+    if (toastT > 0 || toastHeld()) { toastQueue.push(head ? { line: line, head: head } : line); return; }
     showToast(line, head);
   }
+  // Batch 36: toasts wait while the logbook is open instead of covering its bottom, then show in order once it closes.
+  let toastNow = null;
+  function toastHeld() { return typeof logPanel !== "undefined" && logPanel.style.display === "block"; }
+  function holdToast() { if (toastT > 0 && toastNow) { toastQueue.unshift(toastNow); toastT = 0; toastEl.style.display = "none"; toastNow = null; } }
   function showToast(line, head) {
+    toastNow = head ? { line: line, head: head } : line;
     if (line && typeof line === "object") { head = line.head; line = line.line; }
     toastEl.innerHTML = "<div style='font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.8'>" + (head || "Quest complete") + "</div>" + line;
     toastEl.style.display = "block";
@@ -8799,9 +8804,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       toastT -= dt;
       if (toastT <= 0) {
         toastEl.style.display = "none";
-        if (toastQueue.length) showToast(toastQueue.shift());
+        toastNow = null;
+        if (toastQueue.length && !toastHeld()) showToast(toastQueue.shift());
       }
-    }
+    } else if (toastQueue.length && !toastHeld()) showToast(toastQueue.shift());
     if (titleOn || !worldReady || !x3) { questSnap = null; return; }
     const now = questFlags();
     if (questSnap) for (const k in now) if (now[k] && !questSnap[k]) toast(k);
@@ -8977,7 +8983,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 35";
+    ver.textContent = "Version: batch 36";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -13716,6 +13722,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (tab === "deeds" && x3) x3.seenDeeds = deedCount();
       if (tab === "sights" && x3) x3.seenSights = sightCount();
       if (tab === "rank" && x3) x3.seenRank = rankOf();
+      if (logPanel.style.display === "block") holdToast();
       if (x3 && !x3.openedLog) x3.openedLog = true;
       const all = logLines(), cut = all.indexOf("Errands:");
       if (n) { n.style.display = tab === "voyage" || tab === "errands" ? "block" : "none"; n.textContent = tab === "errands" ? (cut >= 0 && all.slice(cut + 1).some(function (l) { return l.trim(); }) ? all.slice(cut) : ["No errands right now. Ask around the taverns and quays."]).join("\n") : bookVoyage(cut >= 0 ? all.slice(0, cut) : all).join("\n"); }
@@ -13725,7 +13732,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (fb) fb.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); deedTodo = !deedTodo; paintLog(); });
     }
     document.getElementById("bookx").addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); logPanel.style.display = "none"; });
-    setInterval(function () { document.body.classList.toggle("bookopen", logPanel.style.display === "block"); }, 200);
+    setInterval(function () { const op = logPanel.style.display === "block"; if (op) holdToast(); document.body.classList.toggle("bookopen", op); }, 200);
     let swipeX = null, swipeY = 0;
     logPanel.addEventListener("touchstart", function (e) { const t = e.touches[0]; swipeX = t.clientX; swipeY = t.clientY; }, { passive: true });
     logPanel.addEventListener("touchend", function (e) {
@@ -14264,7 +14271,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boot.appendChild(row);
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 35";
+    tv.textContent = "Version: batch 36";
     tv.style.cssText = "margin-top:14px;font-size:12px;opacity:.55";
     boot.appendChild(tv);
   }
