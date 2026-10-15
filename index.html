@@ -8346,7 +8346,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     else if (roll === 3) spawnDriftCrate("castaway");
     else if (roll === 0) spawnDriftCrate();
     else if (roll === 1) startCalm();
-    else if (roll === 6 || roll === 2) { if (wave) startVeer(); else startRogueWave(); }
+    else if (roll === 6 && !wave) startRogueWave();
+    else if (roll === 2 && !wave && Math.random() < 0.5) startRogueWave();
     else startVeer();
   }
 
@@ -8629,7 +8630,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!x3 || paused || titleOn || mode !== "sea" || fightOn || x3.tut < 4) return;
     wreckT -= dt;
     if (wreckT > 0) return;
-    wreckT = 240 + Math.random() * 180;
+    wreckT = 200 + Math.random() * 140;
     if (playerSafe()) return;
     const ax = ship.x + Math.sin(ship.heading) * 70, az = ship.z + Math.cos(ship.heading) * 70;
     const crateAt = (wreckN++ % 3 === 0) ? 0 : -1;
