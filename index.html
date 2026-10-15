@@ -3925,7 +3925,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   logBtn.style.cssText = "position:absolute;right:12px;top:calc(224px + env(safe-area-inset-top));z-index:6;pointer-events:auto;min-width:72px;height:32px;font-size:13px;padding:0 10px";
   const hudRow = document.createElement("div");
   hudRow.id = "hudrow";
-  hudRow.style.cssText = "position:absolute;left:12px;top:calc(100px + env(safe-area-inset-top));display:flex;gap:8px;z-index:6;pointer-events:none";
+  hudRow.style.cssText = "position:absolute;left:calc(12px + env(safe-area-inset-left));top:calc(100px + env(safe-area-inset-top));display:flex;gap:8px;z-index:6;pointer-events:none";
   hudRow.appendChild(skillsBtn);
   const glassBtn = document.createElement("button");
   glassBtn.id = "glass";
@@ -3945,8 +3945,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   pauseBtn.type = "button";
   pauseBtn.textContent = "II";
   pauseBtn.setAttribute("aria-label", "Pause");
-  pauseBtn.style.cssText = "pointer-events:auto;min-width:44px!important;width:44px;height:38px;font-size:16px;padding:0";
-  hudRow.appendChild(pauseBtn);
+  // Batch 29 fix: the pause button used to be the 4th button in the left HUD row. That row is capped at 250 px and
+  // wraps, so on landscape phones II dropped to a second row just above the movement stick and sat inside its touch
+  // zone. It now lives top right, beside the wind needle, well away from both thumb controls, and respects notches.
+  pauseBtn.style.cssText = "pointer-events:auto;min-width:44px!important;width:44px;height:38px;font-size:16px;padding:0;position:absolute;z-index:6;top:calc(8px + env(safe-area-inset-top));right:calc(78px + env(safe-area-inset-right))";
+  document.getElementById("ui").appendChild(pauseBtn);
   const setPanel = document.createElement("div");
   setPanel.id = "setpanel";
   setPanel.style.cssText = "display:none;position:fixed;inset:0;z-index:9;background:rgba(4,12,20,.6);align-items:center;justify-content:center;font-family:system-ui,sans-serif;color:#f4efe2";
