@@ -12507,6 +12507,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (first) { x3.ate += "|" + ashorePort.id + "|"; addXp(5); line += " First taste of the local dish: +5 XP (" + x3.ate.split("||").length + " of 4)."; }
       say(line, 4); checkDeeds(); writeSave(); renderMenu();
     }));
+    if (dish) body.textContent += " Port dishes tasted: " + (x3.ate ? x3.ate.split("||").length : 0) + " of 4.";
     body.textContent += " " + (x3.order ? "Your orders: " + orderText() + " (" + orderReward() + " gold)." : "No orders right now.");
     if (!x3.order) box.appendChild(menuButton("Ask the harbour master for orders", function () { newOrder(); renderMenu(); }));
     else box.appendChild(menuButton("Ask for different orders (5 gold)", function () {
@@ -14962,6 +14963,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       flyNow: function () { startFlyers(); return !!flyers; },
       bottleNow: function () { seaBottle(); return notice; },
       speedTest: function (off, secs) { gustT = 0; calmT = 0; veer = null; sail = 2; let top = 0; for (let t = 0; t < secs; t += 1 / 30) { gustT = 0; ship.heading = windAngle + off; updateSea(1 / 30, { steer: 0, forward: 0 }); top = Math.max(top, Math.abs(ship.speed)); } return Math.round(top * 10) / 10; },
+      b33: function () { return { ate: x3.ate, meals: x3.meals, xp: x3.xp, morale: x3.morale, deeds: DEEDS.length, sails: Object.keys(SAILS).length, orders: ORDERS.map(function (o) { return o.id; }), mapSaid: x3.mapSaid, reefed: x3.reefed, report: lastReport, notice: (document.getElementById("notice") || {}).textContent || "" }; },
       b32: function () { return { hasMap: x3.hasMap, map: [x3.mapX, x3.mapZ], maps: x3.maps, glint: glint ? { x: glint.x, z: glint.z, t: !!glint.treasure } : null, flawless: x3.flawless, reefed: x3.reefed, dmg: x3.battleDmg, sails: ship.sails, deeds: DEEDS.length, report: lastReport, crew: x3.crew, morale: x3.morale, fireCool: fireCool, gold: ledger.gold, notes: mapNotes }; },
       giveMap: function () { giveMap("Test map."); return [x3.mapX, x3.mapZ]; },
       b31: function () { return { xp: x3.xp, rank: rankOf(), ranks: RANK_XP.slice(), master: x3.master, storms: x3.storms, seaXp: x3.seaXp, order: x3.order, reward: orderReward(), orders: x3.orders, deeds: DEEDS.length, sails: Object.keys(SAILS).length, sessionXp0: sessionXp0, report: lastReport }; },
