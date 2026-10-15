@@ -6853,6 +6853,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (ship.hull <= 0) return;
     if (playerSafe()) { if (safeWarnT <= 0) { floatText(ship.x, 8, ship.z, "safe", "#bfe8ff"); safeWarnT = 2; } return; }
     if (x3 && x3.reinforced) n = Math.max(1, Math.round(n * 0.85));
+    if (x3 && x3.qRelic === 1) x3.relicHits += 1;
     shakeCam(Math.min(0.9, 0.25 + n * 0.02));
     buzz(n >= 20 ? [60, 40, 60] : 50);
     loseHands(Math.ceil(n / 14));
@@ -8416,7 +8417,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return 20;
   }
   function x3Defaults() {
-    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, tipSafe: false, tipGoods: false, tipWind: false, tipAshore: false, tipBeam: false, tipDusk: false, tipFull: false, tipAim: false, tipSlip: false, tipCross: false, tipShort: false, posting: "", postingAge: 0, postings: 0, salvaged: 0, pumps: false, nest: false, figure: false, saltBarrels: false, bell: false, spars: false, fishValue: 0, bigFish: "", lowGfx: false, sights: "", dives: 0, wrestleWins: 0, shipName: "", favBramble: 0, favSalt: 0, favLorenzo: 0, favBelle: 0, deserted: 0, waves: 0, veers: 0, pods: 0, whales: 0, wrecks: 0, stars: 0, turtles: 0, flyers: 0, xp: 0, orders: 0, order: "", orderBase: 0, orderGoal: 0, shots: 0, crits: 0, topSpeed: 0, master: false, storms: 0, seaXp: 0, battleShots: 0, battleHits: 0, mapX: 0, mapZ: 0, hasMap: false, maps: 0, battleDmg: 0, flawless: 0, reefed: 0, dishAt: "", hints: "", hintsOff: false, bookTab: "voyage", seenDeeds: 0, seenSights: 0, seenRank: 0, checkDone: false, openedLog: false, commission: false, commissions: 0, laurels: 0, pinned: "", pinDone: 0, autoReef: false, rampages: 0, goldFish: 0, glows: 0, powder: false, deepHold: false, bench: false, stormCanvas: false, chainLock: false, fineLines: false, ptbramble: 0, ptsalt: 0, ptlorenzo: 0, ptbelle: 0, tradeSpent: 0, tradeEarned: 0, benchMend: 0, marketBuys: 0, qFiddle: 0, qFiddleX: 0, qFiddleZ: 0, qMail: 0, qMailPort: "", qMailT: 0, qBells: 0, qOil: 0, qLedger: 0, qLedgerFoe: "", qSignal: 0, qSignalX: 0, qSignalZ: 0, qSignalT: 0, qSignalCd: 420, questsDone: 0, questsSeen: "", qPilgrim: 0, qPilgrimPort: "", qSilk: 0, qCook: 0, sCroweLog: 0, sCacheX: 0, sCacheZ: 0, sManifest: 0, sDinner: 0, sToast: "", lTess: 0, lJory: 0, lIvo: 0, lMaud: 0, qVigil: 0, qVigilAt: 0, barrels: 0, barrelCd: 300, storyGold: 0, lostRuns: 0, fiddleNext: 0, ledgerNext: 0, pilgrimNext: 0, cookNext: 0, overboardSaved: 0, overboardLost: 0, slowToasts: false, nightWins: 0, flawlessRun: 0, richChests: 0, bestChest: 0, rerollDay: -1, sailsFlown: "", orderHalf: "", hullWarnT: 0, ate: "", meals: 0, battleCrits: 0, mapSaid: false, fish: 0, fishCaught: 0, raceBest: 0, races: 0, rakes: 0, shadow: 0, soldAt: "", bestStreak: 0, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false, met: "", metSunk: "", hunters: 0, seaTime: 0, dist: 0, bigBtn: false, flash: true };
+    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, tipSafe: false, tipGoods: false, tipWind: false, tipAshore: false, tipBeam: false, tipDusk: false, tipFull: false, tipAim: false, tipSlip: false, tipCross: false, tipShort: false, posting: "", postingAge: 0, postings: 0, salvaged: 0, pumps: false, nest: false, figure: false, saltBarrels: false, bell: false, spars: false, fishValue: 0, bigFish: "", lowGfx: false, sights: "", dives: 0, wrestleWins: 0, shipName: "", favBramble: 0, favSalt: 0, favLorenzo: 0, favBelle: 0, deserted: 0, waves: 0, veers: 0, pods: 0, whales: 0, wrecks: 0, stars: 0, turtles: 0, flyers: 0, xp: 0, orders: 0, order: "", orderBase: 0, orderGoal: 0, shots: 0, crits: 0, topSpeed: 0, master: false, storms: 0, seaXp: 0, battleShots: 0, battleHits: 0, mapX: 0, mapZ: 0, hasMap: false, maps: 0, battleDmg: 0, flawless: 0, reefed: 0, dishAt: "", hints: "", hintsOff: false, bookTab: "voyage", seenDeeds: 0, seenSights: 0, seenRank: 0, checkDone: false, openedLog: false, commission: false, commissions: 0, laurels: 0, pinned: "", pinDone: 0, autoReef: false, rampages: 0, goldFish: 0, glows: 0, powder: false, deepHold: false, bench: false, stormCanvas: false, chainLock: false, fineLines: false, ptbramble: 0, ptsalt: 0, ptlorenzo: 0, ptbelle: 0, tradeSpent: 0, tradeEarned: 0, benchMend: 0, marketBuys: 0, qFiddle: 0, qFiddleX: 0, qFiddleZ: 0, qMail: 0, qMailPort: "", qMailT: 0, qBells: 0, qOil: 0, qLedger: 0, qLedgerFoe: "", qSignal: 0, qSignalX: 0, qSignalZ: 0, qSignalT: 0, qSignalCd: 420, questsDone: 0, questsSeen: "", qPilgrim: 0, qPilgrimPort: "", qSilk: 0, qCook: 0, sCroweLog: 0, sCacheX: 0, sCacheZ: 0, sManifest: 0, sDinner: 0, sToast: "", lTess: 0, lJory: 0, lIvo: 0, lMaud: 0, qVigil: 0, qVigilAt: 0, barrels: 0, barrelCd: 300, storyGold: 0, lostRuns: 0, fiddleNext: 0, ledgerNext: 0, pilgrimNext: 0, cookNext: 0, overboardSaved: 0, overboardLost: 0, frags: 0, fragMaps: 0, qRelic: 0, relicHits: 0, qSmuggle: 0, lTess2: 0, lJory2: 0, lIvo2: 0, lMaud2: 0, diceDay: -1, diceN: 0, diceWon: 0, traderCd: 360, traders: 0, slowToasts: false, nightWins: 0, flawlessRun: 0, richChests: 0, bestChest: 0, rerollDay: -1, sailsFlown: "", orderHalf: "", hullWarnT: 0, ate: "", meals: 0, battleCrits: 0, mapSaid: false, fish: 0, fishCaught: 0, raceBest: 0, races: 0, rakes: 0, shadow: 0, soldAt: "", bestStreak: 0, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false, met: "", metSunk: "", hunters: 0, seaTime: 0, dist: 0, bigBtn: false, flash: true };
   }
   let x3 = null;
   function x3Load(raw) {
@@ -8711,6 +8712,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const pool = [];
     if (x3 && contract.crowePaid && x3.sCroweLog === 0) pool.push("Rumour: the governor's agent kept Crowe's logbook. Some say it names a hiding place.");
     if (x3 && contract.galleonPaid && x3.sManifest === 0) pool.push("Rumour: not all of the Santa Miseria's gold was aboard when you took her.");
+    if (x3 && x3.qRelic === 0) pool.push("Rumour: the church at Belleisle needs a careful captain to carry a relic to San Lorenzo.");
+    if (x3 && x3.frags > 0) pool.push("Rumour: torn chart pieces turn up in barrels, with castaways and aboard merchant brigs.");
     if (x3 && (x3.lTess !== 3 || x3.lMaud !== 3)) pool.push("Rumour: town folk on the quays pay well for goods brought to their door. Talk to them.");
     { const op = PORTS.filter(function (p) { return !ashorePort || p.id !== ashorePort.id; }); const rp = op[Math.floor(Math.random() * op.length)]; if (rp && x3) pool.push("Rumour: it is market day for " + marketDayGood(rp.id) + " at " + rp.name + ". A fifth off the price."); }
     if (shortage) pool.push("Rumour: " + portById(shortage.port).name + " is short of " + shortage.good + ". They'll pay well.");
@@ -9043,7 +9046,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 41";
+    ver.textContent = "Version: batch 42";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -10195,6 +10198,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       renderWilla(title, body, purse, box);
     } else if (menuKind === "local") {
       renderLocal(title, body, purse, box);
+    } else if (menuKind === "seatrader") {
+      renderSeaTrader(title, body, purse, box);
     } else if (menuKind === "beach") {
       renderBeach(title, body, purse, box);
     } else {
@@ -11657,6 +11662,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     { id: "dives25", text: "Make 25 treasure dives", reward: "" },
     { id: "glow5", text: "See glowing water 5 times", reward: "phosphor" },
     { id: "errands6", text: "Finish 6 new errands", reward: "" },
+    { id: "chartmaker", text: "Put together a chart from three pieces", reward: "" },
     { id: "storyend", text: "Find Crowe's cache, the galleon's strongbox and dine with the governor", reward: "govgold" }
   ];
   const SAILS = {
@@ -11690,7 +11696,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // ---- Batch 34: logbook tabs ----
   let deedTodo = false, earned0 = null;
   const DEED_PROG = { errands6: ["questsDone", 6], wishmaker: ["stars", 10], turtle10: ["turtles", 10], flyers10: ["flyers", 10], nightowl: ["nightWins", 10], commission5: ["commissions", 5], laurel5: ["laurels", 5], pinner5: ["pinDone", 5], rampage3: ["rampages", 3], goldfish3: ["goldFish", 3], maps10: ["maps", 10], dives25: ["dives", 25], glow5: ["glows", 5], victor25: ["sunk", 25], fish100: ["fishCaught", 100], wrecks25: ["wrecks", 25], orders100: ["orders", 100], wreckhunter: ["wrecks", 10], whaler: ["whales", 10], dolphinfriend: ["pods", 15], rogue15: ["waves", 15], orders50: ["orders", 50], gunsmoke2000: ["shots", 2000], crits50: ["crits", 50], farvoyager: ["dist", 150, 185], untouchable: ["flawlessRun", 3], deepdiver: ["dives", 10], weatherwise: ["reefed", 5], deadeye: ["crits", 10], unscathed: ["flawless", 5], quartermaster: ["orders", 20], longhaul: ["dist", 50, 185], beachcomber: ["salvaged", 40], fishmonger: ["fishCaught", 30], salvager: ["salvaged", 12], angler: ["fishCaught", 10], wavebreaker: ["waves", 5], weathered: ["veers", 5], podfriend: ["pods", 5], whalewatch: ["whales", 3], stargazer: ["stars", 3], wrecker: ["wrecks", 5], victor: ["sunk", 10], cannonade: ["shots", 500], orders: ["orders", 5], courier: ["jobsDone", 3], champion: ["wrestleWins", 3], cartographer: ["maps", 3], voyager: ["dist", 20, 185], gourmand: ["meals", 25] };
-  const DEED_CAT = [["Battle", "firsthit fort prize leviathan hunter raker bounty victor flawless cannonade critical fivestreak deadeye unscathed veteran shadow fleet ally gunsmoke2000 crits50 nightaction untouchable victor25 rampage nightowl rampage3"], ["Sea life and sights", "podfriend whalewatch turtle sightseer naturalist stargazer rainbow angler fishmonger allsights whaler dolphinfriend fish100 goldfish wishmaker turtle10 flyers10 goldfish3 glow5"], ["Seamanship", "storm night voyager wavebreaker weathered reefer weatherwise swift longhaul racer diver deepdiver rogue15 farvoyager maps10 dives25"], ["Rank and orders", "rankcaptain commodore admiral orders quartermaster orders50 ropes commission laurel orders100 commission5 laurel5 pinner5 errands6 storyend"]];
+  const DEED_CAT = [["Battle", "firsthit fort prize leviathan hunter raker bounty victor flawless cannonade critical fivestreak deadeye unscathed veteran shadow fleet ally gunsmoke2000 crits50 nightaction untouchable victor25 rampage nightowl rampage3"], ["Sea life and sights", "podfriend whalewatch turtle sightseer naturalist stargazer rainbow angler fishmonger allsights whaler dolphinfriend fish100 goldfish wishmaker turtle10 flyers10 goldfish3 glow5"], ["Seamanship", "storm night voyager wavebreaker weathered reefer weatherwise swift longhaul racer diver deepdiver rogue15 farvoyager maps10 dives25"], ["Rank and orders", "rankcaptain commodore admiral orders quartermaster orders50 ropes commission laurel orders100 commission5 laurel5 pinner5 errands6 storyend chartmaker"]];
   const SIGHT_HINT = { whale: "Open water by day.", dolphins: "They race the bow by day.", lightning: "Inside a squall.", shoal: "A dark patch of fish on the water.", grouper: "Keep fishing.", gold: "A golden glint on the waves.", moon: "At sea under the moon.", shanty: "A happy crew sings.", albatross: "Far from land.", star: "Clear nights at sea.", rainbow: "Leave a squall in daylight.", turtle: "Warm open water.", flyingfish: "Skipping ahead of the bow.", glow: "Dark nights in open water." };
   function esc(t) { return String(t).replace(/[&<>]/g, function (c) { return c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;"; }); }
   function deedProg(id) { const p = DEED_PROG[id]; if (!p || !x3) return ""; const v = Math.floor((x3[p[0]] || 0) / (p[2] || 1)); return Math.min(v, p[1]) + " / " + p[1]; }
@@ -11700,7 +11706,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const out = [];
     checklistLines().forEach(function (l) { out.push(l); });
     if (x3 && x3.pinned) { const pd = DEEDS.find(function (q) { return q.id === x3.pinned; }); if (pd) out.push("Pinned deed: " + pd.text + (deedProg(pd.id) ? " (" + deedProg(pd.id) + ")" : "")); }
-    if (x3) out.push("Records: top speed " + x3.topSpeed + " kn \u00B7 best hit streak " + x3.bestStreak + " \u00B7 biggest chest " + x3.bestChest + " gold \u00B7 flawless run " + x3.flawlessRun + (x3.questsDone ? " \u00B7 errands " + x3.questsDone : "") + (x3.barrels ? " \u00B7 barrels salvaged " + x3.barrels : "") + (x3.overboardSaved ? " \u00B7 men saved " + x3.overboardSaved : "") + (x3.marketBuys ? " \u00B7 market-day buys " + x3.marketBuys : "") + (x3.rampages ? " \u00B7 rampages " + x3.rampages : "") + (x3.nightWins ? " \u00B7 night wins " + x3.nightWins : "") + (x3.laurels ? " \u00B7 laurels " + x3.laurels : ""));
+    if (x3) out.push("Records: top speed " + x3.topSpeed + " kn \u00B7 best hit streak " + x3.bestStreak + " \u00B7 biggest chest " + x3.bestChest + " gold \u00B7 flawless run " + x3.flawlessRun + (x3.questsDone ? " \u00B7 errands " + x3.questsDone : "") + (x3.barrels ? " \u00B7 barrels salvaged " + x3.barrels : "") + (x3.diceWon ? " \u00B7 dice won " + x3.diceWon : "") + (x3.traders ? " \u00B7 brigs met " + x3.traders : "") + (x3.overboardSaved ? " \u00B7 men saved " + x3.overboardSaved : "") + (x3.marketBuys ? " \u00B7 market-day buys " + x3.marketBuys : "") + (x3.rampages ? " \u00B7 rampages " + x3.rampages : "") + (x3.nightWins ? " \u00B7 night wins " + x3.nightWins : "") + (x3.laurels ? " \u00B7 laurels " + x3.laurels : ""));
     if (x3) out.push("Ship: hull " + Math.round(100 * Math.max(0, ship.hull) / (ship.hullMax || 1)) + "% \u00B7 sails " + Math.round(ship.sails) + "% \u00B7 crew " + x3.crew + " \u00B7 " + ledger.gold + " gold");
     if (x3 && sessionXp0 != null) { if (earned0 == null) earned0 = x3.earned; out.push("This session: +" + (x3.xp - sessionXp0) + " XP \u00B7 +" + Math.max(0, x3.earned - earned0) + " gold earned"); }
     let skip = false;
@@ -11869,7 +11875,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       allsights: sightCount() >= SIGHTS.length,
       gourmand: x3.meals >= 25,
       ropes: !!x3.checkDone,
-      commission: x3.commissions > 0, laurel: x3.laurels > 0, victor25: x3.sunk >= 25, fish100: x3.fishCaught >= 100, wrecks25: x3.wrecks >= 25, orders100: x3.orders >= 100, rampage: x3.rampages > 0, goldfish: x3.goldFish > 0, pinner: x3.pinDone > 0, wishmaker: x3.stars >= 10, turtle10: x3.turtles >= 10, flyers10: x3.flyers >= 10, nightowl: x3.nightWins >= 10, commission5: x3.commissions >= 5, laurel5: x3.laurels >= 5, pinner5: x3.pinDone >= 5, rampage3: x3.rampages >= 3, goldfish3: x3.goldFish >= 3, maps10: x3.maps >= 10, dives25: x3.dives >= 25, glow5: x3.glows >= 5, errands6: x3.questsDone >= 6, storyend: x3.sCroweLog === 3 && x3.sManifest === 3 && x3.sDinner === 3,
+      commission: x3.commissions > 0, laurel: x3.laurels > 0, victor25: x3.sunk >= 25, fish100: x3.fishCaught >= 100, wrecks25: x3.wrecks >= 25, orders100: x3.orders >= 100, rampage: x3.rampages > 0, goldfish: x3.goldFish > 0, pinner: x3.pinDone > 0, wishmaker: x3.stars >= 10, turtle10: x3.turtles >= 10, flyers10: x3.flyers >= 10, nightowl: x3.nightWins >= 10, commission5: x3.commissions >= 5, laurel5: x3.laurels >= 5, pinner5: x3.pinDone >= 5, rampage3: x3.rampages >= 3, goldfish3: x3.goldFish >= 3, maps10: x3.maps >= 10, dives25: x3.dives >= 25, glow5: x3.glows >= 5, errands6: x3.questsDone >= 6, chartmaker: x3.fragMaps > 0, storyend: x3.sCroweLog === 3 && x3.sManifest === 3 && x3.sDinner === 3,
       wreckhunter: x3.wrecks >= 10, whaler: x3.whales >= 10, dolphinfriend: x3.pods >= 15, rogue15: x3.waves >= 15, orders50: x3.orders >= 50,
       gunsmoke2000: x3.shots >= 2000, crits50: x3.crits >= 50, farvoyager: x3.dist >= 150 * 185, nightaction: x3.nightWins > 0, untouchable: x3.flawlessRun >= 3, richchest: x3.richChests > 0,
       wardrobe: Object.keys(SAILS).filter(function (id) { return sailOpen(id); }).length >= 8,
@@ -12959,6 +12965,23 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         const quick = x3.qMailT > 0;
         box.insertBefore(menuButton("Deliver the mail" + (quick ? " (on time)" : " (late)"), function () { x3.qMail = 3; qDone("mail", quick ? "The postmaster stamps it: on time." : "Late, but delivered.", qPay(quick ? 80 : 30), quick ? 15 : 5); renderMenu(); }), box.lastChild);
       } else if (x3.qMail === 3 && x3.questsDone >= 3) x3.qMail = 0;
+      // Night rum run for Luz, delivered at the Belleisle tavern
+      if (x3.qSmuggle === 1 && pid === "belle") {
+        const dark = dayU.value < 0.35;
+        box.insertBefore(menuButton(!dark ? "Rum run: wait for dark" : ledger.rum >= 4 ? "Slip 4 rum out the back door" : "Rum run: needs 4 rum (" + ledger.rum + ")", function () {
+          if (!dark) { say("Too many eyes in daylight. Come back after dark.", 2.5); return; }
+          if (ledger.rum < 4) { say("Four casks of rum are needed.", 2.5); return; }
+          ledger.rum -= 4; x3.qSmuggle = 3; qDone("smuggle", "The casks vanish into the dark. Luz's man pays in silver.", 100, 15); renderMenu(); }), box.lastChild);
+      }
+      // Dice with the sailors (5 rolls a day)
+      { const day = Math.floor((x3.seaTime || 0) / 600); if (x3.diceDay !== day) { x3.diceDay = day; x3.diceN = 0; }
+        if (x3.diceN < 5) box.insertBefore(menuButton("Dice with the sailors (10 gold, " + (5 - x3.diceN) + " left today)", function () {
+          if (ledger.gold < 10) { say("The stake is 10 gold.", 2); return; }
+          ledger.gold -= 10; x3.diceN += 1; const me = 2 + Math.floor(Math.random() * 6) + Math.floor(Math.random() * 6), them = 2 + Math.floor(Math.random() * 6) + Math.floor(Math.random() * 6);
+          if (me > them) { ledger.gold += 20; x3.diceWon += 1; tradeNote = "You roll " + me + " against " + them + ". You win 20 gold."; }
+          else if (me === them) { ledger.gold += 10; tradeNote = "Both roll " + me + ". Stakes back."; }
+          else tradeNote = "You roll " + me + " against " + them + ". The sailors take your 10 gold.";
+          say(tradeNote, 2.5); writeSave(); renderMenu(); }), box.lastChild); }
       // The cook's navy contract
       if (x3.qCook === 0) { body.textContent += " The cook will salt fish for the navy: bring six."; x3.qCook = 1; }
       if (x3.qCook === 1) box.insertBefore(menuButton(x3.fish >= 6 ? "Fill the navy fish contract (6 fish)" : "Navy fish contract: " + x3.fish + " of 6 fish", function () {
@@ -12983,6 +13006,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       } else if (x3.qOil === 2) {
         box.insertBefore(menuButton("Report the lighthouse lit", function () { x3.qOil = 3; qDone("oil", "The lamp on Gull Rock burns again.", qPay(50), 20); renderMenu(); }), box.lastChild);
       }
+      // The relic (Belleisle church to San Lorenzo church, carried without taking a hit)
+      if (x3.qRelic === 0 && pid === "belle") box.insertBefore(menuButton("Carry the relic to San Lorenzo", function () { x3.qRelic = 1; x3.relicHits = 0; say("A saint's reliquary for San Lorenzo. Every hit your hull takes will chip the casket.", 3.5); writeSave(); renderMenu(); }), box.lastChild);
+      else if (x3.qRelic === 1 && pid === "lorenzo") box.insertBefore(menuButton("Hand over the relic" + (x3.relicHits ? " (chipped)" : " (perfect)"), function () { const perfect = !x3.relicHits; x3.qRelic = 3; if (perfect && standing.spain < 3) standing.spain += 1; qDone("relic", perfect ? "Not a scratch. The bishop blesses your ship. Spain standing +1." : "The casket is chipped in " + x3.relicHits + " places. The bishop pays less.", qPay(perfect ? 90 : 40), perfect ? 25 : 10); renderMenu(); }), box.lastChild);
       // Storm vigil (church)
       if (x3.qVigil === 0) box.insertBefore(menuButton("Keep the storm vigil", function () { x3.qVigil = 1; x3.qVigilAt = x3.storms; say("Ride out a squall at sea, then come back to any church.", 3); writeSave(); renderMenu(); }), box.lastChild);
       else if (x3.qVigil === 1 && x3.storms > x3.qVigilAt) box.insertBefore(menuButton("Tell the priest you rode out the storm", function () { x3.qVigil = 3; addMorale(10, "the blessing"); { const nk = nationKey(); if (nk && standing[nk] < 3) standing[nk] += 1; } qDone("vigil", "The priest blesses the crew. Morale +10.", qPay(40), 20); renderMenu(); }), box.lastChild);
@@ -12998,6 +13024,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         const k = Math.min(5, ledger.silk);
         box.insertBefore(menuButton("Sell Luz " + k + " silk, no questions (" + (k * 58) + ")", function () { ledger.silk -= k; x3.qSilk = 3; qDone("silk", "Luz takes the silk off the books.", k * 58, 10); renderMenu(); }), box.lastChild);
       }
+      if (x3.qSmuggle === 0 && standing.spain >= 0) box.insertBefore(menuButton("Run rum to Belleisle by night", function () { x3.qSmuggle = 1; say("Four casks of rum to the Belleisle tavern, after dark only. Luz pays 25 a cask.", 3.5); writeSave(); renderMenu(); }), box.lastChild);
       if (x3.qLedger === 2) box.insertBefore(menuButton("Tell Luz the debt is settled", function () { x3.qLedger = 3; x3.ledgerNext = x3.questsDone + 4; qDone("ledger", "Luz strikes a line through the ledger.", qPay(90), 25); renderMenu(); }), box.lastChild);
     }
   }
@@ -13015,7 +13042,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       x3.qSignalT -= dt;
       q40Flash -= dt; if (q40Flash <= 0) { q40Flash = 3; if (Math.hypot(ship.x - x3.qSignalX, ship.z - x3.qSignalZ) < 220) floatText(x3.qSignalX, 4, x3.qSignalZ, "\u2734", "#ffffff"); }
       if (x3.qSignalT <= 0) { x3.qSignal = 0; x3.qSignalCd = 600; say("The signal mirror has stopped flashing.", 3); }
-      else if (Math.hypot(ship.x - x3.qSignalX, ship.z - x3.qSignalZ) < 30) { x3.qSignal = 0; x3.qSignalCd = 600; x3.crew = Math.min(crewMaxFor(playerHull.id), x3.crew + 3); floatText(ship.x, 5, ship.z, "+3 crew", "#b8f5b0"); if (Math.random() < 0.2 && !x3.hasMap) giveMap("A castaway trades you a treasure map for the ride."); qDone("signal", "Three castaways scramble aboard and sign on.", qPay(15), 25); }
+      else if (Math.hypot(ship.x - x3.qSignalX, ship.z - x3.qSignalZ) < 30) { x3.qSignal = 0; x3.qSignalCd = 600; x3.crew = Math.min(crewMaxFor(playerHull.id), x3.crew + 3); floatText(ship.x, 5, ship.z, "+3 crew", "#b8f5b0"); if (Math.random() < 0.2 && !x3.hasMap) giveMap("A castaway trades you a treasure map for the ride."); else if (Math.random() < 0.35) addFrag("from a castaway"); qDone("signal", "Three castaways scramble aboard and sign on.", qPay(15), 25); }
     } else if (x3.tut >= 4 && !playerSafe()) {
       x3.qSignalCd -= dt;
       if (x3.qSignalCd <= 0) { const pt = seaPoint(ship.x, ship.z, 140, 240); x3.qSignal = 1; x3.qSignalX = pt[0]; x3.qSignalZ = pt[1]; x3.qSignalT = 360; toast("A signal mirror flashes " + compass(pt[0] - ship.x, pt[1] - ship.z) + ", about " + Math.round(Math.hypot(pt[0] - ship.x, pt[1] - ship.z) / 10) * 10 + " yards off. Castaways? Six minutes before the sun moves.", "At sea"); }
@@ -13048,6 +13075,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3.qBells === 0) L.push("Offered at churches: 8 sugar for the bell feast (" + ledger.sugar + " aboard).");
     if (x3.qSignal === 1) L.push("Errand: castaways signalling, " + d(x3.qSignalX, x3.qSignalZ) + ", " + Math.ceil(x3.qSignalT / 60) + " min.");
     lines41(L, d);
+    if (x3.qRelic === 1) L.push("Errand: the relic for San Lorenzo church" + (x3.relicHits ? ", chipped " + x3.relicHits + " times." : ", still perfect."));
+    if (x3.qSmuggle === 1) L.push("Errand: 4 rum to the Belleisle tavern after dark (" + ledger.rum + " aboard).");
+    if (x3.frags) L.push("Chart pieces: " + x3.frags + " of 3.");
+    if (questMarks40().length) L.push(nearestErrand());
     L.push("New errands finished: " + x3.questsDone + ".");
     return L;
   }
@@ -13076,10 +13107,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     "Ivo Mar": ["lIvo", "tobacco", 4, 50, "Ivo's uncle smokes like a chimney. Four bales of tobacco, please."],
     "Maud Keel": ["lMaud", "rum", 5, 45, "Maud is throwing a harbour party and needs five casks of rum."]
   };
+  const LOCAL42 = {
+    "Tess Harrow": ["lTess2", "sugar", 6, 40, "Tess wants sugar now: six sacks for the wedding cakes."],
+    "Jory Pell": ["lJory2", "coffee", 4, 45, "Jory's new household drinks a lot of coffee. Four sacks?"],
+    "Ivo Mar": ["lIvo2", "rum", 4, 40, "Ivo is opening a tavern. Four casks of rum to start."],
+    "Maud Keel": ["lMaud2", "silk", 1, 70, "Maud wants one bolt of silk for a new harbour flag."]
+  };
   function localQuest41(sp, body, box) {
     if (!x3 || !sp || !LOCAL41[sp.name]) return;
-    const q = LOCAL41[sp.name];
-    if (x3[q[0]] === 3) return;
+    let q = LOCAL41[sp.name];
+    if (x3[q[0]] === 3) { q = LOCAL42[sp.name]; if (!q || x3[q[0]] === 3 || x3.questsDone < 4) return; }
     body.textContent += " " + q[4];
     const have = ledger[q[1]] || 0;
     box.insertBefore(menuButton(have >= q[2] ? "Give " + q[2] + " " + q[1] + " (" + qPay(q[3]) + " gold)" : sp.name.split(" ")[0] + " wants " + q[2] + " " + q[1] + " (" + have + " aboard)", function () {
@@ -13102,7 +13139,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (mode === "sea") questMarks40().forEach(function (q) { if (q[2] === "Mail" || q[2] === "Pilgrims" || q[2] === "Oil" || q[2] === "Cove") return; if (Math.hypot(q[0] - ship.x, q[1] - ship.z) < 420) want[q[2]] = q; });
     Object.keys(beacons41).forEach(function (k) { if (!want[k]) { scene.remove(beacons41[k]); delete beacons41[k]; } });
     Object.keys(want).forEach(function (k) {
-      if (!beacons41[k] && !(x3 && x3.lowGfx)) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 40, 8, 1, true), new THREE.MeshBasicMaterial({ color: 0x5ab8ff, transparent: true, opacity: 0.35, depthWrite: false, fog: false })); m.position.set(want[k][0], 20, want[k][1]); scene.add(m); beacons41[k] = m; }
+      if (!beacons41[k] && !(x3 && x3.lowGfx)) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 40, 8, 1, true), new THREE.MeshBasicMaterial({ color: k === "Cache" || k === "Barrels" ? 0xffc85a : k === "Signal" || k === "Overboard" ? 0xffffff : 0x5ab8ff, transparent: true, opacity: 0.35, depthWrite: false, fog: false })); m.position.set(want[k][0], 20, want[k][1]); scene.add(m); beacons41[k] = m; }
       if (beacons41[k]) beacons41[k].material.opacity = 0.25 + 0.15 * Math.sin(performance.now() / 300);
     });
     // Gull Rock lighthouse lamp after the oil errand
@@ -13118,7 +13155,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       else if (overboard41.t <= 0) { overboard41 = null; x3.overboardLost += 1; x3.crew = Math.max(1, x3.crew - 1); addMorale(-3, "a man lost"); say("The sea has him. The crew go quiet. One hand lost.", 3.5); }
     } else if (x3.tut >= 4 && underStorm(ship.x, ship.z) && sail > 0 && Math.random() < dt / 120) {
       overboard41 = { x: ship.x - Math.sin(ship.heading) * 14, z: ship.z - Math.cos(ship.heading) * 14, t: 30 };
-      toast("Man overboard astern! Turn back and sail over him within 30 seconds.", "Squall"); buzz([60, 40, 60]);
+      toast("Man overboard astern! Turn back and sail over him within 30 seconds.", "Squall"); floatText(overboard41.x, 3, overboard41.z, "Help!", "#ffffff"); buzz([60, 40, 60]);
       capTip("overboard", "A man overboard shows as a blue diamond on the minimap. Turn hard and sail over the spot.");
     }
     // drifting barrels
@@ -13127,7 +13164,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (Math.hypot(ship.x - barrels41.x, ship.z - barrels41.z) < 12) {
         const goods = ["sugar", "rum", "coffee", "tobacco"], g = goods[Math.floor(Math.random() * goods.length)], room = Math.max(0, holdCap() - cargoCount()), n = Math.min(3, room);
         if (n > 0) { ledger[g] += n; say("The crew haul in " + n + " barrels of " + g + ".", 3); } else { ledger.gold += 15; say("No room in the hold, so the crew sell the barrels' hoops and staves: 15 gold.", 3); }
-        x3.barrels += 1; floatText(ship.x, 5, ship.z, "Salvage!", "#d8b27a"); if (barrels41.m) scene.remove(barrels41.m); barrels41 = null; x3.barrelCd = 420 + Math.random() * 240; writeSave();
+        x3.barrels += 1; floatText(ship.x, 5, ship.z, "Salvage!", "#d8b27a"); if (Math.random() < 0.35) addFrag("in a barrel"); if (barrels41.m) scene.remove(barrels41.m); barrels41 = null; x3.barrelCd = 420 + Math.random() * 240; writeSave();
       } else if (barrels41.t <= 0) { if (barrels41.m) scene.remove(barrels41.m); barrels41 = null; x3.barrelCd = 420; }
     } else if (x3.tut >= 4 && !playerSafe() && !foesNear(80)) {
       x3.barrelCd -= dt;
@@ -13139,12 +13176,61 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       }
     }
   }
+  let trader42 = null;
+  function addFrag(src) {
+    if (!x3 || x3.frags >= 3) return;
+    x3.frags += 1;
+    if (x3.frags < 3) { toast("A torn piece of an old chart (" + src + "). Piece " + x3.frags + " of 3.", "Chart piece"); return; }
+    x3.frags = 0; x3.fragMaps += 1; ledger.gold += 80;
+    giveMap("The three pieces fit together into one chart, and the old captain's purse was folded inside it: 80 gold.");
+  }
+  function renderSeaTrader(title, body, purse, box) {
+    title.textContent = "Merchant brig";
+    body.textContent = "A merchant brig heaves to alongside. Her master pays a little under the best island price, and saves you the trip.";
+    purse.textContent = ledger.gold + " gold. Hold " + cargoCount() + " of " + holdCap() + ".";
+    ["sugar", "rum", "coffee", "tobacco", "silk"].forEach(function (g) {
+      if (ledger[g] <= 0) return;
+      let top = 0; PORTS.forEach(function (p) { top = Math.max(top, PRICES[p.id][g].sell); });
+      const price = Math.max(1, Math.round(top * 0.85));
+      box.appendChild(menuButton("Sell " + ledger[g] + " " + g + " (" + price + " each)", function () { ledger.gold += price * ledger[g]; if (x3) x3.tradeEarned += price * ledger[g]; ledger[g] = 0; writeSave(); renderMenu(); }));
+    });
+    if (x3 && x3.frags < 3) box.appendChild(menuButton("Buy a torn chart piece (40 gold)", function () { if (ledger.gold < 40) { say("He wants 40 gold.", 2); return; } ledger.gold -= 40; addFrag("bought from the brig"); renderMenu(); }));
+    box.appendChild(menuButton("Cast off", function () { closeMenu(); if (trader42) { if (trader42.m) scene.remove(trader42.m); trader42 = null; } }));
+  }
+  function updateQuests42(dt) {
+    if (!x3) return;
+    if (overboard42Mesh) { if (overboard41) { overboard42Mesh.visible = true; overboard42Mesh.position.set(overboard41.x, 0.3 + 0.2 * Math.sin(performance.now() / 250), overboard41.z); } else overboard42Mesh.visible = false; }
+    else if (overboard41 && ship.root && !x3.lowGfx) { overboard42Mesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 8), new THREE.MeshLambertMaterial({ color: 0xe0b090 })); scene.add(overboard42Mesh); }
+    if (barrels41 && barrels41.m) barrels41.m.rotation.y += dt * 0.4;
+    if (lightBeam41) { if (!beam42 && !x3.lowGfx) { beam42 = new THREE.Mesh(new THREE.ConeGeometry(4, 40, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0xfff1b0, transparent: true, opacity: 0, depthWrite: false, fog: false, side: THREE.DoubleSide })); beam42.rotation.z = Math.PI / 2; beam42.position.set(ISLANDS[1].x, 13, ISLANDS[1].z); const piv = new THREE.Group(); piv.position.set(ISLANDS[1].x, 13, ISLANDS[1].z); beam42.position.set(20, 0, 0); piv.add(beam42); scene.add(piv); beam42.piv = piv; }
+      if (beam42) { beam42.piv.rotation.y += dt * 0.6; beam42.material.opacity = lightBeam41.material.opacity > 0 ? 0.18 : 0; } }
+    if (mode !== "sea" || paused || titleOn) return;
+    if (trader42) {
+      trader42.t -= dt;
+      if (!menuOpen && Math.hypot(ship.x - trader42.x, ship.z - trader42.z) < 22) { sail = 0; x3.traders += 1; openMenu("seatrader"); trader42.t = Math.min(trader42.t, 20); }
+      if (trader42.t <= 0) { if (trader42.m) scene.remove(trader42.m); trader42 = null; x3.traderCd = 480; }
+    } else if (x3.tut >= 4 && !playerSafe() && !foesNear(120) && cargoCount() > 0) {
+      x3.traderCd -= dt;
+      if (x3.traderCd <= 0) {
+        const pt = seaPoint(ship.x, ship.z, 90, 150); trader42 = { x: pt[0], z: pt[1], t: 150, m: null };
+        if (!x3.lowGfx) { const g = new THREE.Group(); const hull = new THREE.Mesh(new THREE.BoxGeometry(3, 1.6, 9), new THREE.MeshLambertMaterial({ color: 0x6b4426 })); hull.position.y = 0.6; g.add(hull); const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 9, 6), new THREE.MeshLambertMaterial({ color: 0x4a3020 })); mast.position.y = 5; g.add(mast); const sl = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), new THREE.MeshLambertMaterial({ color: 0xf2ead6, side: THREE.DoubleSide })); sl.position.set(0, 5.5, 0.3); g.add(sl); g.position.set(pt[0], 0, pt[1]); scene.add(g); trader42.m = g; }
+        toast("A merchant brig signals " + compass(pt[0] - ship.x, pt[1] - ship.z) + ": she'll buy cargo at sea. Sail alongside within two and a half minutes.", "At sea");
+        capTip("trader", "Merchant brigs pay 85% of the best island price, right where you are.");
+      }
+    }
+  }
+  let overboard42Mesh = null, beam42 = null;
+  function nearestErrand() {
+    let best = null; questMarks40().forEach(function (q) { const d = Math.hypot(q[0] - ship.x, q[1] - ship.z); if (!best || d < best.d) best = { d: d, q: q }; });
+    return best ? "Nearest: " + best.q[2] + ", " + Math.round(best.d) + " yards " + compass(best.q[0] - ship.x, best.q[1] - ship.z) + "." : "";
+  }
   function marks41(out) {
     if (!x3) return;
     if (x3.sCroweLog === 1) out.push([x3.sCacheX, x3.sCacheZ, "Cache"]);
     if (x3.sManifest === 1) out.push([ISLANDS[4].x, ISLANDS[4].z, "Cove"]);
     if (barrels41) out.push([barrels41.x, barrels41.z, "Barrels"]);
     if (overboard41) out.push([overboard41.x, overboard41.z, "Overboard"]);
+    if (trader42) out.push([trader42.x, trader42.z, "Brig"]);
   }
   function lines41(L, d) {
     if (!x3) return;
@@ -13226,6 +13312,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     updateBench(dt);
     updateQuests40(dt);
     updateQuests41(dt);
+    updateQuests42(dt);
     updateGlow(dt);
     if (fStar) { fStar.t += dt; fStar.m.position.x += fStar.dx * dt; fStar.m.position.z += fStar.dz * dt; fStar.m.position.y -= 30 * dt; fStar.m.material.opacity = Math.max(0, 1 - fStar.t); if (fStar.t > 1) { scene.remove(fStar.m); fStar = null; } }
     if (rBow) { rBow.t += dt; const o = Math.min(1, rBow.t / 3) * Math.max(0, 1 - Math.max(0, rBow.t - 17) / 5); rBow.g.children.forEach(function (m) { m.material.opacity = 0.35 * o; }); if (rBow.t > 22 || mode !== "sea") { scene.remove(rBow.g); rBow = null; } }
@@ -14776,7 +14863,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boot.appendChild(row);
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 41";
+    tv.textContent = "Version: batch 42";
     tv.style.cssText = "margin-top:14px;font-size:12px;opacity:.55";
     boot.appendChild(tv);
   }
@@ -15644,6 +15731,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       gustNow: function () { seaGust(); return gustT; },
       b29: function () { return { stars: x3.stars, turtles: x3.turtles, flyers: x3.flyers, fish: x3.fish, star: !!fStar, rainbow: !!rBow, turtle: !!turtle, flying: !!flyers, alb: albT, sights: SIGHTS.length, deeds: DEEDS.length, morale: x3.morale, bottles: BOTTLE_LINES.slice(), fav: [x3.favBramble, x3.favSalt, x3.favLorenzo, x3.favBelle] }; },
       starNow: function () { startStar(); return true; },
+      q42: function () { return { frags: x3.frags, fragMaps: x3.fragMaps, relic: x3.qRelic, relicHits: x3.relicHits, smuggle: x3.qSmuggle, tess2: x3.lTess2, jory2: x3.lJory2, ivo2: x3.lIvo2, maud2: x3.lMaud2, dice: x3.diceN, diceWon: x3.diceWon, trader: trader42 ? [trader42.x, trader42.z, trader42.t] : null, traders: x3.traders, lampOp: lightBeam41 ? lightBeam41.material.opacity : null, beam: beam42 ? beam42.material.opacity : null, obMesh: !!(overboard42Mesh && overboard42Mesh.visible), menu: menuOpen ? menuKind : "" }; },
+      traderNow: function () { x3.traderCd = 0.01; return true; },
+      setObT: function (t) { if (overboard41) overboard41.t = t; return !!overboard41; },
+      setBarrelT: function (t) { if (barrels41) barrels41.t = t; return !!barrels41; },
+      addFrag: function (src) { addFrag(src || "test"); return [x3.frags, x3.fragMaps]; },
+      damageMe: function (n) { damagePlayer(n); return ship.hull; },
       overboardNow: function () { overboard41 = { x: ship.x - Math.sin(ship.heading) * 14, z: ship.z - Math.cos(ship.heading) * 14, t: 30 }; return true; },
       barrelsNow: function () { x3.barrelCd = 0.01; return true; },
       q41: function () { return { log: x3.sCroweLog, cx: x3.sCacheX, cz: x3.sCacheZ, manifest: x3.sManifest, dinner: x3.sDinner, vigil: x3.qVigil, tess: x3.lTess, jory: x3.lJory, ivo: x3.lIvo, maud: x3.lMaud, barrels: x3.barrels, barrel: barrels41 ? [barrels41.x, barrels41.z] : null, beacons: Object.keys(beacons41), lamp: !!lightBeam41, lost: lostName(), runs: x3.lostRuns, ob: overboard41 ? [overboard41.x, overboard41.z, overboard41.t] : null, saved: x3.overboardSaved, lostMen: x3.overboardLost }; },
