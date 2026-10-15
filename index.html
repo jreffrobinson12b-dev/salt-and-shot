@@ -12920,7 +12920,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // Batch 40: new quests and side errands. Existing quests are untouched.
   function qPay(n) { return Math.round(n * (1 + 0.1 * rankOf())); }
   function qDone(id, line, gold, xp) {
-    x3.questsDone += 1; ledger.gold += gold; if (xp) addXp(xp); addMorale(4);
+    x3.questsDone += 1; ledger.gold += gold; if (xp) addXp(xp); addMorale(4); if (mode === "land" && ashorePort) addFavour(ashorePort);
     toast(line + " +" + gold + " gold" + (xp ? ", +" + xp + " XP" : "") + ".", "Errand done");
     fanfare(); buzz([30, 40, 30]); checkDeeds(); writeSave();
   }
@@ -13078,7 +13078,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return goods[(day * 3 + pi * 2) % 5];
   }
   function marketLine() {
-    return "Market days: " + PORTS.map(function (p) { return p.name + " " + marketDayGood(p.id); }).join(", ") + ". Cheap work: powder rooms at Bramble Quay, deep holds and cheap hands at Salt Cay, carpenter's benches at San Lorenzo, storm canvas and cheap sail repairs at Belleisle.";
+    return "Market days: " + PORTS.map(function (p) { return p.name + " " + marketDayGood(p.id); }).join(", ") + ". Yards: Bramble powder room, Salt Cay deep hold and cheap hands, San Lorenzo bench, Belleisle storm canvas and cheap sails.";
   }
   function merchant39(body, box, bestBuy) {
     if (!x3) return;
@@ -14107,7 +14107,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (logPanel.style.display === "block") holdToast();
       if (x3 && !x3.openedLog) x3.openedLog = true;
       const all = logLines(), cut = all.indexOf("Errands:");
-      if (n) { n.style.display = tab === "voyage" || tab === "errands" ? "block" : "none"; n.textContent = tab === "errands" ? ["Today:", orderLine(), marketLine(), x3 && x3.hasMap ? "Treasure map: the X is about " + Math.round(Math.hypot(x3.mapX - ship.x, x3.mapZ - ship.z) / 10) * 10 + " yards " + compass(x3.mapX - ship.x, x3.mapZ - ship.z) + "." : "No treasure map.", ""].join("\n") + "\n" + (cut >= 0 && all.slice(cut + 1).some(function (l) { return l.trim(); }) ? all.slice(cut) : ["No errands right now. Ask around the taverns and quays."]).join("\n") : bookVoyage(cut >= 0 ? all.slice(0, cut) : all).join("\n"); }
+      if (n) { n.style.display = tab === "voyage" || tab === "errands" ? "block" : "none"; n.textContent = tab === "errands" ? ["Today:", orderLine()].concat(questLines40().filter(function (l) { return /^Errand:/.test(l); })).concat([marketLine(), x3 && x3.hasMap ? "Treasure map: the X is about " + Math.round(Math.hypot(x3.mapX - ship.x, x3.mapZ - ship.z) / 10) * 10 + " yards " + compass(x3.mapX - ship.x, x3.mapZ - ship.z) + "." : "No treasure map.", ""]).join("\n") + "\n" + (cut >= 0 && all.slice(cut + 1).some(function (l) { return l.trim(); }) ? all.slice(cut) : ["No errands right now. Ask around the taverns and quays."]).join("\n") : bookVoyage(cut >= 0 ? all.slice(0, cut) : all).join("\n"); }
       const bb = document.getElementById("bookbody");
       if (bb) setTimeout(function () { bb.querySelectorAll(".card[data-id]").forEach(function (c) { c.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); if (!x3 || deedDone(c.dataset.id)) return; x3.pinned = x3.pinned === c.dataset.id ? "" : c.dataset.id; say(x3.pinned ? "Deed pinned. You'll hear as it gets closer." : "Deed unpinned.", 2); if (x3.pinned) capTip("pin", "A pinned deed shows on the Voyage tab and the pause screen. Tap it again to unpin."); paintLog(); }); }); }, 0);
       if (bb) bb.innerHTML = tab === "deeds" ? bookDeeds() : tab === "sights" ? bookSights() : tab === "rank" ? bookRank() : "";
