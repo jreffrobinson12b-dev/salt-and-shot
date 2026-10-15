@@ -12643,6 +12643,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     else body.textContent += " You carry a treasure map.";
     const dish = ashorePort && DISHES[ashorePort.id];
     const visit = (ashorePort ? ashorePort.id : "") + "|" + Math.floor(x3.seaTime / 60);
+    if (dish && x3.dishAt === visit) body.textContent += " The crew have had " + dish.name + " today.";
     if (dish && x3.dishAt !== visit) box.appendChild(menuButton("Order " + dish.name + " for the crew: " + dish.fx + (x3.ate.indexOf("|" + ashorePort.id + "|") < 0 ? ", +5 XP first taste" : "") + " (" + dish.cost + " gold)", function () {
       if (ledger.gold < dish.cost) { say("That costs " + dish.cost + " gold.", 2); return; }
       ledger.gold -= dish.cost; x3.dishAt = visit; x3.meals += 1;
