@@ -13084,7 +13084,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const have = ledger[q[1]] || 0;
     box.insertBefore(menuButton(have >= q[2] ? "Give " + q[2] + " " + q[1] + " (" + qPay(q[3]) + " gold)" : sp.name.split(" ")[0] + " wants " + q[2] + " " + q[1] + " (" + have + " aboard)", function () {
       if ((ledger[q[1]] || 0) < q[2]) { say("You need " + q[2] + " " + q[1] + " in the hold.", 2.5); return; }
-      ledger[q[1]] -= q[2]; x3[q[0]] = 3; qDone("local", sp.name + " is delighted.", qPay(q[3]), 10); renderMenu(); }), box.lastChild);
+      ledger[q[1]] -= q[2]; x3[q[0]] = 3; qDone("local", sp.name + " is delighted.", qPay(q[3]), 10); if (sp.name === "Jory Pell") { addMorale(6, "Jory's wedding"); toast("Jory invites the whole crew to the wedding. They dance till dawn. Morale +6.", "Salt Cay"); } if (sp.name === "Maud Keel") { const add = Math.min(3, crewMaxFor(playerHull.id) - x3.crew); if (add > 0) { x3.crew += add; say("Three sailors from Maud's party sign on with you.", 3); } } renderMenu(); }), box.lastChild);
   }
   const LOST41 = [
     ["fiddle", "The fiddler lost his fiddle when his boat went down offshore. He'd pay well to have it back.", "The fiddler weeps and plays you a jig."],
