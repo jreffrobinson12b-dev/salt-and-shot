@@ -8312,6 +8312,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   let gustT = 0;
   const BOTTLE_LINES = [
+    "A bottle: 'Swipe the logbook left or right to turn its pages.'",
+    "A bottle: 'Dolphins race a ship that runs with them.'",
+    "A bottle: 'A captain who reads his deeds knows his next voyage.'",
     "A bottle: 'Reef in before the rain, and the sails will thank you.'",
     "A bottle: 'Every port's tavern has its own dish. Try them all.'",
     "A bottle: 'Ten lucky balls and the gunners will sew you grey sails.'",
@@ -8956,6 +8959,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       more.style.cssText = "font-size:13px;line-height:1.35;opacity:.85;margin:0 0 8px;max-width:340px;text-align:center";
       more.textContent = RANKS[r] + " \u00B7 " + x3.xp + " XP" + (r < 5 ? " (" + (RANK_XP[r + 1] - x3.xp) + " to " + RANKS[r + 1] + ")" : "") + (sessionXp0 != null ? " \u00B7 +" + (x3.xp - sessionXp0) + " XP this session" : "") + " \u00B7 " + orderLine() + " \u00B7 Next: " + nextGoal().text;
       box.appendChild(more);
+      if (!x3.checkDone) { const cl = document.createElement("div"); cl.style.cssText = more.style.cssText; cl.textContent = checklistLines()[0] + " " + CHECKLIST.filter(function (c) { return !c[1](); }).map(function (c) { return c[0]; }).join(" \u00B7 "); box.appendChild(cl); }
     }
     box.appendChild(setRow("Sound: " + ["off", "low", "full"][x3.volume], function () { x3.volume = (x3.volume + 2) % 3; if (audioCtx) audioOut(); writeSave(); renderSettings(); }));
     box.appendChild(setRow("Vibration: " + (x3.vibrate ? "on" : "off"), function () { x3.vibrate = !x3.vibrate; if (x3.vibrate) buzz(40); writeSave(); renderSettings(); }));
@@ -11542,7 +11546,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     { id: "fishmonger", text: "Catch 30 fish", reward: "" },
     { id: "allsights", text: "See every sight at sea", reward: "pearl" },
     { id: "gourmand", text: "Buy 25 tavern meals", reward: "" },
-    { id: "wardrobe", text: "Own 8 sail colours", reward: "patchwork" }
+    { id: "wardrobe", text: "Own 8 sail colours", reward: "patchwork" },
+    { id: "ropes", text: "Finish the new captain's checklist", reward: "hemp" }
   ];
   const SAILS = {
     white: { name: "Canvas white", hex: 0, cost: 0 },
@@ -11560,7 +11565,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     saffron: { name: "Galley saffron", hex: 0xd9a43a, deed: "gourmet" },
     gunsmoke: { name: "Gunsmoke", hex: 0x5a5a60, deed: "deadeye" },
     pearl: { name: "Pearl", hex: 0xe8e4f0, deed: "allsights" },
-    patchwork: { name: "Patchwork", hex: 0xa88a5a, deed: "wardrobe" }
+    patchwork: { name: "Patchwork", hex: 0xa88a5a, deed: "wardrobe" },
+    hemp: { name: "Hemp", hex: 0xc2a878, deed: "ropes" }
   };
   let wasInSquall = false, leftStormT = 0;
   // ---- Batch 34: logbook tabs ----
@@ -11575,6 +11581,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function bookVoyage(lines) {
     const out = [];
     checklistLines().forEach(function (l) { out.push(l); });
+    if (x3) out.push("Ship: hull " + Math.round(100 * Math.max(0, ship.hull) / (ship.hullMax || 1)) + "% \u00B7 sails " + Math.round(ship.sails) + "% \u00B7 crew " + x3.crew + " \u00B7 " + ledger.gold + " gold");
     if (x3 && sessionXp0 != null) { if (earned0 == null) earned0 = x3.earned; out.push("This session: +" + (x3.xp - sessionXp0) + " XP \u00B7 +" + Math.max(0, x3.earned - earned0) + " gold earned"); }
     let skip = false;
     lines.forEach(function (l) { if (/^Deeds \d+ of \d+:$/.test(l)) { skip = true; out.push("Deeds: " + deedCount() + " of " + DEEDS.length + " (see the Deeds tab)"); return; } if (skip && /^[\u2605\u2606] /.test(l)) return; skip = false; out.push(l); });
@@ -11652,11 +11659,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3 && mode === "sea" && x3.morale < 30) capTip("morale", "Morale is low. A tavern meal, a round of drinks or a fiddler lifts the crew.");
     if (x3 && mode === "sea" && !titleOn && !paused && ship.hullMax && ship.hull > 0 && ship.hull < ship.hullMax * 0.3) {
       x3.hullWarnT -= dt || 0.016;
-      if (x3.hullWarnT <= 0) { x3.hullWarnT = 60; const np = nearestPort(); if (np && x3.tut >= 4) { say("Hull badly hurt! Nearest shipyard: " + np.p.name + ", about " + Math.round(np.d / 10) * 10 + " yards " + compass(np.p.harbour.x - ship.x, np.p.harbour.z - ship.z) + ".", 5); buzz([60, 40, 60]); } }
+      if (x3.hullWarnT <= 0) { x3.hullWarnT = 60; const np = nearestPort(); if (np && x3.tut >= 4) { say("Hull badly hurt! Patch her at a shipyard or lie still in a safe harbour. Nearest shipyard: " + np.p.name + ", about " + Math.round(np.d / 10) * 10 + " yards " + compass(np.p.harbour.x - ship.x, np.p.harbour.z - ship.z) + ".", 5); buzz([60, 40, 60]); } }
     } else if (x3) x3.hullWarnT = 0;
     if (!x3 || mode !== "sea" || titleOn || paused) return;
     if (dayU.value < 0.06) capTip("night", "At night, patrols only spot you up close. A good time to slip past them.");
-    if (ship.hullMax && ship.hull > 0 && ship.hull < ship.hullMax * 0.3) capTip("hull", "Your hull is badly hurt. A shipyard can patch her, or lie still in a safe harbour.");
   }
   function deedDone(id) { return !!x3 && x3.deeds.indexOf("|" + id + "|") >= 0; }
   function checkDeeds(silent) {
@@ -11722,6 +11728,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       fishmonger: x3.fishCaught >= 30,
       allsights: sightCount() >= SIGHTS.length,
       gourmand: x3.meals >= 25,
+      ropes: !!x3.checkDone,
       wardrobe: Object.keys(SAILS).filter(function (id) { return sailOpen(id); }).length >= 8,
       shadow: x3.shadow > 0,
       trader: ["bramble", "salt", "lorenzo", "belle"].every(function (id) { return x3.soldAt.indexOf("|" + id + "|") >= 0; }),
@@ -12597,7 +12604,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     "A grey-haired mate talks of a whale that surfaced under his keel.",
     "A diver swears the mapped chests always lie deeper than the map says.",
     "An old sailmaker shows you a patch from the squall that took his topsail.",
-    "A cook claims the Belleisle pastry recipe once bought a whole crew."
+    "A cook claims the Belleisle pastry recipe once bought a whole crew.",
+    "A young captain tells how a sea turtle led her to a sunken chest.",
+    "An old bosun says he learned more from one squall than from ten years ashore."
   ];
   let lastMapLine = "";
   function mapCost() { return rankOf() >= 5 ? 32 : 40 + 5 * rankOf(); }
@@ -12647,6 +12656,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (dish) body.textContent += " Port dishes tasted: " + (x3.ate ? x3.ate.split("||").length : 0) + " of 4.";
     body.textContent += " " + (x3.order ? "Your orders: " + orderText() + " (" + orderProgress() + " of " + (orderSpec() ? orderSpec().n : 0) + " done, " + orderReward() + " gold)." : "No orders right now.");
     if (!x3.order) box.appendChild(menuButton("Ask the harbour master for orders", function () { newOrder(); renderMenu(); }));
+    else if (["whale", "turtle", "storm", "pods"].indexOf(x3.order) >= 0 && rankOf() < 4) box.appendChild(menuButton("Ask for different orders (free: these depend on luck)", function () { newOrder(); renderMenu(); }));
     else if (rankOf() >= 4) box.appendChild(menuButton("Ask for different orders (free for a " + RANKS[rankOf()] + ")", function () { newOrder(); renderMenu(); }));
     else box.appendChild(menuButton("Ask for different orders (5 gold)", function () {
       if (ledger.gold < 5) { say("The harbour master wants 5 gold for the trouble.", 2); return; }
@@ -14248,7 +14258,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boot.appendChild(tag);
     boot.appendChild(note);
     if (savedRenown >= 0) {
-      const TIPS = ["Tip: taste every port's tavern dish for XP and a new sail colour.", "Tip: half sail in a squall saves your canvas and earns XP.", "Tip: anchor right over a map's red X and the crew will dive for the chest.", "Tip: the harbour master pays double on every third order.", "Tip: fire from her bow or stern to rake for extra damage.", "Tip: at night, patrols only spot you up close.", "Tip: selling lots of one good in one port floods it. Spread your cargo.", "Tip: lie still in a safe harbour and the crew patch the hull.", "Tip: three hits in a row lift crew morale.", "Tip: if a ship tries to cross your bow, turn toward her.", "Tip: patrols can't see far in fog.", "Tip: market news in the Log tells you which port is short of what.", "Tip: taverns post bounties on named patrol ships.", "Tip: wreckage sometimes hides a crate worth more gold.", "Tip: drop anchor at sea and the crew will fish.", "Tip: taverns run harbour races to the next port.", "Tip: fish bite faster at night, and a grouper fetches the most.", "Tip: a fish stew lifts crew spirits more than gold can.", "Tip: diving birds mark a shoal. Anchor there and fish bite twice as fast.", "Tip: a golden shimmer on the water means sunken gold. Anchor on it to dive.", "Tip: take in sail when a rogue wave rolls in.", "Tip: sell often in one port and they will know you, and patch your hull for less.", "Tip: dolphins lead you on for a few seconds. Follow them.", "Tip: after a wind shift, check where the wind settles and trim to suit.", "Tip: when the crew is full, castaways pay for their passage.", "Tip: look up on clear nights. Shooting stars cheer the crew.", "Tip: sail out of a storm by day and you may see a rainbow.", "Tip: selling into a shortage earns double favour in that port.", "Tip: check the Log for today's orders. They pay gold and experience.", "Tip: land five hits in a row and your gun crews reload faster for a while.", "Tip: rise in rank and shipyards patch your hull for less.", "Tip: the tavern can give you different orders for 5 gold.", "Tip: every third order pays double.", "Tip: a sailing master halves the damage rogue waves do to your sails.", "Tip: reef your sails in a squall or the canvas tears.", "Tip: taverns sell treasure maps. Follow the red X.", "Tip: every port's tavern has its own dish for the crew."];
+      const TIPS = ["Tip: the logbook's Deeds tab shows how close you are to each deed.", "Tip: new to the sea? Finish the captain's checklist in the logbook for 50 gold.", "Tip: captain's tips can be switched off, or shown again, in Settings.", "Tip: taste every port's tavern dish for XP and a new sail colour.", "Tip: half sail in a squall saves your canvas and earns XP.", "Tip: anchor right over a map's red X and the crew will dive for the chest.", "Tip: the harbour master pays double on every third order.", "Tip: fire from her bow or stern to rake for extra damage.", "Tip: at night, patrols only spot you up close.", "Tip: selling lots of one good in one port floods it. Spread your cargo.", "Tip: lie still in a safe harbour and the crew patch the hull.", "Tip: three hits in a row lift crew morale.", "Tip: if a ship tries to cross your bow, turn toward her.", "Tip: patrols can't see far in fog.", "Tip: market news in the Log tells you which port is short of what.", "Tip: taverns post bounties on named patrol ships.", "Tip: wreckage sometimes hides a crate worth more gold.", "Tip: drop anchor at sea and the crew will fish.", "Tip: taverns run harbour races to the next port.", "Tip: fish bite faster at night, and a grouper fetches the most.", "Tip: a fish stew lifts crew spirits more than gold can.", "Tip: diving birds mark a shoal. Anchor there and fish bite twice as fast.", "Tip: a golden shimmer on the water means sunken gold. Anchor on it to dive.", "Tip: take in sail when a rogue wave rolls in.", "Tip: sell often in one port and they will know you, and patch your hull for less.", "Tip: dolphins lead you on for a few seconds. Follow them.", "Tip: after a wind shift, check where the wind settles and trim to suit.", "Tip: when the crew is full, castaways pay for their passage.", "Tip: look up on clear nights. Shooting stars cheer the crew.", "Tip: sail out of a storm by day and you may see a rainbow.", "Tip: selling into a shortage earns double favour in that port.", "Tip: check the Log for today's orders. They pay gold and experience.", "Tip: land five hits in a row and your gun crews reload faster for a while.", "Tip: rise in rank and shipyards patch your hull for less.", "Tip: the tavern can give you different orders for 5 gold.", "Tip: every third order pays double.", "Tip: a sailing master halves the damage rogue waves do to your sails.", "Tip: reef your sails in a squall or the canvas tears.", "Tip: taverns sell treasure maps. Follow the red X.", "Tip: every port's tavern has its own dish for the crew."];
       tip.textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
     }
     boot.appendChild(tip);
