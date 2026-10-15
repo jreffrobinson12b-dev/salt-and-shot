@@ -12735,7 +12735,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const sh = x3.shots - x3.battleShots, hi = x3.hits - x3.battleHits, dm = x3.battleDmg, cr = Math.max(0, x3.crits - x3.battleCrits);
     x3.battleShots = x3.shots; x3.battleHits = x3.hits; x3.battleDmg = 0; x3.battleCrits = x3.crits;
     if (sh > 0 && sh < 200 && dayU.value < 0.1) { x3.nightWins += 1; addXp(5); }
+    const runWas = x3.flawlessRun;
     if (sh > 0 && sh < 200) x3.flawlessRun = dm === 0 ? x3.flawlessRun + 1 : 0;
+    if (sh > 0 && sh < 200 && dm > 0 && runWas >= 2) say("Your flawless run ends at " + runWas + " battles.", 3);
     if (sh > 0 && sh < 200 && dm === 0) { x3.flawless += 1; addXp(10); if (ship.root) floatText(ship.x, 10, ship.z, "Flawless!", "#bfffd0"); }
     const sharp = sh >= 4 && sh < 200 && Math.min(sh, hi) / sh >= 0.75;
     if (sharp) addXp(5);
@@ -12949,7 +12951,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           const empty = !glint.treasure && Math.random() < 1 / 6;
           const rich = glint.treasure && Math.random() < 0.15;
           const g = empty ? 0 : glint.treasure ? Math.round((150 + Math.floor(Math.random() * 101) + 10 * rankOf()) * (rich ? 1.5 : 1)) : 40 + Math.floor(Math.random() * 41);
-          if (glint.treasure) { x3.hasMap = false; x3.mapSaid = false; x3.maps += 1; addXp(15); fanfare(); if (rich) { x3.richChests += 1; say("A rich chest, heavy with doubloons!", 3); } x3.bestChest = Math.max(x3.bestChest, g); toast("The divers haul up an iron-bound chest: " + g + " gold!", "Treasure found"); }
+          if (glint.treasure) { x3.hasMap = false; x3.mapSaid = false; x3.maps += 1; addXp(15); fanfare(); if (rich) { x3.richChests += 1; addXp(10); say("A rich chest, heavy with doubloons! +10 XP", 3); } x3.bestChest = Math.max(x3.bestChest, g); toast("The divers haul up an iron-bound chest: " + g + " gold!", "Treasure found"); }
           x3.dives += 1;
           if (empty) say("Only weed and a rusted cutlass down there.", 3);
           else { ledger.gold += g; floatText(ship.x, 4, ship.z, "+" + g, "#ffd76a"); sparkleAt(ship.x, 2, ship.z); say("The divers come up with " + g + " gold!", 3); }
