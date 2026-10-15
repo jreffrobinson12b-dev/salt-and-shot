@@ -12954,6 +12954,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!x3) return;
     const pid = ashorePort ? ashorePort.id : "bramble";
     body.textContent += " Market day here: " + marketDayGood(pid) + ", a fifth off.";
+    capTip("marketday", "Each port has a market day for one good, a fifth off. The Log's Errands tab lists them all.", box);
     const n = x3["pt" + pid] || 0;
     body.textContent += n >= 100 ? " You are a regular here: +1 gold a sale." : " Sold here: " + n + " of 100 for regular prices.";
     const tips = [];
