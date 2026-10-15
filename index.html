@@ -8951,15 +8951,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const rn = renownCount();
       const info = document.createElement("div");
       info.id = "pauserenown";
-      info.style.cssText = "font-size:14px;line-height:1.35;opacity:.92;margin:0 0 8px;max-width:320px;text-align:center";
+      info.style.cssText = "grid-column:1/-1;font-size:14px;line-height:1.35;opacity:.92;margin:0 0 4px;font-size:13px;text-align:center";
       info.textContent = RENOWN_TITLES[rn] + " \u00B7 renown " + rn + " of 8 \u00B7 deeds " + deedCount() + " of " + DEEDS.length + " \u00B7 " + DIFF_WORD[x3.diff] + (hunterFoe && !hunterFoe.gone && !hunterFoe.sinking ? " \u00B7 hunter on your trail" : "") + " \u00B7 " + Math.floor(x3.seaTime / 60) + " min at sea. Next: " + (x3.tut < 4 ? TUT[x3.tut] : nextGoal().text);
       box.appendChild(info);
-      const r = rankOf(), more = document.createElement("div");
+      const r = rankOf(), o = orderSpec(), more = document.createElement("span");
       more.id = "pauserank";
-      more.style.cssText = "font-size:13px;line-height:1.35;opacity:.85;margin:0 0 8px;max-width:340px;text-align:center";
-      more.textContent = RANKS[r] + " \u00B7 " + x3.xp + " XP" + (r < 5 ? " (" + (RANK_XP[r + 1] - x3.xp) + " to " + RANKS[r + 1] + ")" : "") + (sessionXp0 != null ? " \u00B7 +" + (x3.xp - sessionXp0) + " XP this session" : "") + " \u00B7 " + orderLine() + " \u00B7 Next: " + nextGoal().text;
-      box.appendChild(more);
-      if (!x3.checkDone) { const cl = document.createElement("div"); cl.style.cssText = more.style.cssText; cl.textContent = checklistLines()[0] + " " + CHECKLIST.filter(function (c) { return !c[1](); }).map(function (c) { return c[0]; }).join(" \u00B7 "); box.appendChild(cl); }
+      more.textContent = " \u00B7 " + RANKS[r] + " \u00B7 " + x3.xp + " XP" + (r < 5 ? " (" + (RANK_XP[r + 1] - x3.xp) + " to " + RANKS[r + 1] + ")" : "") + (sessionXp0 != null ? ", +" + (x3.xp - sessionXp0) + " this session" : "") + " \u00B7 orders: " + (o ? o.text + " " + orderProgress() + "/" + o.n : "none") + (x3.checkDone ? "" : " \u00B7 checklist " + CHECKLIST.filter(function (c) { return c[1](); }).length + "/" + CHECKLIST.length) + " \u00B7 Next: " + nextGoal().text;
+      info.appendChild(more);
     }
     box.appendChild(setRow("Sound: " + ["off", "low", "full"][x3.volume], function () { x3.volume = (x3.volume + 2) % 3; if (audioCtx) audioOut(); writeSave(); renderSettings(); }));
     box.appendChild(setRow("Vibration: " + (x3.vibrate ? "on" : "off"), function () { x3.vibrate = !x3.vibrate; if (x3.vibrate) buzz(40); writeSave(); renderSettings(); }));
