@@ -6455,7 +6455,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     items.sort(function (a, b) { return b.dist - a.dist; });
     const nowMs = performance.now();
-    const fresh = !separatePlaceTags.hud || nowMs - separatePlaceTags.at > 400;
+    // Batch 27: refresh the HUD boxes at once when the hint text changes, so a new message never sits under a tag.
+    const hintNow = hint.textContent;
+    const fresh = !separatePlaceTags.hud || nowMs - separatePlaceTags.at > 400 || separatePlaceTags.hint !== hintNow;
+    separatePlaceTags.hint = hintNow;
     const hud = fresh ? [] : separatePlaceTags.hud;
     function addHud(el) {
       if (!fresh) return;
