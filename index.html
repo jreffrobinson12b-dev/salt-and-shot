@@ -8735,6 +8735,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3 && x3.hasMap) pool.push("Rumour: a mapped chest only comes up if you anchor right over the X.");
     pool.push("Rumour: one mapped chest in seven is a rich one, half again as heavy.");
     if (x3 && x3.orders % 5 === 4) pool.push("Rumour: the Admiralty has a commission waiting with your next orders.");
+    if (x3 && x3.xp >= 2400 && x3.xp < 2600) pool.push("Rumour: the Admiralty is drafting an admiral's warrant with your name on it.");
+    if (x3 && (x3.sights || "").indexOf("|glow|") < 0) pool.push("Rumour: on dark nights the water sometimes glows blue in a ship's wake.");
+    if (x3 && !x3.pinned && x3.deeds) pool.push("Rumour: captains who pin a deed in the Log find it comes sooner.");
+    if (x3 && !x3.goldFish && x3.fishCaught > 5) pool.push("Rumour: a golden grouper was hauled up off the reefs last week.");
+    if (x3 && !x3.autoReef && x3.storms > 2) pool.push("Rumour: old hands set auto-reef in Settings and never lose a sail to a squall.");
+    if (x3 && !x3.rampages && x3.sunk > 5) pool.push("Rumour: sink three ships inside five minutes and the crew will talk of nothing else.");
     if (x3 && !hasSight("glow")) pool.push("Rumour: on dark nights far from port, the sea itself can glow.");
     if (x3 && !x3.goldFish) pool.push("Rumour: fishermen speak of a golden grouper that pays like treasure.");
     if (x3 && x3.nightWins === 0) pool.push("Rumour: a battle won by moonlight is worth telling twice.");
