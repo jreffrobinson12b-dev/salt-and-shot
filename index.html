@@ -8395,7 +8395,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return 20;
   }
   function x3Defaults() {
-    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, tipSafe: false, tipGoods: false, tipWind: false, tipAshore: false, tipBeam: false, tipDusk: false, tipFull: false, tipAim: false, tipSlip: false, tipCross: false, tipShort: false, posting: "", postingAge: 0, postings: 0, salvaged: 0, pumps: false, nest: false, figure: false, saltBarrels: false, bell: false, spars: false, fishValue: 0, bigFish: "", lowGfx: false, sights: "", dives: 0, wrestleWins: 0, shipName: "", favBramble: 0, favSalt: 0, favLorenzo: 0, favBelle: 0, deserted: 0, waves: 0, veers: 0, pods: 0, whales: 0, wrecks: 0, stars: 0, turtles: 0, flyers: 0, xp: 0, orders: 0, order: "", orderBase: 0, orderGoal: 0, shots: 0, crits: 0, topSpeed: 0, master: false, storms: 0, seaXp: 0, battleShots: 0, battleHits: 0, mapX: 0, mapZ: 0, hasMap: false, maps: 0, battleDmg: 0, flawless: 0, reefed: 0, dishAt: "", hints: "", hintsOff: false, bookTab: "voyage", seenDeeds: 0, seenSights: 0, seenRank: 0, checkDone: false, openedLog: false, hullWarnT: 0, ate: "", meals: 0, battleCrits: 0, mapSaid: false, fish: 0, fishCaught: 0, raceBest: 0, races: 0, rakes: 0, shadow: 0, soldAt: "", bestStreak: 0, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false, met: "", metSunk: "", hunters: 0, seaTime: 0, dist: 0, bigBtn: false, flash: true };
+    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, tipSafe: false, tipGoods: false, tipWind: false, tipAshore: false, tipBeam: false, tipDusk: false, tipFull: false, tipAim: false, tipSlip: false, tipCross: false, tipShort: false, posting: "", postingAge: 0, postings: 0, salvaged: 0, pumps: false, nest: false, figure: false, saltBarrels: false, bell: false, spars: false, fishValue: 0, bigFish: "", lowGfx: false, sights: "", dives: 0, wrestleWins: 0, shipName: "", favBramble: 0, favSalt: 0, favLorenzo: 0, favBelle: 0, deserted: 0, waves: 0, veers: 0, pods: 0, whales: 0, wrecks: 0, stars: 0, turtles: 0, flyers: 0, xp: 0, orders: 0, order: "", orderBase: 0, orderGoal: 0, shots: 0, crits: 0, topSpeed: 0, master: false, storms: 0, seaXp: 0, battleShots: 0, battleHits: 0, mapX: 0, mapZ: 0, hasMap: false, maps: 0, battleDmg: 0, flawless: 0, reefed: 0, dishAt: "", hints: "", hintsOff: false, bookTab: "voyage", seenDeeds: 0, seenSights: 0, seenRank: 0, checkDone: false, openedLog: false, orderHalf: "", hullWarnT: 0, ate: "", meals: 0, battleCrits: 0, mapSaid: false, fish: 0, fishCaught: 0, raceBest: 0, races: 0, rakes: 0, shadow: 0, soldAt: "", bestStreak: 0, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false, met: "", metSunk: "", hunters: 0, seaTime: 0, dist: 0, bigBtn: false, flash: true };
   }
   let x3 = null;
   function x3Load(raw) {
@@ -8719,6 +8719,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     pool.push("Rumour: sell in more than one port. A flooded market pays less.");
     if (x3 && typeof DISHES !== "undefined") { const un = PORTS.filter(function (pt) { return DISHES[pt.id] && x3.ate.indexOf("|" + pt.id + "|") < 0 && (!ashorePort || pt.id !== ashorePort.id); }); if (un.length) { const pt = un[Math.floor(Math.random() * un.length)]; pool.push("Rumour: the tavern at " + pt.name + " serves " + DISHES[pt.id].name + ". Worth the trip."); } }
     if (x3 && x3.hasMap) pool.push("Rumour: a mapped chest only comes up if you anchor right over the X.");
+    if (x3 && typeof SIGHT_HINT !== "undefined") { const un = SIGHTS.filter(function (k) { return !hasSight(k.id); }); if (un.length) { const k = un[Math.floor(Math.random() * un.length)]; pool.push("Rumour: a sailor swears he saw " + k.name + ". " + SIGHT_HINT[k.id]); } }
+    if (x3 && typeof DEED_PROG !== "undefined") { const near = DEEDS.filter(function (d) { const p = DEED_PROG[d.id]; return p && !deedDone(d.id) && (x3[p[0]] || 0) / (p[2] || 1) >= p[1] * 0.6; }); if (near.length) { const d = near[0], p = DEED_PROG[d.id]; pool.push("Rumour: folk say you're close to a new deed: " + d.text.toLowerCase() + " (" + Math.floor((x3[p[0]] || 0) / (p[2] || 1)) + " of " + p[1] + ")."); } }
     if (x3 && x3.reefed === 0) pool.push("Rumour: drop to half sail before a squall, or it will shred your canvas.");
     rumourN += 1;
     return pool[rumourN % pool.length];
@@ -8949,12 +8951,17 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       info.style.cssText = "font-size:14px;line-height:1.35;opacity:.92;margin:0 0 8px;max-width:320px;text-align:center";
       info.textContent = RENOWN_TITLES[rn] + " \u00B7 renown " + rn + " of 8 \u00B7 deeds " + deedCount() + " of " + DEEDS.length + " \u00B7 " + DIFF_WORD[x3.diff] + (hunterFoe && !hunterFoe.gone && !hunterFoe.sinking ? " \u00B7 hunter on your trail" : "") + " \u00B7 " + Math.floor(x3.seaTime / 60) + " min at sea. Next: " + (x3.tut < 4 ? TUT[x3.tut] : nextGoal().text);
       box.appendChild(info);
+      const r = rankOf(), more = document.createElement("div");
+      more.id = "pauserank";
+      more.style.cssText = "font-size:13px;line-height:1.35;opacity:.85;margin:0 0 8px;max-width:340px;text-align:center";
+      more.textContent = RANKS[r] + " \u00B7 " + x3.xp + " XP" + (r < 5 ? " (" + (RANK_XP[r + 1] - x3.xp) + " to " + RANKS[r + 1] + ")" : "") + (sessionXp0 != null ? " \u00B7 +" + (x3.xp - sessionXp0) + " XP this session" : "") + " \u00B7 " + orderLine() + " \u00B7 Next: " + nextGoal().text;
+      box.appendChild(more);
     }
     box.appendChild(setRow("Sound: " + ["off", "low", "full"][x3.volume], function () { x3.volume = (x3.volume + 2) % 3; if (audioCtx) audioOut(); writeSave(); renderSettings(); }));
     box.appendChild(setRow("Vibration: " + (x3.vibrate ? "on" : "off"), function () { x3.vibrate = !x3.vibrate; if (x3.vibrate) buzz(40); writeSave(); renderSettings(); }));
     box.appendChild(setRow("Invert helm: " + (invertHelm ? "on" : "off"), function () { invertHelm = !invertHelm; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Difficulty: " + DIFF_WORD[x3.diff], function () { const o = ["easy", "normal", "hard"]; x3.diff = o[(o.indexOf(x3.diff) + 1) % 3]; writeSave(); renderSettings(); }));
-    box.appendChild(setRow("Show tips again", function () { ["tipFoe", "tipLow", "tipSafe", "tipGoods", "tipWind", "tipAshore", "tipBeam", "tipDusk", "tipFull", "tipAim", "tipSlip", "tipCross", "tipShort"].forEach(function (k) { x3[k] = false; }); writeSave(); say("Tips will show again as you play.", 2.5); renderSettings(); }));
+    box.appendChild(setRow("Show tips again", function () { ["tipFoe", "tipLow", "tipSafe", "tipGoods", "tipWind", "tipAshore", "tipBeam", "tipDusk", "tipFull", "tipAim", "tipSlip", "tipCross", "tipShort"].forEach(function (k) { x3[k] = false; }); x3.hints = ""; x3.hintsOff = false; writeSave(); say("Tips will show again as you play.", 2.5); renderSettings(); }));
     if (x3.tut >= 9) box.appendChild(setRow("Replay the lessons", function () { x3.tut = 0; tutSaid = -1; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Bigger buttons: " + (x3.bigBtn ? "on" : "off"), function () { x3.bigBtn = !x3.bigBtn; applyBigText(); writeSave(); renderSettings(); }));
     if (x3.tut < 4) box.appendChild(setRow("Skip the lessons", function () { x3.tut = 9; writeSave(); renderSettings(); }));
@@ -8962,7 +8969,6 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow("Red hit flash: " + (x3.flash ? "on" : "off"), function () { x3.flash = !x3.flash; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Calm camera: " + (x3.calm ? "on" : "off"), function () { x3.calm = !x3.calm; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Captain's tips: " + (x3.hintsOff ? "off" : "on"), function () { x3.hintsOff = !x3.hintsOff; writeSave(); renderSettings(); }));
-    if (x3.hints) box.appendChild(setRow("Show all captain's tips again", function () { x3.hints = ""; x3.hintsOff = false; say("Captain's tips will show again.", 2); writeSave(); renderSettings(); }));
     box.appendChild(setRow("Large text: " + (x3.bigText ? "on" : "off"), function () { x3.bigText = !x3.bigText; applyBigText(); writeSave(); renderSettings(); }));
     if (pauseKind === "pause") box.appendChild(setRow("Photo mode (tap to bring buttons back)", photoMode));
     box.appendChild(setRow("Credits", showCredits));
@@ -10348,7 +10354,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (playerHull.id !== "frigate" && playerHull.id !== "manowar") box.appendChild(menuButton("Buy frigate (" + YARD_BUY_FRIGATE + " gold)", buyFrigate));
       if (playerHull.id !== "manowar") box.appendChild(menuButton("Buy man-of-war (" + YARD_BUY_MANOWAR + " gold)", buyManowar));
       const patch = hullRepairCost();
-      if (patch > 0) box.appendChild(menuButton("Patch hull to " + ship.hullMax + " (" + patch + " gold)", repairHull));
+      if (patch > 0) box.appendChild(menuButton("Patch hull to " + ship.hullMax + ", now " + Math.round(100 * ship.hull / ship.hullMax) + "% (" + patch + " gold)", repairHull));
       yardExtras(box);
     } else if (yardTab === "guns") {
       body.textContent = "Guns and fittings.";
@@ -11760,6 +11766,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     Object.keys(SAILS).forEach(function (id) {
       const sp = SAILS[id];
       if (id === x3.sail) return;
+      const before = box.children.length;
+      setTimeout(function () { const b = box.children[before]; if (b && b.tagName === "BUTTON") b.style.borderLeft = "12px solid #" + ("000000" + (sp.hex || 0xf4f0e6).toString(16)).slice(-6); }, 0);
       if (sailOpen(id)) box.appendChild(menuButton("Hoist " + sp.name + " sails", function () { x3.sail = id; applySails(); say(sp.name + " sails hoisted.", 2.5); writeSave(); renderMenu(); }));
       else if (sp.cost) box.appendChild(menuButton(sp.name + " sails (" + sp.cost + " gold)", function () {
         if (ledger.gold < sp.cost) { say("The sailmaker wants " + sp.cost + " gold.", 2); return; }
@@ -12537,6 +12545,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const o = orderSpec();
     if (!o) { x3.order = ""; return; }
     if ((x3[o.key] || 0) < x3.orderBase) x3.orderBase = x3[o.key] || 0;
+    if (o.n >= 2 && orderProgress() >= Math.ceil(o.n / 2) && x3.orderHalf !== x3.order + x3.orderBase && orderProgress() < o.n) { x3.orderHalf = x3.order + x3.orderBase; say("Orders: " + orderProgress() + " of " + o.n + ". " + o.text + ".", 3); }
     if (orderProgress() >= o.n) {
       const pay = orderReward();
       ledger.gold += pay; x3.orders += 1; x3.order = "";
@@ -12608,24 +12617,24 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     writeSave();
   }
   const DISHES = {
-    bramble: { name: "a bowl of Bramble chowder", cost: 8, eat: function () { addMorale(6); return "The crew warm up on chowder. Morale +6."; } },
-    salt: { name: "a round of Salt Cay rum punch", cost: 12, eat: function () { addMorale(10); return "Rum punch all round! Morale +10."; } },
-    lorenzo: { name: "pots of San Lorenzo coffee", cost: 8, eat: function () { fireCool = 0; addMorale(3); return "Strong coffee: the gun crews are wide awake. Guns ready, morale +3."; } },
-    belle: { name: "Belleisle pastries", cost: 10, eat: function () { const room = crewMaxFor(playerHull.id) - x3.crew; x3.crew += Math.max(0, Math.min(2, room)); addMorale(4); return "Two dockhands follow the smell of pastries aboard. Morale +4."; } }
+    bramble: { name: "a bowl of Bramble chowder", fx: "+6 morale", cost: 8, eat: function () { addMorale(6); return "The crew warm up on chowder. Morale +6."; } },
+    salt: { name: "a round of Salt Cay rum punch", fx: "+10 morale", cost: 12, eat: function () { addMorale(10); return "Rum punch all round! Morale +10."; } },
+    lorenzo: { name: "pots of San Lorenzo coffee", fx: "guns ready, +3 morale", cost: 8, eat: function () { fireCool = 0; addMorale(3); return "Strong coffee: the gun crews are wide awake. Guns ready, morale +3."; } },
+    belle: { name: "Belleisle pastries", fx: "two new hands, +4 morale", cost: 10, eat: function () { const room = crewMaxFor(playerHull.id) - x3.crew; x3.crew += Math.max(0, Math.min(2, room)); addMorale(4); return "Two dockhands follow the smell of pastries aboard. Morale +4."; } }
   };
   function menuHead(box, t) { const h = document.createElement("div"); h.textContent = t; h.className = "mhead"; h.style.cssText = "grid-column:1/-1;width:100%;font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin:6px 0 0"; box.appendChild(h); }
   function tavernExtras31(body, box) {
     if (!x3) return;
     capTip("tavern", "Taverns: hire hands, treat the crew to the local dish, take the harbour master's orders, or swap stories for XP.", box);
     menuHead(box, "Galley, maps and orders");
-    if (!x3.hasMap) box.appendChild(menuButton("Buy a treasure map from a one-eyed sailor (" + mapCost() + " gold)", function () {
+    if (!x3.hasMap) box.appendChild(menuButton("Buy a treasure map from a one-eyed sailor, worth 150+ gold at the X (" + mapCost() + " gold)", function () {
       if (ledger.gold < mapCost()) { say("He wants " + mapCost() + " gold for it.", 2); return; }
       ledger.gold -= mapCost(); giveMap("You unroll a stained treasure map."); renderMenu();
     }));
     else body.textContent += " You carry a treasure map.";
     const dish = ashorePort && DISHES[ashorePort.id];
     const visit = (ashorePort ? ashorePort.id : "") + "|" + Math.floor(x3.seaTime / 60);
-    if (dish && x3.dishAt !== visit) box.appendChild(menuButton("Order " + dish.name + " for the crew (" + dish.cost + " gold)", function () {
+    if (dish && x3.dishAt !== visit) box.appendChild(menuButton("Order " + dish.name + " for the crew: " + dish.fx + (x3.ate.indexOf("|" + ashorePort.id + "|") < 0 ? ", +5 XP first taste" : "") + " (" + dish.cost + " gold)", function () {
       if (ledger.gold < dish.cost) { say("That costs " + dish.cost + " gold.", 2); return; }
       ledger.gold -= dish.cost; x3.dishAt = visit; x3.meals += 1;
       const low = x3.morale < 30, first = x3.ate.indexOf("|" + ashorePort.id + "|") < 0, night = dayU.value < 0.25;
@@ -12636,7 +12645,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       say(line, 4); checkDeeds(); writeSave(); renderMenu();
     }));
     if (dish) body.textContent += " Port dishes tasted: " + (x3.ate ? x3.ate.split("||").length : 0) + " of 4.";
-    body.textContent += " " + (x3.order ? "Your orders: " + orderText() + " (" + orderReward() + " gold)." : "No orders right now.");
+    body.textContent += " " + (x3.order ? "Your orders: " + orderText() + " (" + orderProgress() + " of " + (orderSpec() ? orderSpec().n : 0) + " done, " + orderReward() + " gold)." : "No orders right now.");
     if (!x3.order) box.appendChild(menuButton("Ask the harbour master for orders", function () { newOrder(); renderMenu(); }));
     else if (rankOf() >= 4) box.appendChild(menuButton("Ask for different orders (free for a " + RANKS[rankOf()] + ")", function () { newOrder(); renderMenu(); }));
     else box.appendChild(menuButton("Ask for different orders (5 gold)", function () {
@@ -12859,7 +12868,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (d < 120) addSight("gold");
       if (mode === "sea" && anchored && d < 12 && !fightOn) {
         if (diveT === 0) say("The crew dive for the sunken gold...", 3);
+        const dp0 = Math.floor(diveT / 2.5);
         diveT += dt;
+        if (Math.floor(diveT / 2.5) > dp0 && diveT < 10) say((glint.treasure ? "Divers working on the chest... " : "Divers down... ") + Math.floor(diveT / 2.5) * 25 + "%", 2.6);
         if (diveT >= 10) {
           diveT = 0;
           const empty = !glint.treasure && Math.random() < 1 / 6;
