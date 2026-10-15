@@ -12382,7 +12382,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (sail === 2 && d < 0.4 && trimSaidT <= 0 && Math.abs(ship.speed || 0) > 8) { trimSaidT = 9999; say("Wind astern and full sail: she is drawing well. Running before the wind is her fastest point of sail.", 3); }
   }
   // ---- Batch 31: tavern orders, sea stories, battle reports, rank sails ----
-  let storyAt = "";
+  let storyAt = "", lastReport = "";
   const SEA_STORIES = [
     "The bosun swears he once outran a waterspout under bare poles.",
     "An old hand tells of a turtle that followed his ship for three days.",
@@ -12410,7 +12410,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!x3) return;
     const sh = x3.shots - x3.battleShots, hi = x3.hits - x3.battleHits;
     x3.battleShots = x3.shots; x3.battleHits = x3.hits;
-    if (sh > 0 && sh < 200) toast("Battle report: " + sh + " shots fired, " + Math.min(sh, hi) + " hits (" + Math.round(100 * Math.min(sh, hi) / sh) + "%).", "After the battle");
+    if (sh > 0 && sh < 200) toast(lastReport = "Battle report: " + sh + " shots fired, " + Math.min(sh, hi) + " hits (" + Math.round(100 * Math.min(sh, hi) / sh) + "%).", "After the battle");
   }
   // ---- Batch 29: shooting stars, rainbows, sea turtles, flying fish, albatross ----
   let starT = 90, fStar = null, rBow = null, turtleT = 260, turtle = null, flyT = 150, flyers = null, albT = 0, albMesh = null;
@@ -14832,7 +14832,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       flyNow: function () { startFlyers(); return !!flyers; },
       bottleNow: function () { seaBottle(); return notice; },
       speedTest: function (off, secs) { gustT = 0; calmT = 0; veer = null; sail = 2; let top = 0; for (let t = 0; t < secs; t += 1 / 30) { gustT = 0; ship.heading = windAngle + off; updateSea(1 / 30, { steer: 0, forward: 0 }); top = Math.max(top, Math.abs(ship.speed)); } return Math.round(top * 10) / 10; },
-      b31: function () { return { xp: x3.xp, rank: rankOf(), ranks: RANK_XP.slice(), master: x3.master, storms: x3.storms, seaXp: x3.seaXp, order: x3.order, reward: orderReward(), orders: x3.orders, deeds: DEEDS.length, sails: Object.keys(SAILS).length, sessionXp0: sessionXp0 }; },
+      b31: function () { return { xp: x3.xp, rank: rankOf(), ranks: RANK_XP.slice(), master: x3.master, storms: x3.storms, seaXp: x3.seaXp, order: x3.order, reward: orderReward(), orders: x3.orders, deeds: DEEDS.length, sails: Object.keys(SAILS).length, sessionXp0: sessionXp0, report: lastReport }; },
       b30: function () { return { xp: x3.xp, rank: rankOf(), rankName: RANKS[rankOf()], order: x3.order, orderBase: x3.orderBase, orders: x3.orders, progress: orderProgress(), reward: orderReward(), shots: x3.shots, crits: x3.crits, top: x3.topSpeed, hot: hotT, deeds: DEEDS.length, repair: hullRepairCost(), gold: ledger.gold, crit: CRIT_CHANCE }; },
       newOrder: function (id) { newOrder(); if (id) { const o = ORDERS.find(function (q) { return q.id === id; }); x3.order = o.id; x3.orderBase = x3[o.key] || 0; x3.orderGoal = o.n; } return x3.order; },
       addXp: function (n) { addXp(n); return x3.xp; },
