@@ -3897,7 +3897,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   const hullHud = document.createElement("div");
   hullHud.id = "hullhud";
-  hullHud.style.cssText = "position:absolute;left:12px;top:calc(58px + env(safe-area-inset-top));width:210px;pointer-events:none;font-family:system-ui,sans-serif;font-size:13px;font-weight:600;text-shadow:0 1px 2px #000";
+  hullHud.style.cssText = "position:absolute;left:12px;top:calc(58px + env(safe-area-inset-top));width:168px;pointer-events:none;font-family:system-ui,sans-serif;font-size:12px;font-weight:600;min-height:44px;text-shadow:0 1px 2px #000";
   hullHud.innerHTML = '<div id="hulllabel" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Hull 100 · Sails 100%</div><div style="margin-top:3px;height:9px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,.7);background:rgba(0,0,0,.4)"><div id="hullfill" style="height:100%;width:100%;background:#7dce4a"></div></div><div id="sailread" style="display:none;margin:0;padding:0;line-height:12px;height:12px;font-size:11px">Sails 0%</div>';
   document.getElementById("ui").appendChild(hullHud);
   const townMenu = document.createElement("div");
@@ -11074,7 +11074,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   function updateHud() {
     const align = windAlign();
-    let feel = "On the beam";
+    let feel = "Abeam";
     if (align > 0.55) feel = "Tailwind";
     else if (align < -0.15) feel = "Headwind";
     windlabel.textContent = feel;
@@ -13263,7 +13263,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     // man overboard in a squall
     if (overboard41) {
       overboard41.t -= dt;
-      if (Math.hypot(ship.x - overboard41.x, ship.z - overboard41.z) < (x3.lifebuoys ? 20 : 12)) { overboard41 = null; splashAt(overboard41.x, overboard41.z, false); x3.overboardSaved += 1; addMorale(3, "the rescue"); addXp(5); floatText(ship.x, 5, ship.z, "Man saved!", "#b8f5b0"); say("A line, a heave, and he's back on deck, coughing. The crew cheer.", 3); }
+      if (Math.hypot(ship.x - overboard41.x, ship.z - overboard41.z) < (x3.lifebuoys ? 20 : 12)) { overboard41 = null; splashAt(ship.x, ship.z, false); x3.overboardSaved += 1; addMorale(3, "the rescue"); addXp(5); floatText(ship.x, 5, ship.z, "Man saved!", "#b8f5b0"); say("A line, a heave, and he's back on deck, coughing. The crew cheer.", 3); }
       else if (overboard41.t <= 0) { overboard41 = null; x3.overboardLost += 1; x3.crew = Math.max(1, x3.crew - 1); addMorale(-3, "a man lost"); say("The sea has him. The crew go quiet. One hand lost.", 3.5); }
     } else if (x3.tut >= 4 && underStorm(ship.x, ship.z) && sail > 0 && Math.random() < dt / 120) {
       { const dd = x3.lifebuoys ? 28 : 14; overboard41 = { x: ship.x - Math.sin(ship.heading) * dd, z: ship.z - Math.cos(ship.heading) * dd, t: x3.lifebuoys ? 45 : 30 }; }
