@@ -11323,7 +11323,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       // Batch 47: never jam the camera into the head. When walls pull it in closer than 2.2 m, lift it to look down over the shoulder instead.
       if (mode === "land") { const hx = camera.position.x - person.x, hz = camera.position.z - person.z, hh = Math.hypot(hx, hz), py0 = person.group.position.y; if (hh < 2.2) { const minY = py0 + 1.6 + (2.2 - hh) * 1.4; if (camera.position.y < minY) camera.position.y = minY; } }
     }
-    { const nr = mode === "land" ? 0.22 : 0.3; if (camera.near !== nr) { camera.near = nr; camera.updateProjectionMatrix(); } }
+    { const nr = mode === "land" ? 0.08 : 0.3; if (camera.near !== nr) { camera.near = nr; camera.updateProjectionMatrix(); } }
     if (mode === "sea") {
       camLean = damp(camLean, (x3 && x3.calm) ? 0 : ((ship.roll || 0) + (ship.list || 0)) * 0.22, dt, 2.5);
       const lean = camLean;
