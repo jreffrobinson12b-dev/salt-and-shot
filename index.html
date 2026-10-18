@@ -6909,7 +6909,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (foe === qbFoe47 && !foe.qbWon48) { foe.qbWon48 = true; qbCalm47 = Math.min(qbCalm47, 20); setTimeout(function () { toast("Quick battle won. The sea is yours now: trade between ports, take on errands, or hunt the next prize.", "Victory"); }, 2500); }
       if (ship.hull > 0 && ship.hull < ship.hullMax * 0.3) { ship.hull = Math.min(ship.hullMax, ship.hull + 5); floatText(ship.x, 9, ship.z, "+5 hull", "#9dffb0"); }
       if (resolveGalleon(foe, "sink")) say("The hold is yours. +200 gold." + tail, 4.2);
-      else say("Their hull is gone. The ship is going under: sail through the wreckage for her salvage." + tail, 3.6);
+      else say("Their hull is gone. The ship is going under: sail through the wreckage for her salvage, about " + SALVAGE_GOLD + " gold" + (x3 && rankOf() > 0 ? ", on top of the " + (5 * rankOf()) + " gold rank bounty" : "") + "." + tail, 4); // Batch 49: name the payout
     } else {
       say("Hit. Their hull is at " + foe.hull + ".", 1.8);
     }
