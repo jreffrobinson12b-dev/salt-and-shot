@@ -4208,7 +4208,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   const camera = new THREE.PerspectiveCamera(60, 1, 0.2, 1800);
   const IS_PHONE = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) || /Android|iPhone|iPad/i.test(navigator.userAgent);
-  const renderer = new THREE.WebGLRenderer({ antialias: !IS_PHONE || (window.devicePixelRatio || 1) < 2, powerPreference: "high-performance" });
+  // Batch 46: test flags. ?lowgfx=1 forces low graphics (no shadows, pixel ratio 1, no antialias, fewer effects); ?nofx=1 also turns off every decorative effect and CSS animation.
+  const URLQ47 = (function () { try { return new URLSearchParams(location.search); } catch (e) { return { get: function () { return null; } }; } })();
+  const NOFX47 = URLQ47.get("nofx") === "1";
+  const LOWGFX47 = NOFX47 || URLQ47.get("lowgfx") === "1";
+  // Probe for a software rasteriser before making the real context, so software WebGL never pays for multisampled buffers.
+  const SOFT0_47 = (function () { try { const c = document.createElement("canvas"); const gl = c.getContext("webgl2") || c.getContext("webgl"); if (!gl) return false; const ext = gl.getExtension("WEBGL_debug_renderer_info"); const r = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : ""; const lose = gl.getExtension("WEBGL_lose_context"); if (lose) lose.loseContext(); return /swiftshader|llvmpipe|software|basic render/i.test(r); } catch (e) { return false; } })();
+  const renderer = new THREE.WebGLRenderer({ antialias: !LOWGFX47 && !SOFT0_47 && (!IS_PHONE || (window.devicePixelRatio || 1) < 2), powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, IS_PHONE ? 1.5 : 1.75));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -4217,7 +4223,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   renderer.domElement.style.touchAction = "none";
   // Batch 44: a software WebGL renderer (no GPU) gets light settings, which keeps memory and frame times in check.
   const SOFT_GL = (function () { try { const gl = renderer.getContext(); const ext = gl.getExtension("WEBGL_debug_renderer_info"); const r = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : ""; return /swiftshader|llvmpipe|software|basic render/i.test(r) && !navigator.webdriver; } catch (e) { return false; } })();
-  if (SOFT_GL) { renderer.setPixelRatio(1); renderer.shadowMap.enabled = false; }
+  if (SOFT_GL || LOWGFX47) { renderer.setPixelRatio(1); renderer.shadowMap.enabled = false; }
+  if (NOFX47) { const st = document.createElement("style"); st.textContent = "*,*::before,*::after{animation:none!important;transition:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;filter:none!important}#rain46,#flash46{display:none!important}"; document.head.appendChild(st); }
   document.getElementById("view").appendChild(renderer.domElement);
 
   const hemi = new THREE.HemisphereLight(0xd5e7f6, 0xc6a06a, 0.72);
@@ -4756,10 +4763,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
 
   function rigHeight(hullId) {
-    if (hullId === "manowar") return { bar: 21, name: 24.9 };
-    if (hullId === "frigate") return { bar: 17.7, name: 21 };
-    if (hullId === "brig") return { bar: 14.5, name: 17.2 };
-    return { bar: 11.5, name: 14.2 };
+    if (hullId === "manowar") return { bar: 21, name: 25.6 };
+    if (hullId === "frigate") return { bar: 17.7, name: 21.9 };
+    if (hullId === "brig") return { bar: 14.5, name: 18.4 };
+    return { bar: 11.5, name: 15.2 };
   }
 
   function warmHullWood(model) {
@@ -6370,6 +6377,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const tex = new THREE.CanvasTexture(canvas);
     const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
     const sprite = new THREE.Sprite(mat);
+    sprite.renderOrder = 21;
     sprite.scale.set(9, 2.25, 1);
     sprite.position.y = 11.5;
     sprite.userData.canvas = canvas;
@@ -6443,6 +6451,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     spr.position.y = y;
     spr.userData.label = text;
     spr.userData.textW = textW;
+    spr.renderOrder = 20;
     return spr;
   }
 
@@ -6450,6 +6459,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     spr.userData.homeX = spr.position.x;
     spr.userData.homeY = spr.position.y;
     spr.userData.homeZ = spr.position.z;
+    spr.renderOrder = 20;
     placeTags.push(spr);
   }
 
@@ -8517,6 +8527,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (raw && typeof raw === "object") {
       for (const k in d) if (typeof raw[k] === typeof d[k]) d[k] = raw[k];
     }
+    if (LOWGFX47) { d.lowGfx0 = d.lowGfx; d.lowGfx = true; }
     d.crew = Math.max(2, Math.min(crewMaxFor(playerHull.id), Math.round(d.crew)));
     if (["long", "carronade", "culverin"].indexOf(d.guns) < 0) d.guns = "long";
     if (!DIFF[d.diff]) d.diff = "normal";
@@ -9153,7 +9164,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 46 (hotfix 1)";
+    ver.textContent = "Version: batch 46";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -10761,7 +10772,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return best;
   }
 
-  let stuckT45 = 0, rope45 = null, groundT45 = 0;
+  let stuckT45 = 0, rope45 = null, groundT45 = 0, menuGhost47 = 0;
+  const WALK47 = 3.6;
   // Batch 45: a captain wedged between the surf line and a wall steps back to the nearest open ground.
   function unstick45() {
     for (let r = 0.6; r <= 3; r += 0.6) for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2, x = person.x + Math.sin(a) * r, z = person.z + Math.cos(a) * r; if (onLand(x, z) && !hitsBlock(x, z, 0.45)) { person.x = x; person.z = z; return true; } }
@@ -10776,9 +10788,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3 && x3.lowGfx) return;
     if (!rope45) { rope45 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), new THREE.LineBasicMaterial({ color: 0x8a6a3a })); scene.add(rope45); }
     const g = ashorePort.gang, pos = rope45.geometry.attributes.position;
+    if (rope45.visible && Math.abs(pos.getX(0) - ship.x) < 0.01 && Math.abs(pos.getZ(0) - ship.z) < 0.01 && pos.getX(1) === g.x) return;
     pos.setXYZ(0, ship.x, 1.6, ship.z); pos.setXYZ(1, g.x, feetY(g.x, g.z) + 0.6, g.z); pos.needsUpdate = true; rope45.geometry.computeBoundingSphere(); rope45.visible = true;
   }
   function updateLand(dt, input) {
+    if (menuOpen && !fightOn && (!townMenu || townMenu.style.display === "none")) { menuGhost47 += dt; if (menuGhost47 > 0.4) { menuGhost47 = 0; closeMenu(); } } else menuGhost47 = 0;
     if (menuOpen || fightOn) {
       setMoving(false);
       if (person.mixer) person.mixer.update(dt);
@@ -10808,13 +10822,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (mag > 1) { mx /= mag; mz /= mag; }
     if (mag > 0.18) {
       const face = Math.atan2(mx, mz);
-      person.yaw = dampAngle(person.yaw, face, dt, 4);
+      person.yaw = dampAngle(person.yaw, face, dt, 10);
       const n = Math.min(1, (Math.min(1, mag) - 0.18) / 0.82);
-      run45 = n > 0.92 ? run45 + dt : 0;
-      const sp = 2.6 * Math.pow(n, 1.55) * (run45 > 1.2 ? 1.3 : 1);
-      if (person.walk) person.walk.timeScale = (0.55 + 0.45 * Math.pow(n, 1.55)) * (run45 > 1.2 ? 1.25 : 1);
-      const nx = person.x + Math.sin(person.yaw) * sp * dt;
-      const nz = person.z + Math.cos(person.yaw) * sp * dt;
+      run45 = n > 0.85 ? run45 + dt : 0;
+      const sp = WALK47 * (0.4 + 0.6 * n) * (run45 > 0.5 ? 1.45 : 1);
+      if (person.walk) person.walk.timeScale = (0.7 + 0.5 * n) * (run45 > 0.5 ? 1.3 : 1);
+      const mvx = Math.sin(face), mvz = Math.cos(face);
+      const nx = person.x + mvx * sp * dt;
+      const nz = person.z + mvz * sp * dt;
       const tryMove = function (x, z) {
         return onLand(x, z) && !hitsBlock(x, z, 0.35);
       };
@@ -10824,7 +10839,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       else {
         // Batch 45: slide along a shore or wall at 45 degrees before giving up.
         let moved = false;
-        for (const da of [0.8, -0.8, 1.4, -1.4]) { const ax = person.x + Math.sin(person.yaw + da) * sp * dt, az = person.z + Math.cos(person.yaw + da) * sp * dt; if (tryMove(ax, az)) { person.x = ax; person.z = az; moved = true; break; } }
+        for (const da of [0.8, -0.8, 1.4, -1.4]) { const ax = person.x + Math.sin(face + da) * sp * dt, az = person.z + Math.cos(face + da) * sp * dt; if (tryMove(ax, az)) { person.x = ax; person.z = az; moved = true; break; } }
         if (!moved) { stuckT45 += dt; if (stuckT45 > 0.6) { stuckT45 = 0; unstick45(); } } else stuckT45 = 0;
       }
       setMoving(true);
@@ -11082,13 +11097,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const camRay = new THREE.Raycaster(), camFrom = new THREE.Vector3(), camDir = new THREE.Vector3();
   function camBlock44(d, x, y, z) {
     const now = performance.now();
-    if (now - occlAt > 1500) { occlAt = now; occl44 = scene.children.filter(function (o) { return o.visible && (o.isMesh || o.isGroup) && o !== water && o !== sky && o !== sunDisc && o !== moonDisc && o !== person.group && o !== ship.root && Math.hypot(o.position.x - x, o.position.z - z) < 22; }); }
+    if (now - occlAt > 700) { occlAt = now; occl44 = scene.children.filter(function (o) { return o.visible && (o.isMesh || o.isGroup) && o !== water && o !== sky && o !== sunDisc && o !== moonDisc && o !== person.group && o !== ship.root && Math.hypot(o.position.x - x, o.position.z - z) < 22; }); }
     if (!occl44.length) return;
     camFrom.set(x, y, z); camDir.copy(d).sub(camFrom); const len = camDir.length(); if (len < 0.5) return; camDir.divideScalar(len);
     camRay.set(camFrom, camDir); camRay.far = len;
     const hit = camRay.intersectObjects(occl44, true).find(function (h) { return !h.object.isSprite && h.distance > 0.6; });
     if (hit) d.copy(camFrom).addScaledVector(camDir, Math.max(1.2, hit.distance - 0.4));
   }
+  const tmpCam47 = new THREE.Vector3();
   function updateCamera(dt) {
     updateLook(dt);
     if (mode === "sea") landYaw = null;
@@ -11135,7 +11151,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const k = 1 - Math.exp(-dt * (lookHeld ? 10 : (mode === "sea" ? 2.6 : 2.2)));
       camera.position.lerp(desired, k);
       camLook.lerp(look, k);
+      if (mode === "land") { camBlock44(camera.position, person.x, person.group.position.y + 1.4, person.z); if (hitsBlock(camera.position.x, camera.position.z, 0.3)) { for (let i = 0; i < 8 && hitsBlock(camera.position.x, camera.position.z, 0.3); i++) camera.position.lerp(tmpCam47.set(person.x, camera.position.y, person.z), 0.25); } }
     }
+    { const nr = mode === "land" ? 0.08 : 0.2; if (camera.near !== nr) { camera.near = nr; camera.updateProjectionMatrix(); } }
     if (mode === "sea") {
       camLean = damp(camLean, (x3 && x3.calm) ? 0 : ((ship.roll || 0) + (ship.list || 0)) * 0.22, dt, 2.5);
       const lean = camLean;
@@ -13777,10 +13795,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   function updateQuests43(dt) {
     if (!x3) return;
-    updateFan45();
-    update45(dt);
+    if (!NOFX47) { updateFan45(); update45(dt); }
     updateKegs45(dt);
-    update46(dt);
+    if (!NOFX47) update46(dt); else watch47(dt);
     if (mode === "sea" && ship.hull > 0 && ship.hull < ship.hullMax * 0.2) { beatT45 -= dt; if (beatT45 <= 0) { beatT45 = 4; buzz([30, 80, 30]); hullHud.style.outline = "2px solid rgba(239,90,60,.9)"; setTimeout(function () { hullHud.style.outline = ""; }, 350); } } else beatT45 = 0;
     updateDebris44(dt);
     updatePill43();
@@ -14249,6 +14266,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   const gfxParts = [];
   function updateGfxParts(dt) {
+    if (NOFX47) { for (let i = 0; i < gfxParts.length; i++) { scene.remove(gfxParts[i].o); if (gfxParts[i].o.material) gfxParts[i].o.material.dispose(); } gfxParts.length = 0; return; }
     while (gfxParts.length > 240) { const q = gfxParts.shift(); scene.remove(q.o); if (q.o.material) q.o.material.dispose(); }
     for (let i = gfxParts.length - 1; i >= 0; i--) {
       const q = gfxParts[i];
@@ -14738,7 +14756,20 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
   }
 
+  let titleDraw47 = 0, guarded47 = false;
+  // Writing the same text into a button every frame still replaces its text node and forces layout; only write real changes.
+  function guardText47() {
+    guarded47 = true;
+    const d = Object.getOwnPropertyDescriptor(Node.prototype, "textContent"), h = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML");
+    if (!d || !h) return;
+    ["fire", "windlabel", "sail", "sub", "hulllabel", "act", "hint", "safebadge", "anchor", "board", "shot", "glass", "chart", "toast", "knots46"].forEach(function (id) {
+      const el = document.getElementById(id); if (!el || el.dataset.g47) return; el.dataset.g47 = "1";
+      Object.defineProperty(el, "textContent", { configurable: true, get: function () { return d.get.call(this); }, set: function (v) { v = v == null ? "" : String(v); const f = this.firstChild; if (f && f.nodeType === 3 && (this.childNodes.length === 1 || (this.childNodes.length === 2 && this.lastChild.id === "reload45"))) { if (f.data !== v) f.data = v; return; } if (d.get.call(this) !== v || this.children.length) { const r = this.querySelector ? this.querySelector("#reload45") : null; d.set.call(this, v); if (r) this.appendChild(r); } } });
+      Object.defineProperty(el, "innerHTML", { configurable: true, get: function () { return h.get.call(this); }, set: function (v) { v = v == null ? "" : String(v); if (h.get.call(this) !== v) h.set.call(this, v); } });
+    });
+  }
   function frame(now) {
+    if (!guarded47) guardText47();
     const dt = Math.min(0.05, (now - last) / 1000);
     layoutHint(now);
     if (!x3) x3Load(null);
@@ -14809,7 +14840,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     updateWeather(dt);
     updateGrapples();
     updateBatch11(dt, waterUniforms.uTime.value);
-    renderer.render(scene, camera);
+    if (!titleOn || now - titleDraw47 > 80) { titleDraw47 = now; renderer.render(scene, camera); }
     perfGuard(now);
     requestAnimationFrame(frame);
   }
@@ -15188,7 +15219,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       invertHelm: !!invertHelm,
       tobacco: ledger.tobacco,
       silk: ledger.silk,
-      x3: (storeConsort(), x3)
+      x3: (storeConsort(), LOWGFX47 ? Object.assign({}, x3, { lowGfx: !!x3.lowGfx0, lowGfx0: undefined }) : x3)
     };
     // Never write a broken number over a good save; heal the live value instead.
     ["gold", "sugar", "rum", "coffee", "hull", "sails", "x", "z", "heading"].forEach(function (k) {
@@ -15482,7 +15513,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boot.appendChild(row);
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 46 (hotfix 1)";
+    tv.textContent = "Version: batch 46";
     tv.style.cssText = "margin-top:14px;font-size:12px;opacity:.55";
     boot.appendChild(tv);
   }
@@ -16360,6 +16391,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       stormHere47: function () { if (!storms.length) return false; storms[0].x = ship.x; storms[0].z = ship.z; return inSquallAt(ship.x, ship.z); },
       heading47: function (h) { ship.heading = h; ship.yawRate = 0; if (ship.root) ship.root.rotation.y = h; return h; },
       sails47: function (v) { ship.sails = v; refreshCloth(); return ship.sails; },
+      land47: function () { const cp = camera.position; let lineHit = false; { camFrom.set(person.x, person.group.position.y + 1.4, person.z); camDir.copy(cp).sub(camFrom); const len = camDir.length(); camDir.divideScalar(Math.max(0.001, len)); camRay.set(camFrom, camDir); camRay.far = len; const h = occl44.length ? camRay.intersectObjects(occl44, true).find(function (q) { return !q.object.isSprite && q.distance > 0.6; }) : null; lineHit = !!h; } return { mode: mode, x: person.x, z: person.z, cam: [cp.x, cp.y, cp.z], camInBlock: hitsBlock(cp.x, cp.z, 0.2), lineHit: lineHit, menuOpen: menuOpen, near: camera.near }; },
+      ghostMenu47: function () { menuOpen = true; return menuOpen; },
+      tagOrder47: function () { return { tags: placeTags.map(function (t) { return t.renderOrder; }), foe: foes.slice(0, 3).map(function (f) { const kids = f.root ? f.root.children.filter(function (c) { return c.isSprite; }) : []; return kids.map(function (c) { return [+c.position.y.toFixed(2), c.renderOrder, +c.scale.y.toFixed(2)]; }); }) }; },
+      walkTo47: function (tx, tz, secs) { let t = 0; const st = 1 / 30; while (t < secs && Math.hypot(person.x - tx, person.z - tz) > 1.5) { const vx = person.x - camera.position.x, vz = person.z - camera.position.z, vl = Math.hypot(vx, vz) || 1; const dx = (tx - person.x), dz = (tz - person.z), dl = Math.hypot(dx, dz) || 1; const fwd = (dx * vx + dz * vz) / (dl * vl), side = (dx * vz - dz * vx) / (dl * vl); updateLand(st, { forward: fwd, steer: -side }); updateCamera(st); t += st; } return { t: +t.toFixed(1), d: +Math.hypot(person.x - tx, person.z - tz).toFixed(1) }; },
+      market47: function () { const d = doors.filter(function (q) { return q.kind === "merchant" && q.port === "bramble"; })[0]; return d ? { x: d.x, z: d.z } : null; },
+      flags47: function () { return { nofx: NOFX47, lowflag: LOWGFX47, soft0: SOFT0_47, low: !!(x3 && x3.lowGfx), pr: renderer.getPixelRatio(), shadows: renderer.shadowMap.enabled, aa: !!(renderer.getContext().getContextAttributes() || {}).antialias, frames: renderer.info.render.frame, titleOn: titleOn, parts: gfxParts.length }; },
       q47: function () { const cs = getComputedStyle(document.getElementById("windlabel") || document.body); const rn = document.getElementById("rain46"); let anims = 0; try { anims = document.getAnimations ? document.getAnimations().filter(function (x) { return x.effect && x.effect.getTiming && x.effect.getTiming().iterations === Infinity && x.playState === "running"; }).length : -1; } catch (e) { anims = -1; } return { mem: mem47.last, trips: mem47.trips, port1: waterUniforms.uPort1.value.toArray(), rainDisp: rn ? rn.style.display : null, infAnims: anims, floaters: floaters.length, parts: gfxParts.length, sails: ship.sails, speed: ship.speed, fogT: fogT, inSquall: inSquallAt(ship.x, ship.z), target: (function () { const t = aimTarget47(); return t ? { sign: t.sign, d: t.d } : null; })(), bearing: viewBearing(), fireText: fireBtn.textContent, howto: (document.getElementById("howto") || {}).textContent || "" }; },
       watch47: function (n) { mem47.t = 0; const g = gfxParts.length; for (let i = 0; i < (n || 0); i++) { const o = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex() })); scene.add(o); gfxParts.push({ o: o, vx: 0, vy: 0, vz: 0, life: 99, max: 99, g: 0 }); } return g; },
       ft47: function (t) { floatText(ship.x, 4, ship.z, t || "x", "#fff"); return floaters.length; },
