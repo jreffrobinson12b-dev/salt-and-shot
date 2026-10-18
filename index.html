@@ -7032,8 +7032,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     flashFade(); // Batch 50: a fade covers the jump back to Bramble Quay
     if (practice47) { say("Practice fight lost. Nothing was saved and nothing lost. Reload and tap Continue to go back to your voyage.", 6); toast("Practice fight lost. Your saved voyage is untouched.", "Practice"); return; }
     mendAcc = -6; // Batch 50: the harbour crew wait a few seconds before patching on, so the HUD matches the number in this message
-    say("Hull gone. Towed back to Bramble Quay and patched to " + ship.hull + " (the crew patch more while you lie in harbour). No salvage was taken: your gold, cargo and renown are kept; the crew's spirits took a knock.", 6);
-    toast("Towed back to Bramble Quay. No salvage was taken: gold, cargo and renown are kept. The hull is patched to " + ship.hull + " and the crew's spirits took a knock." + (x3 && x3.tut < 4 ? " Your lessons carry on where you left off." : ""), "Hull gone");
+    say("Hull gone. Towed back to Bramble Quay and patched to " + hullShow50() + " (the crew patch more while you lie in harbour). No salvage was taken: your gold, cargo and renown are kept; the crew's spirits took a knock.", 6);
+    toast("Towed back to Bramble Quay. No salvage was taken: gold, cargo and renown are kept. The hull is patched to " + hullShow50() + " and the crew's spirits took a knock." + (x3 && x3.tut < 4 ? " Your lessons carry on where you left off." : ""), "Hull gone");
     writeSave();
   }
 
@@ -7138,8 +7138,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     hurtDir45();
     splinters44(ship.x, ship.z, n);
     if (ship.hull <= 0) wreckPlayer();
-    else if (ship.hull + n >= ship.hullMax * 0.3 && ship.hull < ship.hullMax * 0.3) { say("They raked your hull. " + ship.hull + " left: she can't take much more. Break off, or finish it fast.", 3); buzz([80, 40, 80]); } // Batch 48: warn once when the hull drops below 30%
-    else say("They raked your hull. " + ship.hull + " left.", 2);
+    else if (ship.hull + n >= ship.hullMax * 0.3 && ship.hull < ship.hullMax * 0.3) { say("They raked your hull. " + hullShow50() + " left: she can't take much more. Break off, or finish it fast.", 3); buzz([80, 40, 80]); } // Batch 48: warn once when the hull drops below 30%
+    else say("They raked your hull. " + hullShow50() + " left.", 2);
   }
 
   let fightOn = false;
@@ -11614,7 +11614,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const hullPct = Math.round(100 * ship.hull / ship.hullMax);
     const hullLabel = document.getElementById("hulllabel");
     const hullFill = document.getElementById("hullfill");
-    if (hullLabel) hullLabel.textContent = "Hull " + ship.hull + (ship.hullMax !== 100 ? "/" + ship.hullMax : "") + " · Crew " + (x3 ? x3.crew : 0) + (x3 && crewShort() ? " (short)" : moraleWord()) + " · " + hudCargo();
+    if (hullLabel) hullLabel.textContent = "Hull " + hullShow50() + (ship.hullMax !== 100 ? "/" + ship.hullMax : "") + " · Crew " + (x3 ? x3.crew : 0) + (x3 && crewShort() ? " (short)" : moraleWord()) + " · " + hudCargo();
     { const hurt = mode === "sea" && ship.hull > 0 && ship.hull <= ship.hullMax * 0.3; if (vign44.classList.contains("hurt") !== hurt) vign44.classList.toggle("hurt", hurt); }
     if (hullFill) { const low = ship.hull > 0 && ship.hull <= (ship.hullMax || hullPoints(playerHull.id)) * 0.35; if (hullFill.classList.contains("hulllow") !== low) hullFill.classList.toggle("hulllow", low);
       const mid = !low && ship.hull < (ship.hullMax || 100) * 0.65; if (hullFill.classList.contains("hullmid49") !== mid) hullFill.classList.toggle("hullmid49", mid); } // Batch 49: amber between 35% and 65%
@@ -13760,7 +13760,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3.bait > 0) L.push("Bait aboard for " + x3.bait + " more catches.");
     if (x3.qRiddle >= 1 && x3.qRiddle <= 3 && x3.riddleT > 480) L.push("Map-maker's hint: look near " + ["Gull Rock", "Deadman's Cove", "Belleisle's west beach"][x3.qRiddle - 1] + ".");
     if (x3.qContest === 2) L.push("Errand: claim the fishing prize at Salt Cay.");
-    L.push("Market board: " + ["sugar", "rum", "coffee", "tobacco", "silk"].map(function (g) { let lo = null, hi = null; PORTS.forEach(function (p) { const pr = PRICES[p.id][g]; if (!lo || pr.buy < PRICES[lo.id][g].buy) lo = p; if (!hi || pr.sell > PRICES[hi.id][g].sell) hi = p; }); if (lo.id === hi.id || PRICES[hi.id][g].sell <= PRICES[lo.id][g].buy) return null; /* Batch 50: only runs that turn a profit */ return g + " " + PRICES[lo.id][g].buy + " " + lo.name.split(" ")[0] + " \u2192 " + PRICES[hi.id][g].sell + " " + hi.name.split(" ")[0] + " (+" + (PRICES[hi.id][g].sell - PRICES[lo.id][g].buy) + ")"; }).filter(Boolean).join(", ").replace(/^$/, "no run turns a profit today") + ".");
+    L.push("Market board: " + ["sugar", "rum", "coffee", "tobacco", "silk"].map(function (g) { let lo = null, hi = null; PORTS.forEach(function (p) { const pr = PRICES[p.id][g]; if (!lo || pr.buy < PRICES[lo.id][g].buy) lo = p; if (!hi || pr.sell > PRICES[hi.id][g].sell) hi = p; }); if (lo.id === hi.id || PRICES[hi.id][g].sell <= PRICES[lo.id][g].buy) return null; /* Batch 50: only runs that turn a profit */ return { p: PRICES[hi.id][g].sell - PRICES[lo.id][g].buy, t: g + " " + PRICES[lo.id][g].buy + " " + lo.name.split(" ")[0] + " \u2192 " + PRICES[hi.id][g].sell + " " + hi.name.split(" ")[0] + " (+" + (PRICES[hi.id][g].sell - PRICES[lo.id][g].buy) + ")" }; }).filter(Boolean).sort(function (a, b) { return b.p - a.p; }).map(function (o) { return o.t; }).join(", ").replace(/^$/, "no run turns a profit today") + ".");
     if (questMarks40().length) L.push(nearestErrand());
     L.push("New errands finished: " + x3.questsDone + ".");
     return L;
@@ -15183,7 +15183,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     pumpT += dt;
     if (pumpT < 12) return;
     pumpT = 0;
-    if (ship.hull < ship.hullMax * 0.6) ship.hull = Math.min(ship.hullMax * 0.6, ship.hull + 1);
+    if (ship.hull < Math.floor(ship.hullMax * 0.6)) ship.hull = Math.min(Math.floor(ship.hullMax * 0.6), ship.hull + 1);
   }
   let sparT = 0, watchT = 0, bellsAtSea = 0;
   function updateSpars(dt) {
@@ -15560,10 +15560,17 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if ((renownTick & 63) === 0) sanity50();
   }
   // Batch 50: a cheap check every 64 frames: a ship or foe with a broken position or hull is put right instead of poisoning the scene.
+  // Batch 50: the hull number on screen is always a whole number, and never 0 while she still floats.
+  function hullShow50() { const h = ship.hull; return h > 0 ? Math.max(1, Math.round(h)) : 0; }
   function sanity50() {
     if (!isFinite(ship.x) || !isFinite(ship.z) || !isFinite(ship.heading)) { ship.x = 18; ship.z = 60; ship.heading = 0; ship.speed = 0; logErr50("sanity: ship position"); }
     if (!isFinite(ship.speed)) ship.speed = 0;
     if (!isFinite(ship.hull)) ship.hull = ship.hullMax || 100;
+    if (!isFinite(ship.sails)) ship.sails = 100;
+    if (!isFinite(ship.yawRate)) ship.yawRate = 0;
+    if (!isFinite(ledger.gold)) { ledger.gold = 0; logErr50("sanity: gold"); }
+    ["sugar", "rum", "coffee", "tobacco", "silk"].forEach(function (g) { if (!isFinite(ledger[g]) || ledger[g] < 0) { ledger[g] = 0; logErr50("sanity: " + g); } });
+    for (let i = 0; i < foes.length; i++) { const f = foes[i]; if (!f.gone && !isFinite(f.hull)) f.hull = f.hullMax || 100; }
     for (let i = 0; i < foes.length; i++) { const f = foes[i]; if (f.gone) continue; if (!isFinite(f.x) || !isFinite(f.z) || !isFinite(f.heading)) { const w = f.wps && f.wps[0]; f.x = w ? w[0] : 200; f.z = w ? w[1] : 200; f.heading = 0; f.speed = 0; logErr50("sanity: foe " + f.name); } if (!isFinite(f.hull)) f.hull = f.hullMax || 100; }
     if (!isFinite(camera.position.x) || !isFinite(camera.position.y) || !isFinite(camera.position.z)) { camera.position.set(ship.x, 12, ship.z - 20); logErr50("sanity: camera"); }
   }
@@ -15760,7 +15767,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       anchored = !anchored;
       anchorBtn.classList.toggle("on", anchored);
       tap46(anchorBtn);
-      if (anchored) { splashAt(ship.x + Math.sin(ship.heading) * 5, ship.z + Math.cos(ship.heading) * 5, false); buzz(20); }
+      if (anchored) { splashAt(ship.x + Math.sin(ship.heading) * 5, ship.z + Math.cos(ship.heading) * 5, false); buzz(20); } else buzz([10, 30, 10]);
       // Batch 50: dropping anchor with an enemy on you gets a warning, once a fight.
       if (anchored && !practice47) { const e50 = engagedFoe50(); if (e50 && anchorWarn50 !== e50.name) { anchorWarn50 = e50.name; say("Anchored with " + e50.name + " closing. Tap Weigh to get under way.", 3); } }
       ship.speed = 0;
