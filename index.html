@@ -4705,7 +4705,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);
   }
-  window.addEventListener("resize", resize);
+  // Batch 50: resize events (phone address bars, rotation) are folded into one per frame, and an unchanged size does nothing.
+  let resizeQ50 = false, lastSize50 = "";
+  function queueResize50() {
+    if (resizeQ50) return; resizeQ50 = true;
+    requestAnimationFrame(function () { resizeQ50 = false; const k = window.innerWidth + "x" + window.innerHeight; if (k === lastSize50) return; lastSize50 = k; resize(); });
+  }
+  window.addEventListener("resize", queueResize50);
+  window.addEventListener("orientationchange", function () { setTimeout(function () { lastSize50 = ""; queueResize50(); }, 250); });
   resize();
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
@@ -7024,7 +7031,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     tutWait = Math.max(tutWait, 8);
     flashFade(); // Batch 50: a fade covers the jump back to Bramble Quay
     if (practice47) { say("Practice fight lost. Nothing was saved and nothing lost. Reload and tap Continue to go back to your voyage.", 6); toast("Practice fight lost. Your saved voyage is untouched.", "Practice"); return; }
-    say("Hull gone. Towed back to Bramble Quay and patched to " + ship.hull + ". No salvage was taken: your gold, cargo and renown are kept; the crew's spirits took a knock.", 6);
+    mendAcc = -6; // Batch 50: the harbour crew wait a few seconds before patching on, so the HUD matches the number in this message
+    say("Hull gone. Towed back to Bramble Quay and patched to " + ship.hull + " (the crew patch more while you lie in harbour). No salvage was taken: your gold, cargo and renown are kept; the crew's spirits took a knock.", 6);
     toast("Towed back to Bramble Quay. No salvage was taken: gold, cargo and renown are kept. The hull is patched to " + ship.hull + " and the crew's spirits took a knock." + (x3 && x3.tut < 4 ? " Your lessons carry on where you left off." : ""), "Hull gone");
     writeSave();
   }
@@ -10268,6 +10276,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (s.z > 480) s.z = -340;
       if (s.z < -360) s.z = 440;
       s.group.position.set(s.x, 0, s.z);
+      // Batch 50: rain in squalls far from the ship is not animated (no per-frame upload for storms you cannot see).
+      if (Math.hypot(s.x - camera.position.x, s.z - camera.position.z) > s.r + 420) continue;
       const attr = s.rain.geometry.attributes.position;
       for (let p = 0; p < attr.count; p++) {
         let y = attr.getY(p) - dt * 10;
@@ -10277,15 +10287,20 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       attr.needsUpdate = true;
     }
     const squall = inSquallAt(ship.x, ship.z);
-    if (squall && sail === 2 && ship.sails > 0 && !playerSafe()) {
-      ship.sails = Math.max(0, ship.sails - 12 * dt * (x3 && x3.master ? 0.5 : 1) * (x3 && x3.stormCanvas ? 0.6 : 1));
+    // Batch 50: softer squalls. Full sail gets a 3 s grace after you enter one, then tears at a bit over half the old rate.
+    sqT50 = squall && sail === 2 ? sqT50 + dt : 0;
+    if (squall && sail === 2 && ship.sails > 0 && !playerSafe() && sqT50 > 3) {
+      ship.sails = Math.max(0, ship.sails - 6.5 * dt * (x3 && x3.master ? 0.5 : 1) * (x3 && x3.stormCanvas ? 0.6 : 1));
       if (!wearSaid && x3 && x3.tut >= 4) { wearSaid = true; say("The canvas is tearing in the squall. Take in sail!", 3); }
+      // Batch 50: one reminder each time the canvas drops past 60% and 30% while still at full sail in a squall.
+      { const band = ship.sails < 30 ? 2 : ship.sails < 60 ? 1 : 0; if (band > sqBand50 && x3 && x3.tut >= 4) say("Sails at " + Math.round(ship.sails) + "% and still tearing. Take in sail!", 2.5); sqBand50 = Math.max(sqBand50, band); }
       if (ship.sails <= 0 && !bareWarned) {
         bareWarned = true; addMorale(-2);
         say("Sails shredded. She will only creep until a merchant repairs them.", 4);
       }
     }
     if (ship.sails > 30) bareWarned = false;
+    if (!squall) sqBand50 = ship.sails < 30 ? 2 : ship.sails < 60 ? 1 : 0;
   }
 
   function updateSea(dt, input) {
@@ -10495,7 +10510,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function syncAnchor() {
     if (ship.anchorMesh) ship.anchorMesh.visible = !!anchored;
-    if (typeof anchorBtn !== "undefined" && anchorBtn) anchorBtn.classList.toggle("on", !!anchored);
+    if (typeof anchorBtn !== "undefined" && anchorBtn) { anchorBtn.classList.toggle("on", !!anchored); anchorBtn.textContent = anchored ? "Weigh" : "Anchor"; anchorBtn.setAttribute("aria-label", anchored ? "Weigh anchor" : "Drop anchor"); }
   }
 
   function poseHull(root, heading, roll, pitch) {
@@ -13371,6 +13386,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
   }
   let trimSaidT = 0, luffSaidT = 0, speedRecSaid = false;
+  let sqT50 = 0, sqBand50 = 0;
   let wearT = 0, wearSaid = false, reefWarnT = 0, stormFull = false, wasSq32 = false;
   let mapBand = 9;
   function updateMapNear() {
@@ -13378,11 +13394,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!x3 || !x3.hasMap || x3.mapSaid || mode !== "sea" || titleOn || x3.tut < 4) return;
     if (Math.hypot(ship.x - x3.mapX, ship.z - x3.mapZ) < 60) { x3.mapSaid = true; say("This is the spot on the map! Stop over the X, drop anchor and the crew will dive.", 4); buzz([30, 30, 30]); }
   }
-  let reefedAuto = false;
+  let reefedAuto = false, anchorWarn50 = "";
   function updateStormSails(dt) {
     if (!x3 || mode !== "sea" || titleOn || paused || fightOn || playerSafe()) return;
     const sq = inSquallAt(ship.x, ship.z);
-    if (sq && !wasSq32) { capTip("squall", "Squalls tear full sail. Tap the sail button down to half sail until you're through."); stormFull = false; if (sail === 2 && x3.tut >= 4) { say(x3.master ? "Into the squall under full sail! Your sailing master eases the sheets, but reef in." : "Into the squall under full sail! Reef in or the canvas will tear.", 3); buzz([40, 30, 40]); } }
+    if (sq && !wasSq32) { capTip("squall", "Squalls tear full sail. Tap the sail button down to half sail until you're through."); stormFull = false; if (sail === 2 && x3.tut >= 4) { say(x3.master ? "Into the squall under full sail! Your sailing master eases the sheets, but reef in." : "Into the squall under full sail! Reef in within a few seconds or the canvas will tear.", 3); buzz([40, 30, 40]); } }
     if (x3.autoReef && sq && !wasSq32 && sail === 2) { sail = 1; reefedAuto = true; say("Your bosun reefs to half sail for the squall.", 3); }
     if (x3.autoReef && !sq && wasSq32 && reefedAuto && sail === 1) { sail = 2; say("Clear of the squall. Full sail again.", 2.5); }
     if (!sq) reefedAuto = false;
@@ -13744,7 +13760,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3.bait > 0) L.push("Bait aboard for " + x3.bait + " more catches.");
     if (x3.qRiddle >= 1 && x3.qRiddle <= 3 && x3.riddleT > 480) L.push("Map-maker's hint: look near " + ["Gull Rock", "Deadman's Cove", "Belleisle's west beach"][x3.qRiddle - 1] + ".");
     if (x3.qContest === 2) L.push("Errand: claim the fishing prize at Salt Cay.");
-    L.push("Market board: " + ["sugar", "rum", "coffee", "tobacco", "silk"].map(function (g) { let lo = null, hi = null; PORTS.forEach(function (p) { const pr = PRICES[p.id][g]; if (!lo || pr.buy < PRICES[lo.id][g].buy) lo = p; if (!hi || pr.sell > PRICES[hi.id][g].sell) hi = p; }); return g + " " + PRICES[lo.id][g].buy + " " + lo.name.split(" ")[0] + " \u2192 " + PRICES[hi.id][g].sell + " " + hi.name.split(" ")[0]; }).join(", ") + ".");
+    L.push("Market board: " + ["sugar", "rum", "coffee", "tobacco", "silk"].map(function (g) { let lo = null, hi = null; PORTS.forEach(function (p) { const pr = PRICES[p.id][g]; if (!lo || pr.buy < PRICES[lo.id][g].buy) lo = p; if (!hi || pr.sell > PRICES[hi.id][g].sell) hi = p; }); if (lo.id === hi.id || PRICES[hi.id][g].sell <= PRICES[lo.id][g].buy) return null; /* Batch 50: only runs that turn a profit */ return g + " " + PRICES[lo.id][g].buy + " " + lo.name.split(" ")[0] + " \u2192 " + PRICES[hi.id][g].sell + " " + hi.name.split(" ")[0] + " (+" + (PRICES[hi.id][g].sell - PRICES[lo.id][g].buy) + ")"; }).filter(Boolean).join(", ").replace(/^$/, "no run turns a profit today") + ".");
     if (questMarks40().length) L.push(nearestErrand());
     L.push("New errands finished: " + x3.questsDone + ".");
     return L;
@@ -15745,6 +15761,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       anchorBtn.classList.toggle("on", anchored);
       tap46(anchorBtn);
       if (anchored) { splashAt(ship.x + Math.sin(ship.heading) * 5, ship.z + Math.cos(ship.heading) * 5, false); buzz(20); }
+      // Batch 50: dropping anchor with an enemy on you gets a warning, once a fight.
+      if (anchored && !practice47) { const e50 = engagedFoe50(); if (e50 && anchorWarn50 !== e50.name) { anchorWarn50 = e50.name; say("Anchored with " + e50.name + " closing. Tap Weigh to get under way.", 3); } }
       ship.speed = 0;
       ship.yawRate = 0;
       syncAnchor();
@@ -15949,6 +15967,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       invertHelm: !!invertHelm,
       tobacco: ledger.tobacco,
       silk: ledger.silk,
+      engaged50: engagedFoe50(),
       x3: (storeConsort(), LOWGFX47 ? Object.assign({}, x3, { lowGfx: !!x3.lowGfx0, lowGfx0: undefined }) : x3)
     };
     // Never write a broken number over a good save; heal the live value instead.
@@ -16191,9 +16210,30 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     dismissTitle();    showHowTo();
   }
 
+  // Batch 50: a fight in progress is saved with the ship you were fighting (name, hull, side and range), and Continue puts her back on you.
+  function engagedFoe50() {
+    if (mode !== "sea" || practice47) return null;
+    let best = null, bd = 120;
+    for (let i = 0; i < foes.length; i++) { const f = foes[i]; if (!f.alive || f.sinking || f.gone || !f.hunt || f.boss) continue; const d = Math.hypot(f.x - ship.x, f.z - ship.z); if (d < bd) { bd = d; best = f; } }
+    if (!best) return null;
+    return { name: best.name, hull: Math.round(best.hull), dx: Math.round(best.x - ship.x), dz: Math.round(best.z - ship.z) };
+  }
+  function restoreEngaged50(e) {
+    if (!e || mode !== "sea") return false;
+    const f = foes.find(function (o) { return o.name === e.name && !o.gone && !o.boss; });
+    if (!f || !f.alive) { toast(e.name + " broke off while you were away.", "Fight over"); return false; }
+    let fx = ship.x + (e.dx || 25), fz = ship.z + (e.dz || 0);
+    for (let k = 0; k < 8 && typeof spotAfloat === "function" && !spotAfloat(fx, fz); k++) { fx = ship.x + (fx - ship.x) * 1.2; fz = ship.z + (fz - ship.z) * 1.2 + 6; }
+    f.x = fx; f.z = fz; f.hull = clamp(e.hull, 1, f.hullMax); f.hunt = true; f.ignore = 0; f.cool = Math.max(f.cool || 0, 4);
+    if (f.root) f.root.position.set(f.x, 0, f.z);
+    if (f.bar) paintHullSprite(f.bar, f.hull, f.hullMax);
+    toast(f.name + " is still on you, hull " + Math.round(f.hull) + " of " + f.hullMax + ".", "Back in the fight");
+    return true;
+  }
   function startContinue(data) {
     applySave(data);
     dismissTitle();
+    try { if (data && data.engaged50) restoreEngaged50(data.engaged50); } catch (e) { logErr50("restore fight: " + e); }
     writeSave();
   }
 
@@ -17302,6 +17342,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       setBoss: function (h, c) { LEVIATHAN_HULL = h; LEVIATHAN_COOL = c; return [h, c]; },
       quickBattle: function () { quickBattle(); return { sail: sail, gold: ledger.gold }; },
       fire50: function (sg) { const s0 = x3.shots; const st = { mode: mode, fightOn: fightOn, ball: !!ballTemplate, hull: ship.hull, c0: coolS47[0], c1: coolS47[1], fc: fireCool }; fire(sg); return Object.assign(st, { fired: x3.shots - s0 }); },
+      eng50: function () { return engagedFoe50(); },
       h50: function (k) { if (k === "throw") throwOnce50 = true; if (k === "nan") { ship.x = NaN; if (foes[0]) foes[0].z = NaN; } return { errs: errs50.slice(), t: waterUniforms.uTime.value, x: ship.x, z: ship.z, fz: foes[0] ? foes[0].z : null, boot: boot.classList.contains("hide") ? "" : boot.textContent }; },
       saveNow: function () { lastSaveTxt50 = ""; writeSave(); return !!localStorage.getItem("salt-and-shot-3d-v1"); },
       setHull: function (n) { ship.hull = n; return ship.hull; },
