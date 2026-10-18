@@ -4711,7 +4711,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (resizeQ50) return; resizeQ50 = true;
     requestAnimationFrame(function () { resizeQ50 = false; const k = window.innerWidth + "x" + window.innerHeight; if (k === lastSize50) return; lastSize50 = k; resize(); });
   }
-  window.addEventListener("resize", queueResize50);
+  window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", function () { setTimeout(function () { lastSize50 = ""; queueResize50(); }, 250); });
   resize();
 
@@ -9488,7 +9488,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 49";
+    ver.textContent = "Version: batch 50";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -10293,7 +10293,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       ship.sails = Math.max(0, ship.sails - 6.5 * dt * (x3 && x3.master ? 0.5 : 1) * (x3 && x3.stormCanvas ? 0.6 : 1));
       if (!wearSaid && x3 && x3.tut >= 4) { wearSaid = true; say("The canvas is tearing in the squall. Take in sail!", 3); }
       // Batch 50: one reminder each time the canvas drops past 60% and 30% while still at full sail in a squall.
-      { const band = ship.sails < 30 ? 2 : ship.sails < 60 ? 1 : 0; if (band > sqBand50 && x3 && x3.tut >= 4) say("Sails at " + Math.round(ship.sails) + "% and still tearing. Take in sail!", 2.5); sqBand50 = Math.max(sqBand50, band); }
+      { const band = ship.sails < 30 ? 2 : ship.sails < 60 ? 1 : 0; if (band > sqBand50 && x3 && x3.tut >= 4) { say("Sails at " + Math.round(ship.sails) + "% and still tearing. Take in sail!", 2.5); buzz([30, 20, 30]); } sqBand50 = Math.max(sqBand50, band); }
       if (ship.sails <= 0 && !bareWarned) {
         bareWarned = true; addMorale(-2);
         say("Sails shredded. She will only creep until a merchant repairs them.", 4);
@@ -13401,6 +13401,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (sq && !wasSq32) { capTip("squall", "Squalls tear full sail. Tap the sail button down to half sail until you're through."); stormFull = false; if (sail === 2 && x3.tut >= 4) { say(x3.master ? "Into the squall under full sail! Your sailing master eases the sheets, but reef in." : "Into the squall under full sail! Reef in within a few seconds or the canvas will tear.", 3); buzz([40, 30, 40]); } }
     if (x3.autoReef && sq && !wasSq32 && sail === 2) { sail = 1; reefedAuto = true; say("Your bosun reefs to half sail for the squall.", 3); }
     if (x3.autoReef && !sq && wasSq32 && reefedAuto && sail === 1) { sail = 2; say("Clear of the squall. Full sail again.", 2.5); }
+    // Batch 50: leaving a squall with torn canvas says how much is left.
+    if (!sq && wasSq32 && !reefedAuto && ship.sails < 90 && x3.tut >= 4) say("Clear of the squall. Sails at " + Math.round(ship.sails) + "%: a merchant can mend them.", 3);
     if (!sq) reefedAuto = false;
     wasSq32 = sq;
     if (!sq) return;
@@ -16328,7 +16330,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         tapBoth47(rb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } const now = performance.now(); if (!armedR || now - armedR > 60000) { armedR = now; rb.textContent = "Swap back? Tap again"; return; } try { const cur = localStorage.getItem(SAVE_KEY); localStorage.setItem(SAVE_KEY, bk); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); else localStorage.removeItem(SAVE_KEY + "-before-new"); } catch (err) { return; } importReload47 = true; location.reload(); }); boot.appendChild(rb); } }
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 49";
+    tv.textContent = "Version: batch 50";
     // Batch 50: the version sits in the bottom-right corner of the screen, so a long tip or a short screen can never push it out of view.
     tv.style.cssText = "position:fixed;right:calc(8px + env(safe-area-inset-right));bottom:calc(6px + env(safe-area-inset-bottom));font-size:11px;opacity:.55;pointer-events:none;z-index:2";
     boot.appendChild(tv);
