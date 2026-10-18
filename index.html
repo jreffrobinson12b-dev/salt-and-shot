@@ -6792,6 +6792,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       showThinCrew(foe);
       foe.sinking = true;
       foe.sink = 0;
+      stinger47("win");
       dropSalvage(foe.x, foe.z);
       markCroweDown(foe);
       const offense = offend(foe);
@@ -8488,6 +8489,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   ];
   function seaGust() {
     gustT = 25;
+    gustWhoosh47();
     if (ship.root) floatText(ship.x, 7, ship.z, "fair gust", "#e8f6ff");
     if (dayU.value > 0.4 && Math.random() < 0.5) { addSight("albatross"); addMorale(2, "an albatross"); albT = 15; say("A fair gust, and an albatross glides over the mast. Sailors call it luck.", 3.5); }
     else say(dayU.value < 0.25 ? "A night breeze fills the sails." : "A fair gust fills the sails.", 3.2);
@@ -8583,7 +8585,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   document.getElementById("ui").appendChild(aimTip);
   polishCss.textContent += "@media (max-height:440px){#howto>div{font-size:13px!important;line-height:1.3!important;padding:10px 14px!important;max-width:460px!important}#howto>div>div:first-child{margin-bottom:4px!important}#howto>div>div:nth-child(2){font-size:18px!important;margin-bottom:2px!important}#howto button{height:42px!important;margin-top:8px!important}}";
   polishCss.textContent += "#ui button{-webkit-tap-highlight-color:transparent}#ui button:active{opacity:.85}#board.ready45{box-shadow:0 0 0 3px rgba(242,212,138,.85),0 0 10px rgba(242,212,138,.5)}@keyframes rain46{from{background-position:0 0}to{background-position:-40px 200px}}@keyframes tap46{0%{opacity:.6}100%{opacity:1}}#fire.tap46,#sail.tap46,#anchor.tap46{animation:tap46 .35s ease-out}@keyframes hint46{from{opacity:0}to{opacity:1}}@keyframes gust46{0%,100%{color:inherit}50%{color:#9dffb0}}#windlabel.gust46{color:#9dffb0}#hint{animation:hint46 .3s ease-out}#ui button:disabled{opacity:.6}@keyframes menu46{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}#townmenu{animation:menu46 .18s ease-out}@keyframes gold46{0%{color:#ffe08a;text-shadow:0 0 8px rgba(255,214,90,.9)}100%{}}#sub.gold46{animation:gold46 .9s ease-out}@keyframes toast46{from{opacity:0;margin-top:-6px}to{opacity:1;margin-top:0}}#toast{animation:toast46 .22s ease-out}";
-  polishCss.textContent += "#ui button{transition:transform .08s ease-out}#ui button:active{transform:scale(.95)}button:focus-visible{outline:2px solid #f2d48a;outline-offset:2px}#setbtns{overscroll-behavior:contain;scroll-behavior:smooth}#savepanel47 button{border-radius:10px}#savepanel47 textarea:focus{outline:2px solid #f2d48a}#toast{box-shadow:0 6px 22px rgba(0,0,0,.45);border-radius:12px}#hint{border-radius:12px}";
+  polishCss.textContent += "#ui button{transition:transform .08s ease-out}#ui button:active{transform:scale(.95)}button:focus-visible{outline:2px solid #f2d48a;outline-offset:2px}#setbtns{overscroll-behavior:contain;scroll-behavior:smooth}#savepanel47 button{border-radius:10px}#savepanel47 textarea:focus{outline:2px solid #f2d48a}#toast{box-shadow:0 6px 22px rgba(0,0,0,.45);border-radius:12px}#hint{border-radius:12px}#ui button,#boot button,#setpanel button{touch-action:manipulation;-webkit-user-select:none;user-select:none;cursor:pointer}#ui button:disabled{cursor:not-allowed}::selection{background:rgba(242,212,138,.45);color:#fff}#setbtns,#savepanel47>div,#mbody,#logpanel{scrollbar-width:thin;scrollbar-color:rgba(242,212,138,.5) transparent}#stick.on47{box-shadow:0 0 0 2px rgba(242,212,138,.55),0 0 16px rgba(242,212,138,.25)}#knob{will-change:transform}";
   polishCss.textContent += "@keyframes ready45{0%,100%{box-shadow:0 0 0 2px rgba(242,212,138,.5)}50%{box-shadow:0 0 0 4px rgba(242,212,138,.95),0 0 14px rgba(242,212,138,.6)}}#act.ready45{box-shadow:0 0 0 3px rgba(242,212,138,.85),0 0 10px rgba(242,212,138,.5)}";
   polishCss.textContent += "@keyframes hullwarn{0%,100%{opacity:1}50%{opacity:.35}}#hullfill.hulllow{background:#e0473a!important;animation:hullwarn .9s ease-in-out 6}" +
     "@keyframes logglow{0%,100%{box-shadow:0 0 0 2px #ffd65a}50%{box-shadow:0 0 0 5px rgba(255,214,90,.35)}}#log.fresh{animation:logglow 1.1s ease-in-out 6}";
@@ -9721,13 +9723,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     writeSave();
   }
 
+  // Batch 47: keyboard steering eases in over about a tenth of a second instead of snapping to full helm.
+  const keyEase47 = { s: 0, f: 0, t: 0 };
   function readSteer() {
     let steer = joy.x;
     let forward = joy.y;
-    if (keys["a"] || keys["arrowleft"]) steer -= 1;
-    if (keys["d"] || keys["arrowright"]) steer += 1;
-    if (keys["w"] || keys["arrowup"]) forward += 1;
-    if (keys["s"] || keys["arrowdown"]) forward -= 1;
+    { const now = performance.now(), d = clamp((now - (keyEase47.t || now)) / 1000, 0, 0.1); keyEase47.t = now; const ts = ((keys["d"] || keys["arrowright"]) ? 1 : 0) - ((keys["a"] || keys["arrowleft"]) ? 1 : 0), tf = ((keys["w"] || keys["arrowup"]) ? 1 : 0) - ((keys["s"] || keys["arrowdown"]) ? 1 : 0), k = 1 - Math.exp(-d / 0.07); keyEase47.s += (ts - keyEase47.s) * k; keyEase47.f += (tf - keyEase47.f) * k; if (Math.abs(ts - keyEase47.s) < 0.02) keyEase47.s = ts; if (Math.abs(tf - keyEase47.f) < 0.02) keyEase47.f = tf; steer += keyEase47.s; forward += keyEase47.f; }
     return { steer: clamp(steer, -1, 1), forward: clamp(forward, -1, 1) };
   }
 
@@ -13707,7 +13708,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function showExport47() {
     const code = saveCode47(), p = panel47("Export save");
     const note = document.createElement("div"); note.textContent = "Copy this code, or download the file, to move your voyage to another browser or to the app."; p.box.appendChild(note);
-    const ta = document.createElement("textarea"); ta.id = "savecode47"; ta.readOnly = true; ta.value = code; ta.style.cssText = "width:100%;height:96px;margin-top:8px;font:11px/1.3 ui-monospace,monospace;background:#081520;color:#f4efe2;border:1px solid #3a5a70;border-radius:8px;padding:6px;word-break:break-all";
+    const ta = document.createElement("textarea"); ta.id = "savecode47"; ta.readOnly = true; ta.value = code; ta.addEventListener("focus", function () { ta.select(); }); ta.style.cssText = "width:100%;height:96px;margin-top:8px;font:11px/1.3 ui-monospace,monospace;background:#081520;color:#f4efe2;border:1px solid #3a5a70;border-radius:8px;padding:6px;word-break:break-all";
     p.box.appendChild(ta);
     const msg = document.createElement("div"); msg.id = "savemsg47"; msg.style.cssText = "min-height:18px;margin-top:6px;color:#9dffb0"; p.box.appendChild(msg);
     p.box.appendChild(btn47("Copy code", function () { ta.select(); let done = false; try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(code).then(function () { msg.textContent = "Copied."; }, function () { msg.textContent = document.execCommand && document.execCommand("copy") ? "Copied." : "Select the code and copy it by hand."; }); done = true; } } catch (e) { done = false; } if (!done) msg.textContent = document.execCommand && document.execCommand("copy") ? "Copied." : "Select the code and copy it by hand."; uiTick47(); }));
@@ -13744,6 +13745,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // The first tap or key unlocks sound, so music starts without waiting for the first cannon.
   function unlockAudio47() { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === "suspended") audioCtx.resume(); if (!noiseBuf) noiseBurst(0.0001, 0.01, 100); } catch (e) { /* audio optional */ } }
   window.addEventListener("pointerdown", unlockAudio47, true);
+  window.addEventListener("pointerdown", function (e) { const b = e.target && e.target.closest ? e.target.closest("#ui button, #boot button, #townmenu button") : null; if (b && !b.disabled) uiTick47(); }, true);
   window.addEventListener("keydown", unlockAudio47, true);
 
   // Music: a small generative score in D dorian. Moods: title, sea, night, town, battle. Moods crossfade; cannon fire ducks the music.
@@ -13806,9 +13808,31 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function flap47() { try { if (!audioCtx || !noiseBuf) return; const t = audioCtx.currentTime; for (let i = 0; i < 3; i++) { const s = audioCtx.createBufferSource(), f = audioCtx.createBiquadFilter(), g = audioCtx.createGain(); s.buffer = noiseBuf; f.type = "bandpass"; f.frequency.value = 500 + i * 140; f.Q.value = 1.4; g.gain.setValueAtTime(0.0001, t + i * 0.07); g.gain.exponentialRampToValueAtTime(0.06, t + i * 0.07 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.07 + 0.12); s.connect(f); f.connect(g); g.connect(audioOut()); s.start(t + i * 0.07, Math.random() * 0.5); s.stop(t + i * 0.07 + 0.14); } } catch (e) { /* optional */ } }
   function chain47() { try { if (!audioCtx) return; const t = audioCtx.currentTime; for (let i = 0; i < 7; i++) note47(t + i * 0.055 + Math.random() * 0.02, 2200 + Math.random() * 900, 0.05, 0.03, "square", 4200, audioOut()); } catch (e) { /* optional */ } }
   let sail47 = null, anch47 = null, whoosh47 = false;
+  function clack47() { try { if (!audioCtx || audioCtx.state !== "running") return; const t = audioCtx.currentTime; note47(t, 300, 0.07, 0.07, "square", 1200, audioOut()); note47(t + 0.05, 190, 0.09, 0.06, "square", 900, audioOut()); } catch (e) { /* optional */ } }
+  function gustWhoosh47() { try { if (!audioCtx || !noiseBuf) return; const t = audioCtx.currentTime, s2 = audioCtx.createBufferSource(), f = audioCtx.createBiquadFilter(), g = audioCtx.createGain(); s2.buffer = noiseBuf; s2.loop = true; f.type = "bandpass"; f.Q.value = 0.8; f.frequency.setValueAtTime(300, t); f.frequency.linearRampToValueAtTime(1100, t + 1.2); f.frequency.linearRampToValueAtTime(500, t + 2.4); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06, t + 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.5); s2.connect(f); f.connect(g); g.connect(audioOut()); s2.start(t); s2.stop(t + 2.6); } catch (e) { /* optional */ } }
+  // Short musical stingers: a rising call when an enemy goes down, a warm chord on promotion, a soft bell on reaching harbour.
+  function stinger47(kind) { try { if (!audioCtx || audioCtx.state !== "running" || musicLevel47() <= 0) return; const t = audioCtx.currentTime, dest = mus47 ? mus47.bus : audioOut(), lv = 1.6; duckMusic47(0.5, 1.2);
+      if (kind === "win") [62, 66, 69, 74].forEach(function (n, i) { note47(t + i * 0.12, midiHz47(n), 0.5, 0.09 * lv, "triangle", 3000, dest); });
+      else if (kind === "rank") [57, 62, 66, 69].forEach(function (n) { note47(t, midiHz47(n), 1.6, 0.05 * lv, "sawtooth", 1500, dest); });
+      else if (kind === "port") [81, 76].forEach(function (n, i) { note47(t + i * 0.35, midiHz47(n), 1.4, 0.05 * lv, "sine", 4000, dest); note47(t + i * 0.35, midiHz47(n + 12) * 1.01, 0.8, 0.015 * lv, "sine", 5000, dest); });
+    } catch (e) { /* optional */ } }
+  let safe47 = null, rank47 = null, stepT47 = 0, amb47 = null, chirpT47 = 2;
+  function updateAmb47(dt) {
+    if (!audioCtx || audioCtx.state !== "running" || !noiseBuf) return;
+    if (!amb47) { const s2 = audioCtx.createBufferSource(); s2.buffer = noiseBuf; s2.loop = true; const f = audioCtx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 2500; const g = audioCtx.createGain(); g.gain.value = 0; s2.connect(f); f.connect(g); g.connect(audioOut()); s2.start(); amb47 = { g: g }; }
+    const t = audioCtx.currentTime, wet = !titleOn && !paused && mode === "sea" && inSquallAt(ship.x, ship.z);
+    amb47.g.gain.setTargetAtTime(wet ? 0.03 : 0, t, 0.6);
+    // Crickets in town at night.
+    if (mode === "land" && !paused && !menuOpen && dayU.value < 0.3) { chirpT47 -= dt; if (chirpT47 <= 0) { chirpT47 = 0.6 + Math.random() * 1.8; for (let i = 0; i < 3; i++) note47(t + i * 0.06, 4200 + Math.random() * 300, 0.035, 0.012, "sine", 6000, audioOut()); } }
+    // Soft footsteps ashore, faster when running.
+    if (mode === "land" && person.moving && !menuOpen) { stepT47 -= dt; if (stepT47 <= 0) { stepT47 = run45 > 0.5 ? 0.27 : 0.38; noiseBurst(0.035, 0.05, 700 + Math.random() * 300); } } else stepT47 = 0.1;
+  }
   function update47(dt) {
     updateMusic47(dt);
     if (!x3 || titleOn) return;
+    updateAmb47(dt);
+    { const sf = mode === "sea" && typeof playerSafe === "function" && playerSafe(); if (safe47 === false && sf) stinger47("port"); safe47 = sf; }
+    { const r = rankOf(); if (rank47 !== null && r > rank47) stinger47("rank"); rank47 = r; }
     if (sail47 !== null && sail !== sail47) { flap47(); buzz(12); }
     sail47 = sail;
     if (anch47 !== null && anchored !== anch47) chain47();
@@ -13955,7 +13979,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const k = fireCool > 0.05 && sea ? 1 - fireCool / Math.max(0.1, relMax45) : 1;
       rel45.style.opacity = k < 1 ? "1" : "0";
       if (k < 1) { const dg = Math.round(k * 24) * 15; if (rel45.dataset.dg !== String(dg)) { rel45.dataset.dg = String(dg); rel45.style.background = "conic-gradient(rgba(242,212,138,.55) " + dg + "deg, rgba(0,0,0,.25) 0)"; } }
-      if (rel45.dataset.was === "1" && k >= 1 && fightish45()) buzz(10);
+      if (rel45.dataset.was === "1" && k >= 1) { if (fightish45()) buzz(10); clack47(); }
       rel45.dataset.was = k < 1 ? "1" : "0";
     }
     // Faint smoke trails behind cannonballs, darker for incoming shot.
@@ -15271,8 +15295,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const max = r.width * 0.42;
       const m = Math.hypot(dx, dy) || 1;
       if (m > max) { dx *= max / m; dy *= max / m; }
-      joy.x = dx / max;
-      joy.y = -dy / max;
+      { const kk = Math.hypot(dx, dy) / max, dz = 0.05, sc = kk < dz ? 0 : (kk - dz) / (1 - dz) / kk; joy.x = dx / max * sc; joy.y = -dy / max * sc; }
+      if (knob.style.transition !== "none") knob.style.transition = "none";
+      stick.classList.add("on47");
       knob.style.transform = "translate(" + dx + "px," + dy + "px)";
     }
     stick.addEventListener("pointerdown", function (e) {
@@ -15287,6 +15312,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (e.pointerId !== pid) return;
       pid = null;
       joy.x = 0; joy.y = 0;
+      knob.style.transition = "transform .2s cubic-bezier(.3,1.5,.5,1)";
+      stick.classList.remove("on47");
       knob.style.transform = "translate(0px,0px)";
     }
     stick.addEventListener("pointerup", endStick);
