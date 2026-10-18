@@ -8437,7 +8437,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boom();
     buzz(25);
     ship.roll = (ship.roll || 0) - sign * 0.05; shakeCam(0.07);
-    say((sign > 0 ? "Port battery" : "Starboard battery") + (assist && assist.name ? ", laid on " + assist.name + ". " : ". ") + word, 1.2);
+    // Batch 48: a volley with nobody in reach says how far off she is, so short splashes make sense.
+    let far48 = ""; if (!assist) { const rch = gunReach48(gtv), nf = nearFoe47(rch * 2.2); if (nf && nf.sign === sign && nf.fromLine >= BEAR_MIN && nf.d > rch) far48 = " Out of reach: she is " + Math.round(nf.d) + " yd off, your guns carry about " + Math.round(rch) + "."; }
+    say((sign > 0 ? "Port battery" : "Starboard battery") + (assist && assist.name ? ", laid on " + assist.name + ". " : ". ") + word + far48, far48 ? 2.4 : 1.2);
   }
 
   const SPL_GEO = { big: new THREE.SphereGeometry(0.6, 8, 6), small: new THREE.SphereGeometry(0.35, 8, 6), ring: new THREE.RingGeometry(0.5, 0.8, 20), ring2: new THREE.RingGeometry(0.3, 0.45, 20), spout: new THREE.CylinderGeometry(0.12, 0.45, 3.2, 8, 1, true) };
@@ -9833,6 +9835,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     chartBtn.style.display = "none";
     chartPanel.style.display = "none";
     flashFade();
+    // Batch 48: tell new captains once how to run.
+    if (x3 && !x3.tipRun48) { x3.tipRun48 = true; setTimeout(function () { if (mode === "land" && noticeT <= 0) say(IS_PHONE ? "Push the stick all the way to break into a run." : "Walk with W or the arrow keys. Hold Shift, or keep W held, to run.", 4); }, 1800); }
     writeSave();
   }
 
