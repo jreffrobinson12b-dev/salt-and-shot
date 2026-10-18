@@ -3823,8 +3823,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     "button:active{box-shadow:0 1px 0 rgba(90,60,20,.55);opacity:.92}" +
     "button.ghost{background:linear-gradient(180deg,rgba(18,34,50,.7),rgba(6,16,26,.62));box-shadow:0 2px 6px rgba(0,0,0,.3);text-shadow:none}" +
     "#map{box-shadow:0 0 0 2px rgba(242,212,138,.55),0 4px 12px rgba(0,0,0,.4),inset 0 0 14px rgba(0,0,0,.45)}" +
-    "#hullfill{background:linear-gradient(90deg,#4fa83a,#8fdc58)!important}#hullfill.hulllow{background:linear-gradient(90deg,#b8321e,#ef7a3a)!important}" +
+    "#hullfill.hullmid49{background:linear-gradient(90deg,#c98a1e,#f0c040)!important}#hullfill{background:linear-gradient(90deg,#4fa83a,#8fdc58)!important}#hullfill.hulllow{background:linear-gradient(90deg,#b8321e,#ef7a3a)!important}" +
     "#toast{background:linear-gradient(180deg,rgba(46,34,16,.95),rgba(24,18,8,.94))!important;box-shadow:0 0 0 1px rgba(0,0,0,.6),0 6px 20px rgba(0,0,0,.55),inset 0 0 18px rgba(242,212,138,.12)!important}" +
+    "#townmenu{background:radial-gradient(ellipse at 50% -10%,#1d3a4c 0%,#10202c 55%,#0a161f 100%)!important}#townmenu>div{animation:menuIn49 .22s ease-out}@keyframes menuIn49{from{opacity:0}to{opacity:1}}" +
+    "#mtitle{color:#f2d48a;letter-spacing:.3px;border-bottom:1px solid rgba(242,212,138,.3);padding-bottom:8px;text-shadow:0 2px 6px rgba(0,0,0,.45)}#mpurse{color:#f2d48a;font-weight:600}#mbody{color:#e9e4d6}#mbtns>button[data-dim='1']{filter:saturate(.55)}" +
+    "#setpanel>div{animation:menuIn49 .2s ease-out}#setpanel>div{box-shadow:0 10px 30px rgba(0,0,0,.5)}" +
+    "@keyframes badge49{0%,100%{box-shadow:0 0 0 0 rgba(242,212,138,0)}50%{box-shadow:0 0 0 4px rgba(242,212,138,.35)}}#practice49{animation:badge49 1.4s ease-in-out 3}" +
+    "@media (prefers-reduced-motion:reduce){#townmenu>div,#setpanel>div,#logpanel>div,#practice49{animation:none}}#mbtns>button.topleave{background:rgba(8,20,32,.55)!important;color:#f2d48a!important;border:1px solid rgba(242,212,138,.55)!important}#mbtns>button{letter-spacing:.2px}" +
     "#hint.sea49{background:rgba(6,14,22,.32)!important;height:auto!important;min-height:0!important;font-size:12.5px!important;max-width:min(380px,calc(100vw - 24px))!important;padding:3px 10px!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;transition:opacity .6s}" +
     "#hint{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,.12)}" +
     "h1{text-shadow:0 2px 0 #000,0 0 10px rgba(0,0,0,.45)!important}" +
@@ -3904,7 +3909,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const hullHud = document.createElement("div");
   hullHud.id = "hullhud";
   hullHud.style.cssText = "position:absolute;left:12px;top:calc(58px + env(safe-area-inset-top));width:168px;pointer-events:none;font-family:system-ui,sans-serif;font-size:12px;font-weight:600;min-height:44px;text-shadow:0 1px 2px #000";
-  hullHud.innerHTML = '<div id="hulllabel" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Hull 100 · Sails 100%</div><div style="margin-top:3px;height:9px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,.7);background:rgba(0,0,0,.4)"><div id="hullfill" style="height:100%;width:100%;background:#7dce4a"></div></div><div id="sailread" style="display:none;margin:0;padding:0;line-height:12px;height:12px;font-size:11px">Sails 0%</div>';
+  hullHud.innerHTML = '<div id="hulllabel" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Hull 100 · Sails 100%</div><div style="margin-top:3px;height:9px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,.7);background:rgba(0,0,0,.4);position:relative"><div id="hulllag49" style="position:absolute;left:0;top:0;height:100%;width:100%;background:rgba(255,236,190,.75);transition:width .6s ease-in .4s"></div><div id="hullfill" style="position:relative;height:100%;width:100%;background:#7dce4a"></div></div><div id="sailread" style="display:none;margin:0;padding:0;line-height:12px;height:12px;font-size:11px">Sails 0%</div>';
   document.getElementById("ui").appendChild(hullHud);
   const townMenu = document.createElement("div");
   townMenu.id = "townmenu";
@@ -6388,11 +6393,39 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
   }
 
-  function boom() {
+  // Batch 49: boom(x, z) places other ships' and forts' guns: quieter and duller with distance, and panned to the side they fire from. Your own guns stay full and centred.
+  function boomOut49(x, z) {
+    if (x == null || !audioCtx) return audioOut();
+    const d = Math.hypot(x - camera.position.x, z - camera.position.z);
+    const k = clamp(1 - d / 260, 0.22, 1);
+    const g = audioCtx.createGain(); g.gain.value = k;
+    const f = audioCtx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 600 + 7000 * k * k;
+    g.connect(f);
+    let tail = f;
+    if (audioCtx.createStereoPanner) {
+      const pn = audioCtx.createStereoPanner();
+      const rx = Math.cos(camYawNow49()) * (x - camera.position.x) - Math.sin(camYawNow49()) * (z - camera.position.z);
+      pn.pan.value = clamp(-rx / Math.max(20, d) * 0.8, -0.8, 0.8);
+      f.connect(pn); tail = pn;
+    }
+    tail.connect(audioOut());
+    setTimeout(function () { try { g.disconnect(); } catch (e) { /* gone */ } }, 1500);
+    return g;
+  }
+  // Batch 49: a ball that only just misses you whistles overhead before it splashes.
+  function whistle49() {
+    try { if (!audioCtx || audioCtx.state !== "running") return; const t = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(1900, t); o.frequency.exponentialRampToValueAtTime(650, t + 0.38);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.045, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      o.connect(g); g.connect(audioOut()); o.start(t); o.stop(t + 0.42); } catch (e) { /* audio optional */ }
+  }
+  function camYawNow49() { const v = new THREE.Vector3(); camera.getWorldDirection(v); return Math.atan2(v.x, v.z); }
+  function boom(x, z) {
     try {
       audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === "suspended") audioCtx.resume();
       const t = audioCtx.currentTime;
+      const out49 = boomOut49(x, z);
       const o = audioCtx.createOscillator();
       const g = audioCtx.createGain();
       o.type = "triangle";
@@ -6400,16 +6433,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       o.frequency.exponentialRampToValueAtTime(45, t + 0.28);
       g.gain.setValueAtTime(0.18, t);
       g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-      o.connect(g); g.connect(audioOut());
+      o.connect(g); g.connect(out49);
       o.start(t); o.stop(t + 0.36);
-      noiseBurst(0.22, 0.4, 900);
-      { const s2 = audioCtx.createOscillator(), g2 = audioCtx.createGain(); s2.type = "sine"; s2.frequency.setValueAtTime(62, t); s2.frequency.exponentialRampToValueAtTime(30, t + 0.5); g2.gain.setValueAtTime(0.16, t); g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.55); s2.connect(g2); g2.connect(audioOut()); if (mus47 && mus47.rev) g2.connect(mus47.rev.in); s2.start(t); s2.stop(t + 0.6); }
-      duckMusic47(0.6, 0.6);
+      noiseBurst(0.22, 0.4, 900, out49);
+      { const s2 = audioCtx.createOscillator(), g2 = audioCtx.createGain(); s2.type = "sine"; s2.frequency.setValueAtTime(62, t); s2.frequency.exponentialRampToValueAtTime(30, t + 0.5); g2.gain.setValueAtTime(0.16, t); g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.55); s2.connect(g2); g2.connect(out49); if (mus47 && mus47.rev) g2.connect(mus47.rev.in); s2.start(t); s2.stop(t + 0.6); }
+      duckMusic47(x == null ? 0.6 : 0.8, 0.6);
     } catch (e) { /* audio optional */ }
   }
 
   let noiseBuf = null;
-  function noiseBurst(vol, len, freq) {
+  function noiseBurst(vol, len, freq, dest) {
     try {
       if (!audioCtx) return;
       if (!noiseBuf) {
@@ -6426,7 +6459,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const g = audioCtx.createGain();
       g.gain.setValueAtTime(vol, t);
       g.gain.exponentialRampToValueAtTime(0.001, t + len);
-      src.connect(f); f.connect(g); g.connect(audioOut());
+      src.connect(f); f.connect(g); g.connect(dest || audioOut());
       src.start(t); src.stop(t + len + 0.02);
     } catch (e) { /* audio optional */ }
   }
@@ -7019,7 +7052,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const shot = shots[shots.length - 1];
       shot.g = 0;
       shot.fortId = gun.id;
-      boom();
+      boom(gun.x, gun.z);
     }
   }
 
@@ -7073,6 +7106,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     buzz(n >= 20 ? [60, 40, 60] : 50);
     loseHands(Math.ceil(n / 14));
     if (typeof hitFlash === "function") hitFlash(n);
+    if (ship.root && n >= 8) crewEmote(ship.root, "interact-right", 0.6, 0.05); // Batch 49: the crew flinch and scramble when a broadside strikes home
     ship.hull = Math.max(0, ship.hull - n);
     if (x3) x3.battleDmg += n;
     floatText(ship.x, 8, ship.z, "-" + n, n >= 15 ? "#ff7a6a" : "#ffb4a8");
@@ -8074,6 +8108,24 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       smokes.push({ mesh: mesh, life: 2.2, max: 2.2, y0: mesh.position.y, grow: 1.1, shared: true });
     }
   }
+  // Batch 49: shot-torn sails flap and shiver in the wind; the worse the tear, the more they flog.
+  let flutT49 = 0;
+  function flutter49(dt) {
+    if (mode !== "sea" || (x3 && x3.lowGfx)) return;
+    flutT49 += dt;
+    const list = [[ship.root, ship.sails]];
+    for (let i = 0; i < foes.length; i++) if (foes[i].root && !foes[i].gone) list.push([foes[i].root, foes[i].sails]);
+    for (let i = 0; i < list.length; i++) {
+      const parts = clothParts(list[i][0]); if (!parts) continue;
+      const torn = Math.max(0, Math.min(1, (70 - (typeof list[i][1] === "number" ? list[i][1] : 100)) / 70));
+      for (let j = 0; j < parts.length; j++) {
+        const c = parts[j]; if (c.rz49 == null) c.rz49 = c.obj.rotation.z;
+        if (torn <= 0 && !c.fl49) continue;
+        c.fl49 = torn > 0;
+        c.obj.rotation.z = c.rz49 + (torn > 0 ? (Math.sin(flutT49 * 9 + j * 1.7) * 0.6 + Math.sin(flutT49 * 15.3 + j) * 0.4) * 0.05 * torn : 0);
+      }
+    }
+  }
   function puffTiny(x, y, z) {
     const mesh = new THREE.Mesh(
       new THREE.SphereGeometry(0.26, 8, 6),
@@ -8282,7 +8334,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         f.root.rotation.y = f.heading;
         poseHull(f.root, f.heading, Math.min(0.5, f.sink * 0.22) * (i % 2 ? 1 : -1), -Math.min(0.35, f.sink * 0.14));
         if (f.bar) f.bar.material.opacity = Math.max(0, 1 - f.sink / 2);
+        // Batch 49: water boils round a sinking hull, and she goes under with a last big splash.
+        f.bub49 = (f.bub49 || 0) - dt;
+        if (f.bub49 <= 0 && f.sink < 2.5 && Math.hypot(f.x - camera.position.x, f.z - camera.position.z) < 150) { f.bub49 = 0.35; const a = Math.random() * Math.PI * 2; splashAt(f.x + Math.sin(a) * 2.5, f.z + Math.cos(a) * 2.5, false); }
         if (f.sink > 2.6) {
+          if (Math.hypot(f.x - camera.position.x, f.z - camera.position.z) < 150) splashAt(f.x, f.z, true);
           scene.remove(f.root);
           if (f.bar && f.bar.material) {
             if (f.bar.material.map) f.bar.material.map.dispose();
@@ -8374,7 +8430,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
             f.cool = f.boss ? LEVIATHAN_COOL * diffK("foeCool") : ((f.thin > 0 ? 10 : 7) - (foeTemper(f) === "bold" ? 1 : 0)) * diffK("foeCool")
             if (f === qbFoe47 && qbCalm47 > 0) f.cool *= 1.6; // Batch 48: the quick-battle demo foe fires slower and hits half as hard.
             if (!f.boss && rankOf() === 0) f.cool *= 1.1;
-            boom();
+            boom(f.x, f.z);
           }
         }
       }
@@ -9403,7 +9459,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 48";
+    ver.textContent = "Version: batch 49";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -9651,7 +9707,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (d < 48) {
         c.cool = 8.5;
         puffAt(c.x, 3.5, c.z);
-        boom();
+        boom(c.x, c.z);
         const dmg = Math.round(hullSpec(c.hullId).damage * 0.45);
         splashAt(t.x, t.z, true);
         damageFoe(t, dmg);
@@ -9836,7 +9892,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           o.cool = 6 + Math.random() * 2;
           puffAt(o.x, 3.4, o.z);
           splashAt(other.x + (Math.random() - 0.5) * 3, other.z + (Math.random() - 0.5) * 3, true);
-          if (Math.hypot(o.x - ship.x, o.z - ship.z) < 200) boom();
+          if (Math.hypot(o.x - ship.x, o.z - ship.z) < 200) boom(o.x, o.z);
           hurtSkirmisher(other, 8 + Math.floor(Math.random() * 7), false);
         }
       });
@@ -11285,7 +11341,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           }
         }
         if (hit && s.from === "player") shakeCam(0.18);
-        if (!hit && s.from !== "player" && mode === "sea" && Math.hypot(s.mesh.position.x - ship.x, s.mesh.position.z - ship.z) < 7) { shakeCam(0.08); buzz(12); }
+        if (!hit && s.from !== "player" && mode === "sea" && Math.hypot(s.mesh.position.x - ship.x, s.mesh.position.z - ship.z) < 7) { shakeCam(0.08); buzz(12); whistle49(); }
         releaseShot(s);
         shots.splice(i, 1);
       }
@@ -11318,6 +11374,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       }
     }
     hurtSmoke49(dt);
+    flutter49(dt);
     for (let i = smokes.length - 1; i >= 0; i--) {
       const s = smokes[i];
       s.life -= dt;
@@ -11522,7 +11579,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const hullFill = document.getElementById("hullfill");
     if (hullLabel) hullLabel.textContent = "Hull " + ship.hull + (ship.hullMax !== 100 ? "/" + ship.hullMax : "") + " · Crew " + (x3 ? x3.crew : 0) + (x3 && crewShort() ? " (short)" : moraleWord()) + " · " + hudCargo();
     { const hurt = mode === "sea" && ship.hull > 0 && ship.hull <= ship.hullMax * 0.3; if (vign44.classList.contains("hurt") !== hurt) vign44.classList.toggle("hurt", hurt); }
-    if (hullFill) { const low = ship.hull > 0 && ship.hull <= (ship.hullMax || hullPoints(playerHull.id)) * 0.35; if (hullFill.classList.contains("hulllow") !== low) hullFill.classList.toggle("hulllow", low); }
+    if (hullFill) { const low = ship.hull > 0 && ship.hull <= (ship.hullMax || hullPoints(playerHull.id)) * 0.35; if (hullFill.classList.contains("hulllow") !== low) hullFill.classList.toggle("hulllow", low);
+      const mid = !low && ship.hull < (ship.hullMax || 100) * 0.65; if (hullFill.classList.contains("hullmid49") !== mid) hullFill.classList.toggle("hullmid49", mid); } // Batch 49: amber between 35% and 65%
     const sailRead = document.getElementById("sailread");
     if (sailRead) {
       const sailN = Math.round(ship.sails);
@@ -11541,6 +11599,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     if (hullFill) {
       hullFill.style.width = hullPct + "%";
+      { const lag = document.getElementById("hulllag49"); if (lag && lag.style.width !== hullPct + "%") lag.style.width = hullPct + "%"; } // Batch 49: a pale strip shows the chunk a hit just took, then drains away
       hullFill.style.background = hullPct > 55 ? "#7dce4a" : hullPct > 28 ? "#e2b340" : "#d0453a";
     }
     const canBoard = boardTarget();
@@ -12781,7 +12840,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const TUT = [
     "Lesson 1 of 4: tap Sail to raise sail.",
     "Lesson 2 of 4: steer with the stick and sail out of the harbour. Run with the wind or across it; straight into it is slow.",
-    "Lesson 3 of 4: swipe to look sideways, then tap Fire for a broadside.",
+    "Lesson 3 of 4: tap Fire Port or Fire Stbd for a broadside. You can also swipe to look sideways and tap Fire.",
     "Lesson 4 of 4: sail back to a quay and tap Ashore."
   ];
   function tutLine() { return x3.tut === 0 && mode === "land" ? "Lesson 1 of 4: walk to the gangplank on the quay; Board lights up there. Tap Board, then raise sail at sea." : TUT[x3.tut]; }
@@ -12800,14 +12859,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       x3.tut++;
       tutWait = 1.2;
       buzz(25);
+      // Batch 49: a small tick, a chime and a check mark over the ship for each lesson done, so progress feels earned.
+      if (x3.tut < 4) { try { chime([660, 880], 0.1, 0.03); } catch (e) { /* optional */ } floatText(mode === "sea" ? ship.x : person.x, mode === "sea" ? 9 : 3, mode === "sea" ? ship.z : person.z, "\u2713 Lesson " + x3.tut + " of 4", "#9dffb0"); }
       if (x3.tut >= 4) { x3.tut = 9; ledger.gold += 25; toast("You know the ropes. The harbour master sends 25 gold. Tap \u2630 Log any time for your next goal.", "Lessons done"); writeSave(); }
       else writeSave();
       return;
     }
-    if (tutSaid !== x3.tut) { tutSaid = x3.tut; tutRepeat = 25; say(tutLine(), 6); }
+    if (tutSaid !== x3.tut) { tutSaid = x3.tut; tutRepeat = 18; say(tutLine(), 6); }
     tutRepeat -= dt;
     if (x3.tut === 1 && !tutWindSaid && noticeT <= 0 && mode === "sea" && sail > 0 && windAlign() < -0.15) { tutWindSaid = true; say("Headwind slows you. Steer the bow off the wind and she picks up speed.", 5); }
-    if (tutRepeat <= 0 && noticeT <= 0) { tutRepeat = 25; let extra = ""; if (x3.tut === 3 && mode === "sea") { let bd = 1e9, bn = ""; PORTS.forEach(function (p) { const d = Math.hypot(p.harbour.x - ship.x, p.harbour.z - ship.z); if (d < bd) { bd = d; bn = p.name; } }); extra = " " + bn + " is " + Math.round(bd) + " yards away."; } say(tutLine() + extra, 6); }
+    if (tutRepeat <= 0 && noticeT <= 0) { tutRepeat = 18; /* Batch 49: lessons come back a little sooner (was 25 s) */ let extra = ""; if (x3.tut === 3 && mode === "sea") { let bd = 1e9, bn = ""; PORTS.forEach(function (p) { const d = Math.hypot(p.harbour.x - ship.x, p.harbour.z - ship.z); if (d < bd) { bd = d; bn = p.name; } }); extra = " " + bn + " is " + Math.round(bd) + " yards away."; } say(tutLine() + extra, 6); }
   }
   // Bow foam: a soft white V under the bow that grows with speed.
   const bowFoam = (function () {
@@ -16165,7 +16226,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         tapBoth47(rb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } const now = performance.now(); if (!armedR || now - armedR > 5000) { armedR = now; rb.textContent = "Swap back? Tap again"; return; } try { const cur = localStorage.getItem(SAVE_KEY); localStorage.setItem(SAVE_KEY, bk); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); else localStorage.removeItem(SAVE_KEY + "-before-new"); } catch (err) { return; } importReload47 = true; location.reload(); }); boot.appendChild(rb); } }
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 48";
+    tv.textContent = "Version: batch 49";
     tv.style.cssText = "margin-top:14px;font-size:12px;opacity:.55";
     boot.appendChild(tv);
   }
