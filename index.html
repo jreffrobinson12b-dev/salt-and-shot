@@ -8352,6 +8352,18 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const n = nearFoe47(Math.max(60, (gunStats().range || 90) * 1.1));
     return n && n.fromLine >= BEAR_MIN ? n : null;
   }
+  // Batch 47: sign > 0 is the ship's port (left) side, sign < 0 starboard (right). Label names the side and points the way it lies on screen.
+  function sideLabel47(sg) {
+    if (!sg) return "\u21C6 Swipe to aim";
+    const fwdX = Math.sin(ship.heading), fwdZ = Math.cos(ship.heading), rx = Math.cos(ship.heading) * sg, rz = -Math.sin(ship.heading) * sg;
+    const cx = camLook.x - camera.position.x, cz = camLook.z - camera.position.z, cl = Math.hypot(cx, cz) || 1;
+    // screen-right on the water is (-cz, cx) / cl; a side that lies ahead or behind the view gets no arrow
+    const sx = (rx * -cz + rz * cx) / cl, word = sg > 0 ? "port" : "stbd";
+    void fwdX; void fwdZ;
+    if (sx > 0.35) return "Fire " + word + " \u25B6";
+    if (sx < -0.35) return "\u25C0 Fire " + word;
+    return "Fire " + word;
+  }
   function fire(forceSign) {
     if (mode !== "sea" || fightOn || !ballTemplate || ship.hull <= 0) return;
     if (fireCool > 0) {
@@ -8391,7 +8403,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boom();
     buzz(25);
     ship.roll = (ship.roll || 0) - sign * 0.05; shakeCam(0.07);
-    say((sign > 0 ? "Starboard battery" : "Port battery") + (assist && assist.name ? ", laid on " + assist.name + ". " : ". ") + word, 1.2);
+    say((sign > 0 ? "Port battery" : "Starboard battery") + (assist && assist.name ? ", laid on " + assist.name + ". " : ". ") + word, 1.2);
   }
 
   const SPL_GEO = { big: new THREE.SphereGeometry(0.6, 8, 6), small: new THREE.SphereGeometry(0.35, 8, 6), ring: new THREE.RingGeometry(0.5, 0.8, 20), ring2: new THREE.RingGeometry(0.3, 0.45, 20), spout: new THREE.CylinderGeometry(0.12, 0.45, 3.2, 8, 1, true) };
@@ -10028,7 +10040,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
   }
 
+  let qbCalm47 = 0, qbFoe47 = null;
   function updateStorms(dt) {
+    if (qbCalm47 > 0) {
+      qbCalm47 -= dt;
+      if (!qbFoe47 || !qbFoe47.alive || qbFoe47.gone || qbFoe47.sinking || mode !== "sea") { qbCalm47 = Math.min(qbCalm47, 20); if (mode !== "sea") qbCalm47 = 0; }
+      fogT = 0; gustT = 0;
+      for (let i = 0; i < storms.length; i++) { const st = storms[i]; const d = Math.hypot(st.x - ship.x, st.z - ship.z); if (d < st.r + 240) { const a = Math.atan2(st.x - ship.x, st.z - ship.z) || 1; st.x = ship.x + Math.sin(a) * (st.r + 300); st.z = ship.z + Math.cos(a) * (st.r + 300); } }
+    }
     for (let i = 0; i < storms.length; i++) {
       const s = storms[i];
       s.x += s.vx * dt;
@@ -10072,6 +10091,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (sail === 2 && skills.sail >= 3) set *= 1.15;
       if (squall && sail === 2) set *= 0.38;
       const cloth = Math.max(0.3, ship.sails <= 0 ? 0.3 : ship.sails / 100);
+      if (ship.sails <= 5 && sail > 0) set = Math.max(set, sailVals[2]); // Batch 47: the jury rig sets every scrap at half or full sail
       const hurt = ship.hull < 35 ? 0.85 : 1;
       if (calmT > 0) set *= 0.5;
       if (gustT > 0) set *= 1.25;
@@ -10868,7 +10888,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function closestDoor() {
     let best = null;
-    let bd = 2.4;
+    let bd = 3.6;
     for (let i = 0; i < doors.length; i++) {
       if (ashorePort && doors[i].port && doors[i].port !== ashorePort.id) continue;
       const d = Math.hypot(person.x - doors[i].x, person.z - doors[i].z);
@@ -10880,7 +10900,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
 
   let stuckT45 = 0, rope45 = null, groundT45 = 0, menuGhost47 = 0;
-  const WALK47 = 3.6;
+  const WALK47 = 4.0;
+  // Batch 47: slow a little in the last metres before a door so the captain stops at it instead of overshooting.
+  function doorEase47() { let dd = 9; for (let i = 0; i < doors.length; i++) { const d = Math.hypot(person.x - doors[i].x, person.z - doors[i].z); if (d < dd) dd = d; } return dd >= 3.6 ? 1 : 0.55 + 0.45 * (dd / 3.6); }
   // Batch 45: a captain wedged between the surf line and a wall steps back to the nearest open ground.
   function unstick45() {
     for (let r = 0.6; r <= 3; r += 0.6) for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2, x = person.x + Math.sin(a) * r, z = person.z + Math.cos(a) * r; if (onLand(x, z) && !hitsBlock(x, z, 0.45)) { person.x = x; person.z = z; return true; } }
@@ -10932,7 +10954,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       person.yaw = dampAngle(person.yaw, face, dt, 10);
       const n = Math.min(1, (Math.min(1, mag) - 0.18) / 0.82);
       run45 = n > 0.85 ? run45 + dt : 0;
-      const sp = WALK47 * (0.4 + 0.6 * n) * (run45 > 0.5 ? 1.45 : 1);
+      const sp = WALK47 * (0.4 + 0.6 * n) * (run45 > 0.35 ? 1.5 : 1) * doorEase47();
       if (person.walk) person.walk.timeScale = (0.7 + 0.5 * n) * (run45 > 0.5 ? 1.3 : 1);
       const mvx = Math.sin(face), mvz = Math.cos(face);
       const nx = person.x + mvx * sp * dt;
@@ -11184,7 +11206,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       return;
     }
     if (mode !== "sea" && mode !== "land") return;
-    const keyTurn = (keys["e"] ? 1 : 0) - (keys["q"] ? 1 : 0);
+    const keyTurn = (keys["q"] ? 1 : 0) - (keys["e"] ? 1 : 0);
     keyTurn47 += (keyTurn - keyTurn47) * Math.min(1, dt * 10); if (Math.abs(keyTurn47) < 0.01 && !keyTurn) keyTurn47 = 0;
     if (keyTurn47) lookYaw += keyTurn47 * dt * 1.25;
     const holding = lookPtr !== null || !!keys["q"] || !!keys["e"];
@@ -11379,7 +11401,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       else fireBtn.style.backgroundImage = "";
       if (fireCool <= 0.05 && !fightOn) {
         const aimNow = viewBearing();
-        { const at47 = aimNow.bear ? null : aimTarget47(); const sg = aimNow.bear ? aimNow.sign : (at47 ? at47.sign : 0); fireBtn.textContent = sg ? (sg > 0 ? "Fire: " + shotWord() + " \u25B6" : "\u25C0 Fire: " + shotWord()) : "\u21C6 Swipe to aim"; aimNow.bear = aimNow.bear || !!at47; }
+        { const at47 = aimNow.bear ? null : aimTarget47(); const sg = aimNow.bear ? aimNow.sign : (at47 ? at47.sign : 0); fireBtn.textContent = sideLabel47(sg); aimNow.bear = aimNow.bear || !!at47; }
         fireBtn.style.opacity = ""; { const bs = aimNow.bear ? "" : "dashed"; if (fireBtn.style.borderStyle !== bs) fireBtn.style.borderStyle = bs; }
       } else fireBtn.style.opacity = "";
       if (fireCool > 0.05) {
@@ -11487,7 +11509,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         if (noticeT > 0) hint.textContent = notice;
         else hint.textContent = "The ground is soft. Dig.";
       } else if (door) {
-        actBtn.textContent = "Enter";
+        actBtn.textContent = door.label && door.label.length <= 10 ? "Enter " + door.label : "Enter";
         actBtn.disabled = false;
         if (noticeT > 0) hint.textContent = notice;
         else hint.textContent = door.label + " door. Step inside.";
@@ -12596,7 +12618,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     "Lesson 3 of 4: swipe to look sideways, then tap Fire for a broadside.",
     "Lesson 4 of 4: sail back to a quay and tap Ashore."
   ];
-  function tutLine() { return x3.tut === 0 && mode === "land" ? "Lesson 1 of 4: walk to the gangplank and tap Board, then tap Sail." : TUT[x3.tut]; }
+  function tutLine() { return x3.tut === 0 && mode === "land" ? "Lesson 1 of 4: walk to the gangplank on the quay; Board lights up there. Tap Board, then raise sail at sea." : TUT[x3.tut]; }
   let tutSaid = -1, tutWait = 2, tutRepeat = 25, tutWindSaid = false;
   function tutDone(step) {
     if (step === 0) return mode === "sea" && sail > 0;
@@ -15256,6 +15278,17 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (fb) fb.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); deedTodo = !deedTodo; paintLog(); });
     }
     document.getElementById("bookx").addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); logPanel.style.display = "none"; });
+    // Batch 47: under load a tap can arrive as a click without a usable pointerdown; close on either, from anywhere inside the X.
+    logPanel.addEventListener("click", function (e) { if (e.target && e.target.closest && e.target.closest("#bookx,#logclose")) { e.preventDefault(); e.stopPropagation(); logPanel.style.display = "none"; } });
+    window.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape") return;
+      const tag = e.target && e.target.tagName; if (tag === "TEXTAREA" || tag === "INPUT") return;
+      if (logPanel.style.display === "block") { logPanel.style.display = "none"; e.preventDefault(); return; }
+      if (skillPanel.style.display === "block") { skillPanel.style.display = "none"; e.preventDefault(); return; }
+      if (chartPanel.style.display === "block") { chartPanel.style.display = "none"; e.preventDefault(); return; }
+      if (typeof setPanel !== "undefined" && setPanel.style.display === "flex") { closeSettings(); e.preventDefault(); return; }
+      if (menuOpen) { closeMenu(); e.preventDefault(); }
+    });
     let heldI = false;
     setInterval(function () { const op = logPanel.style.display === "block"; if (op) holdToast(); document.body.classList.toggle("bookopen", op); const h = toastHeld(); if (heldI && !h) { holdToast(); releaseToasts(); } heldI = h; }, 200);
     let swipeX = null, swipeY = 0;
@@ -15650,7 +15683,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!x3) x3Load(null);
     x3.aimed = true;
     if (x3.tut < 4) x3.tut = 9;
-    { let px = 18, pz = 190; for (let k = 0; k < 20 && !spotAfloat(px, pz); k++) pz += 15; ship.x = px; ship.z = pz; ship.heading = 0; ship.speed = 3; ship.yawRate = 0; if (ship.root) ship.root.position.set(ship.x, 0, ship.z); anchored = false; syncAnchor(); }
+    { let px = 18, pz = 190; for (let k = 0; k < 20 && !spotAfloat(px, pz); k++) pz += 15; ship.x = px; ship.z = pz; ship.heading = 0; ship.speed = 3.2; ship.yawRate = 0; if (ship.root) ship.root.position.set(ship.x, 0, ship.z); anchored = false; syncAnchor(); }
     let fi = -1;
     for (let i = 0; i < foes.length; i++) if (foes[i].name === "Gull Purse" && !foes[i].gone) fi = i;
     if (fi < 0) for (let i = 0; i < foes.length; i++) if (!foes[i].gone && !foes[i].galleon && foes[i].hullId === "cutter") { fi = i; break; }
@@ -15660,13 +15693,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       for (let k = 0; k < 12 && !spotAfloat(fx, fz); k++) { fz += 10; }
       f.x = fx; f.z = fz; f.heading = Math.PI + 0.6; f.hunt = true; f.ignore = 0; f.hull = f.hullMax;
       f.cool = 4;
-      { let bx = ship.x + 38, bz = ship.z + 14; for (let k = 0; k < 10 && !spotAfloat(bx, bz); k++) { bx -= 6; bz += 8; } f.x = bx; f.z = bz; f.heading = 0.15; f.alive = true; f.gone = false; f.sinking = false; if (f.root) { f.root.visible = true; f.root.position.set(f.x, f.root.position.y, f.z); } }
+      { let bx = ship.x + 21, bz = ship.z + 3; for (let k = 0; k < 10 && !spotAfloat(bx, bz); k++) { bz += 8; } f.x = bx; f.z = bz; f.heading = 0; f.way = 3.2; qbFoe47 = f; qbCalm47 = 600; f.alive = true; f.gone = false; f.sinking = false; if (f.root) { f.root.visible = true; f.root.position.set(f.x, f.root.position.y, f.z); } }
     }
     for (let i = 0; i < storms.length; i++) { const st = storms[i]; const d = Math.hypot(st.x - ship.x, st.z - ship.z); if (d < st.r + 260) { const a = Math.atan2(st.x - ship.x, st.z - ship.z) || 1; st.x = ship.x + Math.sin(a) * (st.r + 320); st.z = ship.z + Math.cos(a) * (st.r + 320); } }
     fogT = 0; fogK = 0; gustT = 0; ship.sails = 100; refreshCloth();
-    sail = 2;
+    sail = 1;
     refreshCloth();
-    { const qm = "Quick battle! " + (fi >= 0 ? foes[fi].name : "A patrol") + " is close on your starboard beam. Tap Fire: the guns lay themselves on her."; say(qm, 7); setTimeout(function () { say(qm, 6); }, 1200); }
+    { const qm = "Quick battle! " + (fi >= 0 ? foes[fi].name : "A patrol") + " is close on your port beam, inside gun range. Tap Fire: the guns lay themselves on her."; say(qm, 7); setTimeout(function () { say(qm, 6); }, 1200); }
     writeSave();
   }
 
@@ -16688,6 +16721,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       unstick45: function () { return unstick45(); },
       kegs45: function (x, z) { if (x != null) kegDrop45(x, z); return kegs45.map(function (k) { return [k.x, k.z, k.t]; }); },
       counts46: function () { return { floaters: floaters.length, parts: gfxParts.length, smokes: smokes.length, splashes: splashes.length, rain: rain45.length, shots: shots.length, debris: debris44.length, kegs: kegs45.length, programs: (renderer.info.programs || []).length, geos: renderer.info.memory.geometries, tex: renderer.info.memory.textures, objs: scene.children.length, heap: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) : 0, squall: inSquallAt(ship.x, ship.z), fog: fogK, sails: ship.sails, speed: ship.speed }; },
+      qb47: function () { const f = qbFoe47; let sx = null; if (f) { const v = new THREE.Vector3(f.x, 2, f.z); camera.updateMatrixWorld(); v.project(camera); sx = (v.x + 1) / 2 * innerWidth; } return { calm: qbCalm47, sail: sail, speed: ship.speed, foeD: f ? Math.hypot(f.x - ship.x, f.z - ship.z) : null, foeWay: f ? f.way : null, foeX: sx, w: innerWidth, fireText: fireBtn.textContent, sails: ship.sails, squall: inSquallAt(ship.x, ship.z), reach: 24 * gunType().speed * 1.2 * Math.max(0.8, gunType().lift), label: sideLabel47(f ? (((f.x - ship.x) * Math.cos(ship.heading) - (f.z - ship.z) * Math.sin(ship.heading)) > 0 ? 1 : -1) : 0) }; },
+      door47: function (i, off) { const d = doors.filter(function (q) { return !ashorePort || q.port === ashorePort.id; })[i || 0]; if (!d) return null; const g = ashorePort.gang, dx = g.x - d.x, dz = g.z - d.z, l = Math.hypot(dx, dz) || 1; person.x = d.x + dx / l * off; person.z = d.z + dz / l * off; const c = closestDoor(); return { label: d.label, near: c ? c.label : null }; },
+      tutLine47: function () { return tutLine(); },
       stormHere47: function () { if (!storms.length) return false; storms[0].x = ship.x; storms[0].z = ship.z; return inSquallAt(ship.x, ship.z); },
       heading47: function (h) { ship.heading = h; ship.yawRate = 0; if (ship.root) ship.root.rotation.y = h; return h; },
       sails47: function (v) { ship.sails = v; refreshCloth(); return ship.sails; },
