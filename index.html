@@ -6952,11 +6952,41 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
 
   const recentSinks = [];
+  // Batch 50 hotfix 1: the practice enemy strikes her colours. That is a Victory (with the Victory screen), but no salvage, gold, XP, deeds or reputation change.
+  function strikeQb50(foe) {
+    if (!foe || foe.qbWon48) return;
+    foe.qbWon48 = true; foe.struck50 = true; foe.hunt = false; foe.flee46 = false; foe.cool = 999; foe.ignore = 9999;
+    qbCalm47 = Math.max(qbCalm47, 20);
+    floatText(foe.x, 12, foe.z, "She strikes!", "#ffe08a");
+    say(foe.name + " strikes her colours! Victory.", 3.5);
+    try { stinger47("win"); cheer(foe.x, foe.z); } catch (e) { /* optional */ }
+    buzz([40, 30, 80]);
+    const sh = x3 ? x3.shots - x3.battleShots : 0, hi = x3 ? Math.min(sh, x3.hits - x3.battleHits) : 0;
+    if (x3) { x3.battleShots = x3.shots; x3.battleHits = x3.hits; x3.battleDmg = 0; x3.battleCrits = x3.crits; }
+    setTimeout(function () { showVictory50(foe, sh, hi); }, 900);
+    setTimeout(function () { if (foe.alive && !foe.sinking && !foe.gone) { foe.sinking = true; foe.sink = 0; } }, 3500); // the prize crew scuttles her; no salvage
+  }
+  function showVictory50(foe, sh, hi) {
+    const old = document.getElementById("victory50"); if (old) old.remove();
+    const v = document.createElement("div"); v.id = "victory50";
+    v.style.cssText = "position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:60;min-width:260px;max-width:88vw;padding:18px 22px;border-radius:14px;background:rgba(10,24,36,.94);border:2px solid #f2d48a;color:#f4ecd8;text-align:center;font-family:Palatino,Georgia,serif;box-shadow:0 8px 30px rgba(0,0,0,.5)";
+    const h = document.createElement("div"); h.textContent = "Victory"; h.style.cssText = "font-size:30px;color:#f2d48a;margin-bottom:6px";
+    const l = document.createElement("div"); l.textContent = foe.name + " strikes her colours." + (sh > 0 ? " " + sh + " shots, " + hi + " hits." : ""); l.style.cssText = "font-size:15px;margin-bottom:6px";
+    const n = document.createElement("div"); n.textContent = practice47 ? "Practice fight: nothing is saved." : "Quick battle won."; n.style.cssText = "font-size:13px;opacity:.8;margin-bottom:12px";
+    const ok = document.createElement("button"); ok.type = "button"; ok.id = "victoryok50"; ok.textContent = "Done"; ok.style.cssText = "min-width:120px;height:46px;font-size:17px";
+    ok.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); v.remove(); });
+    v.appendChild(h); v.appendChild(l); v.appendChild(n); v.appendChild(ok);
+    document.body.appendChild(v);
+    setTimeout(function () { if (v.parentNode) v.remove(); }, 12000);
+  }
   function damageFoe(foe, n) {
     if (!foe || !foe.alive || foe.sinking) return;
     lastFoeHit = foe;
     const prev50 = foe.hull;
     foe.hull = Math.max(0, foe.hull - n);
+    // Batch 50 hotfix 1: the quick-battle enemy strikes at a quarter hull, even if one big hit would have taken her past it or sunk her outright.
+    const strike50 = !!(foe.qb50 && !foe.qbWon48 && foe.hull <= foe.hullMax * 0.25);
+    if (strike50) foe.hull = Math.max(1, Math.min(foe.hull, Math.floor(foe.hullMax * 0.25)));
     paintHullSprite(foe.bar, foe.hull, foe.hullMax, prev50);
     // Batch 50: the chunk a hit took flashes pale on her bar for a moment, then the bar settles.
     if (foe.bar && prev50 > foe.hull) { clearTimeout(foe.barT50); foe.barT50 = setTimeout(function () { if (foe.bar && foe.bar.userData && foe.bar.userData.canvas && foe.bar.material) paintHullSprite(foe.bar, foe.hull, foe.hullMax); }, 220); }
@@ -6966,6 +6996,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     floatText(foe.x, 9, foe.z, "-" + n, n >= 15 ? "#ffa04a" : "#ffe08a");
     hitMark45(n);
     splinters44(foe.x, foe.z, n);
+    if (strike50) { strikeQb50(foe); return; }
     if (foe.hull <= 0) splinters44(foe.x, foe.z, 40);
     if (!(x3 && x3.lowGfx)) puffAt(foe.x, 3, foe.z);
     if (foe.hull <= 0) {
@@ -7257,6 +7288,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
 
   function offend(foe) {
+    if (foe && foe.qb50) return ""; // Batch 50 hotfix 1: a practice fight never changes your standing with any nation
     if (foe && foe.name === "Grey Nun" && x3 && x3.bountyAccepted && !x3.bountyDown) { x3.bountyDown = true; say("Grey Nun is done. Hob Kegwell owes you the bounty.", 4); }
     if (!foe || !foe.nation || foe.offended) return "";
     foe.offended = true;
@@ -8271,8 +8303,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (mode === "sea" && f.alive && !f.sinking && f.hunt && f.ignore <= 0 && pd > 0.5) {
       const runAt = foeTemper(f) === "bold" ? 25 : (foeTemper(f) === "wary" ? 60 : 40);
       // Batch 49: the quick-battle foe never runs; at a quarter hull she strikes her colours and it counts as your win.
-      if (f === qbFoe47 && qbCalm47 > 0 && !f.qbWon48 && f.hull <= f.hullMax * 0.25) { floatText(f.x, 12, f.z, "She strikes!", "#ffe08a"); say(f.name + " strikes her colours! The prize crew scuttles her.", 3.5); damageFoe(f, 9999); return { want: f.heading, dist: Infinity, hunting: false }; }
-      if (f.hull < runAt && pd > 36 && !(f === qbFoe47 && qbCalm47 > 0)) { if (!f.flee46) { f.flee46 = true; floatText(f.x, 10, f.z, "fleeing!", "#9dffb0"); } return { want: avoid46(f, windAngle), dist: Infinity, hunting: true }; }
+      if (f.qb50 && !f.qbWon48 && f.hull <= f.hullMax * 0.25) { strikeQb50(f); return { want: f.heading, dist: Infinity, hunting: false }; }
+      if (f.qb50) f.flee46 = false;
+      if (f.hull < runAt && pd > 36 && !f.qb50) { if (!f.flee46) { f.flee46 = true; floatText(f.x, 10, f.z, "fleeing!", "#9dffb0"); } return { want: avoid46(f, windAngle), dist: Infinity, hunting: true }; }
       f.flee46 = false;
       const bear = Math.atan2(pdx, pdz);
       // Some captains try to cross your bow or stern to rake you. They break off after 9 s, when hurt, or once in place.
@@ -8564,7 +8597,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   // Batch 47: each battery reloads on its own. coolS47[0] is port, [1] starboard. fireCool stays the timer of the battery fired last,
   // so anything that clears fireCool (coffee, tests, sims) also clears both batteries.
-  const coolS47 = [0, 0];
+  const coolS47 = [0, 0], fireQ50 = [0, 0];
   function fire(forceSign) {
     if (mode !== "sea" || fightOn || !ballTemplate || ship.hull <= 0) return;
     coolS47[0] = Math.min(coolS47[0], Math.max(0, fireCool)); coolS47[1] = Math.min(coolS47[1], Math.max(0, fireCool));
@@ -8573,14 +8606,22 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       return;
     }
     const aim = forceSign ? { bear: true, sign: forceSign } : viewBearing();
-    if (aim.bear && coolS47[aim.sign > 0 ? 0 : 1] > 0) { say((aim.sign > 0 ? "Port" : "Starboard") + " guns reloading. " + Math.ceil(coolS47[aim.sign > 0 ? 0 : 1]) + "s.", 0.9); return; }
+    if (aim.bear && coolS47[aim.sign > 0 ? 0 : 1] > 0) {
+      // Batch 50 hotfix 1: a tap in the last 1.5 s of a reload is kept and fires the moment the guns are loaded; earlier taps flash the button and say how long.
+      const si = aim.sign > 0 ? 0 : 1, left = coolS47[si];
+      if (left <= 1.5) { fireQ50[si] = performance.now(); say((aim.sign > 0 ? "Port" : "Starboard") + " guns fire as soon as they are loaded.", 1.4); return; }
+      { const btn = typeof sideBtn47 !== "undefined" ? sideBtn47[si] : null; if (btn) { btn.classList.remove("rel50"); void btn.offsetWidth; btn.classList.add("rel50"); } }
+      say((aim.sign > 0 ? "Port" : "Starboard") + " guns reloading. " + Math.ceil(left) + "s.", 1.6); return;
+    }
     if (!aim.bear) {
       const tgt = aimTarget47();
       if (tgt) return fire(tgt.sign);
       const near = nearFoe47(220);
-      if (near) { lookYaw = near.sign * Math.PI / 2; lookIdle = 0; say("Turn side-on to her: she is off the " + (near.fromLine < BEAR_MIN ? (near.ahead ? "bow" : "stern") : "beam") + ". Guns fire to the side.", 2); return; }
-      say("No ship in reach. Fire Port and Fire Stbd shoot that side anyway; drag the right half of the screen, or press Q / E, to look.", 2.4);
-      return;
+      // Batch 50 hotfix 1: the "Swipe to aim" Fire always fires when loaded: the battery on her side (and the view swings to it), or with no ship near, the side the view leans to.
+      if (near) { lookYaw = near.sign * Math.PI / 2; lookIdle = 0; const loaded50 = coolS47[near.sign > 0 ? 0 : 1] <= 0; const r50 = fire(near.sign); if (loaded50) say("Fired the " + (near.sign > 0 ? "port" : "starboard") + " battery. She is off the " + (near.fromLine < BEAR_MIN ? (near.ahead ? "bow" : "stern") : "beam") + ": turn side-on for a sure hit.", 2.2); return r50; }
+      { const cx = camLook.x - camera.position.x, cz = camLook.z - camera.position.z, cl = Math.hypot(cx, cz) || 1, rx = Math.cos(ship.heading), rz = -Math.sin(ship.heading);
+        const dv = (rx * cx + rz * cz) / cl;
+        return fire(dv > 0.35 ? 1 : dv < -0.35 ? -1 : (coolS47[0] <= coolS47[1] ? 1 : -1)); }
     }
     const stats = gunStats();
     if (x3) x3.shots += 1;
@@ -14250,6 +14291,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return b;
   });
   { const bb = document.getElementById("btns"); if (bb) bb.insertBefore(sides47, fireBtn); }
+  polishCss.textContent += "@keyframes rel50{0%{box-shadow:0 0 0 0 rgba(255,120,90,.9)}100%{box-shadow:0 0 0 10px rgba(255,120,90,0)}}.side47.rel50{animation:rel50 .45s ease-out}";
   polishCss.textContent += "@media (max-height:520px){#sides47{position:absolute;right:calc(100% + 8px);bottom:0}}@media (max-height:520px) and (max-width:620px){body.bigbtn #sides47{position:static;grid-column:1/-1}}";
   let side48T = 0;
   // Batch 49: practice fights from the title over a saved voyage are never saved; say so on screen the whole time.
@@ -14262,6 +14304,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const want = on ? "flex" : "none"; if (sides47.style.display !== want) sides47.style.display = want;
     if (!on) return;
     const full = Math.max(0.1, relMax45 || gunStats().reload || 6);
+    for (let qi = 0; qi < 2; qi++) if (fireQ50[qi] && coolS47[qi] <= 0) { const at = fireQ50[qi]; fireQ50[qi] = 0; if (performance.now() - at < 2500 && !paused && !menuOpen) fire(qi === 0 ? 1 : -1); }
     sideBtn47.forEach(function (b, i) {
       const c = Math.min(coolS47[i], Math.max(0, fireCool) + (coolS47[i] > fireCool ? 0 : 0));
       const txt = c > 0.05 ? (i === 0 ? "Port" : "Stbd") + " reloading " + Math.ceil(c) + "s" : (i === 0 ? "Fire Port" : "Fire Stbd"); // Batch 49: say what the number means
@@ -16134,7 +16177,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       for (let k = 0; k < 12 && !spotAfloat(fx, fz); k++) { fz += 10; }
       f.x = fx; f.z = fz; f.heading = Math.PI + 0.6; f.hunt = true; f.ignore = 0; f.hull = f.hullMax;
       f.cool = 6;
-      { let bx = ship.x + Math.min(21, gunReach48() * 0.75), bz = ship.z + 3; for (let k = 0; k < 10 && !spotAfloat(bx, bz); k++) { bz += 8; } f.x = bx; f.z = bz; f.heading = 0; f.way = 3.2; qbFoe47 = f; qbCalm47 = 600; f.alive = true; f.gone = false; f.sinking = false; if (f.root) { f.root.visible = true; f.root.position.set(f.x, f.root.position.y, f.z); } }
+      { let bx = ship.x + Math.min(21, gunReach48() * 0.75), bz = ship.z + 3; for (let k = 0; k < 10 && !spotAfloat(bx, bz); k++) { bz += 8; } f.x = bx; f.z = bz; f.heading = 0; f.way = 3.2; qbFoe47 = f; qbCalm47 = 600; for (let j = 0; j < foes.length; j++) foes[j].qb50 = false; f.qb50 = true; f.qbWon48 = false; f.struck50 = false; f.flee46 = false; f.alive = true; f.gone = false; f.sinking = false; if (f.root) { f.root.visible = true; f.root.position.set(f.x, f.root.position.y, f.z); } }
     }
     for (let i = 0; i < storms.length; i++) { const st = storms[i]; const d = Math.hypot(st.x - ship.x, st.z - ship.z); if (d < st.r + 260) { const a = Math.atan2(st.x - ship.x, st.z - ship.z) || 1; st.x = ship.x + Math.sin(a) * (st.r + 320); st.z = ship.z + Math.cos(a) * (st.r + 320); } }
     fogT = 0; fogK = 0; gustT = 0; ship.sails = 100; refreshCloth();
@@ -17221,7 +17264,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       unstick45: function () { return unstick45(); },
       kegs45: function (x, z) { if (x != null) kegDrop45(x, z); return kegs45.map(function (k) { return [k.x, k.z, k.t]; }); },
       counts46: function () { return { floaters: floaters.length, parts: gfxParts.length, smokes: smokes.length, splashes: splashes.length, rain: rain45.length, shots: shots.length, debris: debris44.length, kegs: kegs45.length, programs: (renderer.info.programs || []).length, geos: renderer.info.memory.geometries, tex: renderer.info.memory.textures, objs: scene.children.length, heap: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) : 0, squall: inSquallAt(ship.x, ship.z), fog: fogK, sails: ship.sails, speed: ship.speed }; },
-      qb49: function (n) { const f = qbFoe47; if (f && n) damageFoe(f, n); return { hull: f ? f.hull : null, max: f ? f.hullMax : null, won: !!(f && f.qbWon48), sinking: !!(f && f.sinking), flee: !!(f && f.flee46), practice: practice47, badge: (document.getElementById("practice49") || {}).style ? document.getElementById("practice49").style.display : null }; },
+      qb49: function (n) { const f = qbFoe47; if (f && n) damageFoe(f, n); return { hull: f ? f.hull : null, max: f ? f.hullMax : null, won: !!(f && f.qbWon48), sinking: !!(f && f.sinking), flee: !!(f && f.flee46), struck: !!(f && f.struck50), victory: !!document.getElementById("victory50"), standing: JSON.stringify(standing), gold: ledger.gold, sunk: x3 ? x3.sunk : null, practice: practice47, badge: (document.getElementById("practice49") || {}).style ? document.getElementById("practice49").style.display : null }; },
       b49: function () { return { trade: tradeLines().join("\n"), mode: mode, hull: ship.hull, x: ship.x, z: ship.z, tut: x3 ? x3.tut : null, hintCls: hint.className, hintBottom: parseFloat(hint.style.bottom) || 0, h: innerHeight, hintText: hint.textContent }; },
       qb47: function () { const f = qbFoe47; let sx = null; if (f) { const v = new THREE.Vector3(f.x, 2, f.z); camera.updateMatrixWorld(); v.project(camera); sx = (v.x + 1) / 2 * innerWidth; } return { calm: qbCalm47, sail: sail, speed: ship.speed, foeD: f ? Math.hypot(f.x - ship.x, f.z - ship.z) : null, foeWay: f ? f.way : null, foeHull: f ? f.hull : null, foeMax: f ? f.hullMax : null, hull: ship.hull, foeXZ: f ? [f.x, f.z, f.heading] : null, me: [ship.x, ship.z, ship.heading], shots: shots.filter(function (q) { return q.from === 'player'; }).map(function (q) { return [q.mesh.position.x, q.mesh.position.y, q.mesh.position.z]; }), foeX: sx, w: innerWidth, fireText: fireBtn.textContent, sails: ship.sails, squall: inSquallAt(ship.x, ship.z), reach: gunReach48(), label: sideLabel47(f ? (((f.x - ship.x) * Math.cos(ship.heading) - (f.z - ship.z) * Math.sin(ship.heading)) > 0 ? 1 : -1) : 0) }; },
       door47: function (i, off) { const d = doors.filter(function (q) { return !ashorePort || q.port === ashorePort.id; })[i || 0]; if (!d) return null; const g = ashorePort.gang, dx = g.x - d.x, dz = g.z - d.z, l = Math.hypot(dx, dz) || 1; person.x = d.x + dx / l * off; person.z = d.z + dz / l * off; const c = closestDoor(); return { label: d.label, near: c ? c.label : null }; },
@@ -17352,6 +17395,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       shipAt: function (x, z) { ship.x = x; ship.z = z; ship.speed = 0; return [x, z]; },
       setBoss: function (h, c) { LEVIATHAN_HULL = h; LEVIATHAN_COOL = c; return [h, c]; },
       quickBattle: function () { quickBattle(); return { sail: sail, gold: ledger.gold }; },
+      sh50: function () { return { shots: x3.shots, c: coolS47.slice(), q: fireQ50.slice(), hint: hint.textContent, fireText: fireBtn.textContent }; },
       fire50: function (sg) { const s0 = x3.shots; const st = { mode: mode, fightOn: fightOn, ball: !!ballTemplate, hull: ship.hull, c0: coolS47[0], c1: coolS47[1], fc: fireCool }; fire(sg); return Object.assign(st, { fired: x3.shots - s0 }); },
       eng50: function () { return engagedFoe50(); },
       h50: function (k) { if (k === "throw") throwOnce50 = true; if (k === "nan") { ship.x = NaN; if (foes[0]) foes[0].z = NaN; } return { errs: errs50.slice(), t: waterUniforms.uTime.value, x: ship.x, z: ship.z, fz: foes[0] ? foes[0].z : null, boot: boot.classList.contains("hide") ? "" : boot.textContent }; },
