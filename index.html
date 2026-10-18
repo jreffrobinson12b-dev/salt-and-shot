@@ -6882,6 +6882,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       addMorale(15, "the victory");
       if (x3 && rankOf() > 0) { ledger.gold += 5 * rankOf(); floatText(foe.x, 12, foe.z, "+" + (5 * rankOf()) + " rank bounty", "#ffe08a"); }
       battleReport(foe.name);
+      if (foe === qbFoe47 && !foe.qbWon48) { foe.qbWon48 = true; qbCalm47 = Math.min(qbCalm47, 20); setTimeout(function () { toast("Quick battle won. The sea is yours now: trade between ports, take on errands, or hunt the next prize.", "Victory"); }, 2500); }
       if (ship.hull > 0 && ship.hull < ship.hullMax * 0.3) { ship.hull = Math.min(ship.hullMax, ship.hull + 5); floatText(ship.x, 9, ship.z, "+5 hull", "#9dffb0"); }
       if (resolveGalleon(foe, "sink")) say("The hold is yours. +200 gold." + tail, 4.2);
       else say("Their hull is gone. The ship is going under: sail through the wreckage for her salvage." + tail, 3.6);
@@ -9256,6 +9257,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     try { if (audioCtx) { if (document.hidden) audioCtx.suspend(); else audioCtx.resume(); } } catch (e) { /* optional */ }
   });
   window.addEventListener("pagehide", function () { if (worldReady && !titleOn) writeSave(); });
+  // Batch 48: ?qa=1 adds a small "QA: sink me" button for testers to check losing quickly.
+  if (/[?&]qa=1\b/.test(location.search)) { const qa = document.createElement("button"); qa.type = "button"; qa.id = "qasink48"; qa.textContent = "QA: sink me"; qa.style.cssText = "position:fixed;left:50%;top:calc(4px + env(safe-area-inset-top));transform:translateX(-50%);z-index:60;height:28px;font-size:12px;padding:0 10px;opacity:.75"; qa.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); if (mode === "sea" && ship.hull > 0 && !titleOn) { ship.hull = 1; damagePlayer(5); if (ship.hull > 0) { ship.hull = 0; wreckPlayer(); } } else say("QA: be at sea to sink.", 2); }); document.body.appendChild(qa); }
+  // Batch 48: phones often skip pagehide when you swipe away, so also save when the tab is hidden and every 20 s, so Continue picks up mid-battle hull and position.
+  document.addEventListener("visibilitychange", function () { if (document.hidden && worldReady && !titleOn) writeSave(); });
+  setInterval(function () { if (worldReady && !titleOn && !document.hidden) writeSave(); }, 20000);
   let paused = false;
   let pauseKind = "";
   function setRow(label, fn) {
@@ -10331,7 +10337,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     b.type = "button";
     b.textContent = label;
     b.style.cssText = "min-height:48px;padding:6px 10px;line-height:1.2;border-radius:12px;border:2px solid rgba(255,255,255,.45);background:#f2d48a;color:#1a1208;font-weight:700;font-size:16px";
-    const price = /\((\d+) gold\)/.exec(label);
+    const price = /\((\d+) gold[),]/.exec(label);
     if (price && !/^(Take|Claim|Sell|Deliver|Accept|Collect)\b/.test(label) && typeof ledger !== "undefined" && ledger.gold < +price[1]) { b.classList.add("poor"); b.style.opacity = "0.55"; b.style.borderStyle = "dashed"; b.title = "Not enough gold"; }
     b.addEventListener("pointerdown", function (e) {
       e.preventDefault();
@@ -10394,7 +10400,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     let price = base + standingHere();
     if (x3 && ashorePort && (x3["pt" + ashorePort.id] || 0) >= 100) price += 1;
     if (skills.trade >= 3) price += 1;
-    const drop = Math.min(Math.floor(Math.max(0, glutOf(good) - 8) / 4), Math.floor(base * 0.2));
+    // Batch 48: every sale here knocks the price down a little at once (one gold per 4 sold, up to 30%), so Sell all can never push it up.
+    const drop = Math.min(Math.ceil(glutOf(good) / 4), Math.max(1, Math.floor(base * 0.3)));
     if (shortage && shortage.good === good && ashorePort && ashorePort.id === shortage.port) {
       // A shortage pays 40% over the local price, and never less than 20% over the best price anywhere else.
       let top = 0; PORTS.forEach(function (p) { top = Math.max(top, PRICES[p.id][good].sell); });
@@ -11564,7 +11571,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         actBtn.textContent = door.label && door.label.length <= 10 ? "Enter " + door.label : "Enter";
         actBtn.disabled = false;
         if (noticeT > 0) hint.textContent = notice;
-        else hint.textContent = door.label + " door. Step inside.";
+        else hint.textContent = door.label + " door. Step inside." + (nearGangplank() ? " Step away from the door to Board, or tap To ship." : "");
       } else {
         actBtn.textContent = "Board";
         actBtn.disabled = !nearGangplank();
@@ -14029,6 +14036,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   });
   { const bb = document.getElementById("btns"); if (bb) bb.insertBefore(sides47, fireBtn); }
   polishCss.textContent += "@media (max-height:520px){#sides47{position:absolute;right:calc(100% + 8px);bottom:0}}@media (max-height:520px) and (max-width:620px){body.bigbtn #sides47{position:static;grid-column:1/-1}}";
+  let side48T = 0;
   function updateSides47() {
     const on = mode === "sea" && !titleOn && !fightOn;
     const want = on ? "flex" : "none"; if (sides47.style.display !== want) sides47.style.display = want;
@@ -14041,6 +14049,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const dq = c > 0.05 ? String(Math.round(100 * clamp(1 - c / full, 0, 1) / 10) * 10) : "";
       if (b.dataset.dq !== dq) { b.dataset.dq = dq; b.style.background = dq ? "linear-gradient(90deg, rgba(242,212,138,0.55) " + dq + "%, rgba(8,20,32,0.55) " + dq + "%)" : ""; }
     });
+    // Batch 48: a side whose guns would lay on a ship right now gets a green edge, so you know which button to press.
+    side48T -= 1 / 60;
+    if (side48T <= 0) { side48T = 0.2; const gt = gunType(); [1, -1].forEach(function (sg, i) { const sx = ship.x + Math.cos(ship.heading) * sg * 3.2, sz = ship.z - Math.sin(ship.heading) * sg * 3.2; const on48 = !!broadsideAssist(sg, sx, sz, gt); const b = sideBtn47[i]; if ((b.dataset.tgt === "1") !== on48) { b.dataset.tgt = on48 ? "1" : ""; b.style.boxShadow = on48 ? "0 0 0 2px #7be08a, 0 0 10px rgba(123,224,138,0.6)" : ""; } }); }
   }
   function toShip47(e) { if (e) { e.preventDefault(); e.stopPropagation(); } if (mode !== "land" || menuOpen || (fightOn && fight && fight.land)) return; if (typeof uiTick47 === "function") uiTick47(); boardShip(true); }
   shipBtn47.addEventListener("pointerdown", toShip47);
@@ -15982,7 +15993,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       return b;
     }
     if (data) {
-      row.appendChild(choice("Play", startNew));
+      // Batch 48: Play over a saved voyage asks once more and backs the old save up first.
+      { const pb = document.createElement("button"); pb.type = "button"; pb.id = "titleplay48"; pb.textContent = "Play"; pb.style.cssText = "min-width:140px;height:54px;font-size:18px"; let armed = 0;
+        const go = function (e) { e.preventDefault(); e.stopPropagation(); if (picked) return; const now = performance.now(); if (!armed || now - armed > 5000) { armed = now; pb.textContent = "New game? Tap again"; note.textContent = "This starts over from Bramble Quay with 42 gold. Your current voyage is backed up on this phone first."; return; } if (now - armed < 250) return; picked = true; try { const cur = localStorage.getItem(SAVE_KEY); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); } catch (err) { /* storage optional */ } startNew(); };
+        pb.addEventListener("pointerdown", go); pb.addEventListener("click", function (e) { e.preventDefault(); }); row.appendChild(pb); }
       row.appendChild(choice("Continue", function () { startContinue(data); }));
     } else {
       note.textContent = "A new captain, a borrowed cutter and a little sugar and rum in the hold.";
