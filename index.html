@@ -16231,10 +16231,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!f || !f.alive) { toast(e.name + " broke off while you were away.", "Fight over"); return false; }
     let fx = ship.x + (e.dx || 25), fz = ship.z + (e.dz || 0);
     for (let k = 0; k < 8 && typeof spotAfloat === "function" && !spotAfloat(fx, fz); k++) { fx = ship.x + (fx - ship.x) * 1.2; fz = ship.z + (fz - ship.z) * 1.2 + 6; }
+    if (typeof spotAfloat === "function" && !spotAfloat(fx, fz)) { toast(e.name + " broke off while you were away.", "Fight over"); return false; }
     f.x = fx; f.z = fz; f.hull = clamp(e.hull, 1, f.hullMax); f.hunt = true; f.ignore = 0; f.cool = Math.max(f.cool || 0, 4);
     if (f.root) f.root.position.set(f.x, 0, f.z);
     if (f.bar) paintHullSprite(f.bar, f.hull, f.hullMax);
-    toast(f.name + " is still on you, hull " + Math.round(f.hull) + " of " + f.hullMax + ".", "Back in the fight");
+    toast(f.name + " is still on you, " + Math.round(Math.hypot(f.x - ship.x, f.z - ship.z)) + " yards " + compass(f.x - ship.x, f.z - ship.z) + ", hull " + Math.round(f.hull) + " of " + f.hullMax + ".", "Back in the fight");
+    buzz([40, 30, 40]);
     return true;
   }
   function startContinue(data) {
