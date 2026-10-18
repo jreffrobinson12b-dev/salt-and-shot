@@ -3830,6 +3830,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     "#setpanel>div{animation:menuIn49 .2s ease-out}#setpanel>div{box-shadow:0 10px 30px rgba(0,0,0,.5)}" +
     "@keyframes badge49{0%,100%{box-shadow:0 0 0 0 rgba(242,212,138,0)}50%{box-shadow:0 0 0 4px rgba(242,212,138,.35)}}#practice49{animation:badge49 1.4s ease-in-out 3}" +
     "@media (prefers-reduced-motion:reduce){#townmenu>div,#setpanel>div,#logpanel>div,#practice49{animation:none}}#mbtns>button.topleave{background:rgba(8,20,32,.55)!important;color:#f2d48a!important;border:1px solid rgba(242,212,138,.55)!important}#mbtns>button{letter-spacing:.2px}" +
+    "@keyframes gup50{0%{color:#ffe08a;text-shadow:0 0 8px rgba(255,216,106,.9)}100%{}}@keyframes gdn50{0%{color:#ffb4a8}100%{}}#sub.gup50{animation:gup50 .9s ease-out}#sub.gdn50{animation:gdn50 .7s ease-out}" +
     "#hint.sea49{background:rgba(6,14,22,.32)!important;height:auto!important;min-height:0!important;font-size:12.5px!important;max-width:min(380px,calc(100vw - 24px))!important;padding:3px 10px!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;transition:opacity .6s}" +
     "#hint{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,.12)}" +
     "h1{text-shadow:0 2px 0 #000,0 0 10px rgba(0,0,0,.45)!important}" +
@@ -6519,7 +6520,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return sprite;
   }
 
-  function paintHullSprite(sprite, hull, maxHull) {
+  function paintHullSprite(sprite, hull, maxHull, prevHull) {
     const canvas = sprite.userData.canvas;
     const g = canvas.getContext("2d");
     g.clearRect(0, 0, 128, 32);
@@ -6528,6 +6529,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const f = Math.max(0, hull / maxHull);
     g.fillStyle = f > 0.55 ? "#7dce4a" : f > 0.28 ? "#e2b340" : "#d0453a";
     g.fillRect(2, 8, 124 * f, 16);
+    if (prevHull > hull) { const pf = Math.min(1, prevHull / maxHull); g.fillStyle = "rgba(255,244,214,0.95)"; g.fillRect(2 + 124 * f, 8, 124 * (pf - f), 16); }
     g.strokeStyle = "#ffffff";
     g.lineWidth = 2;
     g.strokeRect(2, 8, 124, 16);
@@ -6946,8 +6948,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function damageFoe(foe, n) {
     if (!foe || !foe.alive || foe.sinking) return;
     lastFoeHit = foe;
+    const prev50 = foe.hull;
     foe.hull = Math.max(0, foe.hull - n);
-    paintHullSprite(foe.bar, foe.hull, foe.hullMax);
+    paintHullSprite(foe.bar, foe.hull, foe.hullMax, prev50);
+    // Batch 50: the chunk a hit took flashes pale on her bar for a moment, then the bar settles.
+    if (foe.bar && prev50 > foe.hull) { clearTimeout(foe.barT50); foe.barT50 = setTimeout(function () { if (foe.bar && foe.bar.userData && foe.bar.userData.canvas && foe.bar.material) paintHullSprite(foe.bar, foe.hull, foe.hullMax); }, 220); }
     foe.pulse45 = 0.35;
     if (!foe.boss) foe.heading += (Math.random() - 0.5) * 0.08;
     if (rankOf() >= 2 && !foe.boss) for (let i = 0; i < foes.length; i++) { const o = foes[i]; if (o === foe || !o.alive || o.sinking || o.gone || o.hunt || o.boss) continue; if (Math.hypot(o.x - foe.x, o.z - foe.z) < 110 && !playerSafe()) { o.hunt = true; floatText(o.x, 10, o.z, "joins the fight!", "#ffb4a8"); break; } }
@@ -6978,7 +6983,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       addMorale(15, "the victory");
       if (x3 && rankOf() > 0) { ledger.gold += 5 * rankOf(); floatText(foe.x, 12, foe.z, "+" + (5 * rankOf()) + " rank bounty", "#ffe08a"); }
       battleReport(foe.name);
-      if (foe === qbFoe47 && !foe.qbWon48) { foe.qbWon48 = true; qbCalm47 = Math.min(qbCalm47, 20); setTimeout(function () { toast("Quick battle won. The sea is yours now: trade between ports, take on errands, or hunt the next prize.", "Victory"); }, 2500); }
+      if (foe === qbFoe47 && !foe.qbWon48) { foe.qbWon48 = true; qbCalm47 = Math.min(qbCalm47, 20); setTimeout(function () { toast(practice47 ? "Quick battle won! This was practice and is not saved: reload and tap Continue for your voyage." : "Quick battle won. The sea is yours now: trade between ports, take on errands, or hunt the next prize.", "Victory"); }, 2500); }
       if (ship.hull > 0 && ship.hull < ship.hullMax * 0.3) { ship.hull = Math.min(ship.hullMax, ship.hull + 5); floatText(ship.x, 9, ship.z, "+5 hull", "#9dffb0"); }
       if (resolveGalleon(foe, "sink")) say("The hold is yours. +200 gold." + tail, 4.2);
       else say("Their hull is gone. The ship is going under: sail through the wreckage for her salvage, about " + SALVAGE_GOLD + " gold" + (x3 && rankOf() > 0 ? ", on top of the " + (5 * rankOf()) + " gold rank bounty" : "") + "." + tail, 4); // Batch 49: name the payout
@@ -7017,6 +7022,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     // Batch 49: say plainly that nothing went to salvage, keep lesson progress, and give the message room before any lesson line.
     tutWait = Math.max(tutWait, 8);
+    flashFade(); // Batch 50: a fade covers the jump back to Bramble Quay
     if (practice47) { say("Practice fight lost. Nothing was saved and nothing lost. Reload and tap Continue to go back to your voyage.", 6); toast("Practice fight lost. Your saved voyage is untouched.", "Practice"); return; }
     say("Hull gone. Towed back to Bramble Quay and patched to " + ship.hull + ". No salvage was taken: your gold, cargo and renown are kept; the crew's spirits took a knock.", 6);
     toast("Towed back to Bramble Quay. No salvage was taken: gold, cargo and renown are kept. The hull is patched to " + ship.hull + " and the crew's spirits took a knock." + (x3 && x3.tut < 4 ? " Your lessons carry on where you left off." : ""), "Hull gone");
@@ -9393,6 +9399,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   let goldSeen = null;
   function watchGold() {
     if (titleOn || !worldReady) { goldSeen = null; return; }
+    // Batch 50: the status line glows gold when you earn and dims red when you spend.
+    if (goldSeen !== null && ledger.gold !== goldSeen) { const sb = document.getElementById("sub"); if (sb) { sb.classList.remove("gup50", "gdn50"); void sb.offsetWidth; sb.classList.add(ledger.gold > goldSeen ? "gup50" : "gdn50"); } }
     if (goldSeen !== null && ledger.gold > goldSeen) {
       const gain = ledger.gold - goldSeen;
       if (x3) x3.earned += gain;
@@ -16078,6 +16086,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // One tap to a fight: sails up, aim tip done, a weak patrol closing from open water.
   function quickBattle() {
     if (!x3) x3Load(null);
+    // Batch 50: every quick battle is practice. Whatever voyage is live is saved first, then nothing during the fight (autosave, hiding the page, the fight itself) is written.
+    if (!practice47) { lastSaveTxt50 = ""; writeSave(); practice47 = true; }
+    // Always start at sea and aboard, with full hull, even if the voyage was ashore (at the shipyard, in a menu).
+    closeMenu();
+    if (mode === "land") { mode = "sea"; if (person.group) person.group.visible = false; setMoving(false); ashoreBeach = null; if (typeof chartBtn !== "undefined") chartBtn.style.display = ""; }
+    if (fightOn) closeFight();
+    ship.hull = ship.hullMax || hullPoints(playerHull.id);
     x3.aimed = true;
     if (x3.tut < 4) x3.tut = 9;
     { let px = 18, pz = 190; for (let k = 0; k < 20 && !spotAfloat(px, pz); k++) pz += 15; ship.x = px; ship.z = pz; ship.heading = 0; ship.speed = 3.2; ship.yawRate = 0; if (ship.root) ship.root.position.set(ship.x, 0, ship.z); anchored = false; syncAnchor(); }
@@ -16234,7 +16249,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (data) {
       // Batch 48: Play over a saved voyage asks once more and backs the old save up first.
       { const pb = document.createElement("button"); pb.type = "button"; pb.id = "titleplay48"; pb.textContent = "Play"; pb.style.cssText = "min-width:140px;height:54px;font-size:18px"; let armed = 0;
-        const go = function (e) { e.preventDefault(); e.stopPropagation(); if (picked) return; const now = performance.now(); if (!armed || now - armed > 5000) { armed = now; pb.textContent = "New game? Tap again"; note.textContent = "This starts over from Bramble Quay with 80 gold. Your current voyage is backed up on this phone first."; return; } if (now - armed < 250) return; picked = true; try { const cur = localStorage.getItem(SAVE_KEY); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); } catch (err) { /* storage optional */ } startNew(); };
+        const go = function (e) { e.preventDefault(); e.stopPropagation(); if (picked) return; const now = performance.now(); if (!armed || now - armed > 60000) { armed = now; pb.textContent = "New game? Tap again"; pb.style.background = "#f6b35a"; /* Batch 50: the question stays open for a minute (it used to lapse after 5 s, so a second tap after reading the note just asked again) */ note.textContent = "This starts over from Bramble Quay with 80 gold. Your current voyage is backed up on this phone first."; return; } if (now - armed < 80) return; picked = true; try { const cur = localStorage.getItem(SAVE_KEY); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); } catch (err) { /* storage optional */ } startNew(); };
         pb.addEventListener("pointerdown", go); pb.addEventListener("click", function (e) { e.preventDefault(); }); row.appendChild(pb); }
       row.appendChild(choice("Continue", function () { startContinue(data); }));
     } else {
@@ -16260,7 +16275,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     // Batch 48: Play over a save keeps a backup; this brings it back.
     { let bk = null; try { bk = localStorage.getItem(SAVE_KEY + "-before-new"); } catch (e) { bk = null; }
       if (bk) { const rb = document.createElement("button"); rb.type = "button"; rb.id = "titlerestore48"; rb.textContent = "Restore previous voyage"; rb.style.cssText = "margin:10px 0 0 8px;height:36px;font-size:14px;background:transparent;border:1px solid rgba(242,212,138,.5);color:#f2d48a;border-radius:10px;padding:0 14px"; let armedR = 0;
-        tapBoth47(rb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } const now = performance.now(); if (!armedR || now - armedR > 5000) { armedR = now; rb.textContent = "Swap back? Tap again"; return; } try { const cur = localStorage.getItem(SAVE_KEY); localStorage.setItem(SAVE_KEY, bk); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); else localStorage.removeItem(SAVE_KEY + "-before-new"); } catch (err) { return; } importReload47 = true; location.reload(); }); boot.appendChild(rb); } }
+        tapBoth47(rb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } const now = performance.now(); if (!armedR || now - armedR > 60000) { armedR = now; rb.textContent = "Swap back? Tap again"; return; } try { const cur = localStorage.getItem(SAVE_KEY); localStorage.setItem(SAVE_KEY, bk); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); else localStorage.removeItem(SAVE_KEY + "-before-new"); } catch (err) { return; } importReload47 = true; location.reload(); }); boot.appendChild(rb); } }
     const tv = document.createElement("div");
     tv.id = "titlever";
     tv.textContent = "Version: batch 49";
