@@ -3910,6 +3910,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   squallBanner.style.cssText = "display:none;position:absolute;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:6px 12px;border-radius:999px;background:rgba(12,18,28,.72);border:1px solid rgba(210,220,230,.45);font-family:system-ui,sans-serif;font-size:13px;font-weight:700;letter-spacing:.02em;pointer-events:none;white-space:nowrap";
   squallBanner.textContent = "Squall";
   document.getElementById("ui").appendChild(squallBanner);
+  // Batch 47: iOS Safari safe taps. Fires on pointerup (finger lifted on the same button) and on click, once per tap.
+  function tapBoth47(el, fn) {
+    let downOn = false, lastT = 0;
+    const go = function (e) { const t = performance.now(); if (t - lastT < 450) { if (e && e.cancelable) e.preventDefault(); return; } lastT = t; fn.call(el, e); };
+    el.addEventListener("pointerdown", function () { downOn = true; });
+    el.addEventListener("pointerup", function (e) { if (!downOn) return; downOn = false; go(e); });
+    el.addEventListener("pointercancel", function () { downOn = false; });
+    el.addEventListener("click", go);
+  }
   const storyBanner = document.createElement("div");
   storyBanner.id = "story";
   storyBanner.style.cssText = "display:none;position:absolute;top:calc(42px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:6px 12px;border-radius:999px;background:rgba(28,22,12,.82);border:1px solid rgba(242,212,138,.7);font-family:system-ui,sans-serif;font-size:13px;font-weight:700;letter-spacing:.02em;pointer-events:none;white-space:nowrap";
@@ -7070,8 +7079,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     fightPanel.innerHTML = html;
     const buttons = fightPanel.querySelectorAll("button");
     for (let i = 0; i < buttons.length; i++) {
-      buttons[i].addEventListener("click", function (e) {
-        const b = e.currentTarget;
+      tapBoth47(buttons[i], function (e) {
+        const b = this;
         if (b.getAttribute("data-pistol")) exchange(-1);
         else exchange(Number(b.getAttribute("data-line")));
       });
@@ -7751,8 +7760,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     fightPanel.innerHTML = html;
     const buttons = fightPanel.querySelectorAll("button");
     for (let i = 0; i < buttons.length; i++) {
-      buttons[i].addEventListener("click", function (e) {
-        const which = e.currentTarget.getAttribute("data-take");
+      tapBoth47(buttons[i], function (e) {
+        const which = this.getAttribute("data-take");
         if (which === "ship") takeShip();
         else if (which === "consort") keepConsort();
         else takePrize();
@@ -8374,13 +8383,18 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (sx < -0.35) return "\u25C0 Fire " + word;
     return "Fire " + word;
   }
+  // Batch 47: each battery reloads on its own. coolS47[0] is port, [1] starboard. fireCool stays the timer of the battery fired last,
+  // so anything that clears fireCool (coffee, tests, sims) also clears both batteries.
+  const coolS47 = [0, 0];
   function fire(forceSign) {
     if (mode !== "sea" || fightOn || !ballTemplate || ship.hull <= 0) return;
-    if (fireCool > 0) {
-      say("Guns reloading. " + Math.ceil(fireCool) + "s.", 0.9);
+    coolS47[0] = Math.min(coolS47[0], Math.max(0, fireCool)); coolS47[1] = Math.min(coolS47[1], Math.max(0, fireCool));
+    if (!forceSign && coolS47[0] > 0 && coolS47[1] > 0) {
+      say("Guns reloading. " + Math.ceil(Math.min(coolS47[0], coolS47[1])) + "s.", 0.9);
       return;
     }
     const aim = forceSign ? { bear: true, sign: forceSign } : viewBearing();
+    if (aim.bear && coolS47[aim.sign > 0 ? 0 : 1] > 0) { say((aim.sign > 0 ? "Port" : "Starboard") + " guns reloading. " + Math.ceil(coolS47[aim.sign > 0 ? 0 : 1]) + "s.", 0.9); return; }
     if (!aim.bear) {
       const tgt = aimTarget47();
       if (tgt) return fire(tgt.sign);
@@ -8393,7 +8407,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3) x3.shots += 1;
     const chain = shotKind === "chain";
     const grape = shotKind === "grape";
-    fireCool = stats.reload * (rankOf() === 0 ? 0.9 : 1); relMax45 = fireCool;
+    fireCool = stats.reload * (rankOf() === 0 ? 0.9 : 1); relMax45 = fireCool; coolS47[aim.sign > 0 ? 0 : 1] = fireCool;
     shakeCam(0.18);
     const fx = Math.sin(ship.heading);
     const fz = Math.cos(ship.heading);
@@ -8654,6 +8668,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   vign44.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:1";
   document.getElementById("ui").appendChild(vign44);
   polishCss.textContent += "body.title47 #ui{visibility:hidden!important}body.title47 #howto{display:none}";
+  // Batch 47: the title scrolls instead of clipping on short landscape screens, keeps clear of notches and the Safari bars, and tightens up below 460 px.
+  polishCss.textContent += "body.title47 #boot{overflow-y:auto;justify-content:safe center;box-sizing:border-box;padding:calc(12px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}body.title47 #boot>*{flex-shrink:0}@media (max-height:460px){body.title47 #boot>div:first-child{font-size:32px!important;margin-bottom:0!important}body.title47 #boot #titletip{display:none}body.title47 #boot button{height:44px!important}body.title47 #titlever{margin-top:8px!important}}";
   polishCss.textContent += "#sub,#hulllabel,#windlabel{text-shadow:0 1px 2px rgba(0,0,0,.75)}#btns button:active,#mbtns button:active{transform:scale(.95)}" +
     "@keyframes menuin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}#townmenu{animation:menuin .18s ease-out}" +
     "@keyframes toastin{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}#toast{animation:toastin .25s ease-out}" +
@@ -11417,17 +11433,18 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       fireBtn.style.display = "";
       if (shotBtn) shotBtn.style.display = "";
       glassBtn.style.display = "";
-      fireBtn.textContent = fireCool > 0.05 ? ("Reload " + Math.ceil(fireCool)) : ("Fire: " + shotWord());
+      const cAll47 = Math.min(coolS47[0], coolS47[1], Math.max(0, fireCool));
+      fireBtn.textContent = cAll47 > 0.05 ? ("Reload " + Math.ceil(cAll47)) : ("Fire: " + shotWord());
       // Reload progress: the button fills left to right as the crew load the guns.
-      if (fireCool > 0.05) { const full = Math.max(1, gunStats().reload || 6); const k = Math.round(100 * clamp(1 - fireCool / full, 0, 1)); fireBtn.style.backgroundImage = "linear-gradient(90deg, rgba(255,255,255,.38) " + k + "%, rgba(0,0,0,0) " + k + "%)"; }
+      if (cAll47 > 0.05) { const full = Math.max(1, gunStats().reload || 6); const k = Math.round(100 * clamp(1 - cAll47 / full, 0, 1)); fireBtn.style.backgroundImage = "linear-gradient(90deg, rgba(255,255,255,.38) " + k + "%, rgba(0,0,0,0) " + k + "%)"; }
       else fireBtn.style.backgroundImage = "";
-      if (fireCool <= 0.05 && !fightOn) {
+      if (cAll47 <= 0.05 && !fightOn) {
         const aimNow = viewBearing();
         { const at47 = aimNow.bear ? null : aimTarget47(); const sg = aimNow.bear ? aimNow.sign : (at47 ? at47.sign : 0); fireBtn.textContent = sideLabel47(sg); aimNow.bear = aimNow.bear || !!at47; }
         fireBtn.style.opacity = ""; { const bs = aimNow.bear ? "" : "dashed"; if (fireBtn.style.borderStyle !== bs) fireBtn.style.borderStyle = bs; }
       } else fireBtn.style.opacity = "";
-      if (fireCool > 0.05) {
-        const done = Math.round(100 * (1 - fireCool / Math.max(0.1, gunStats().reload)));
+      if (cAll47 > 0.05) {
+        const done = Math.round(100 * (1 - cAll47 / Math.max(0.1, gunStats().reload)));
         { const dq = Math.round(done / 5) * 5; if (fireBtn.dataset.dq !== String(dq)) { fireBtn.dataset.dq = String(dq); fireBtn.style.background = "linear-gradient(90deg, rgba(242,212,138,0.55) " + dq + "%, rgba(8,20,32,0.55) " + dq + "%)"; } }
         fireReady = false;
         fireBtn.style.boxShadow = "";
@@ -12815,6 +12832,34 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   portraitTip.textContent = "\u21BB Best played with the phone sideways";
   portraitTip.style.cssText = "display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(352px + env(safe-area-inset-top));padding:6px 12px;border-radius:12px;background:rgba(8,20,32,.7);color:#f4efe2;font:600 13px system-ui,sans-serif;pointer-events:none;white-space:nowrap";
   document.getElementById("ui").appendChild(portraitTip);
+  let tipT47 = 7; // Batch 47: the sideways notice shows for a few seconds after play starts and goes once you get under way
+  function moving47() { return !!(person && person.moving); }
+  // Batch 47: HUD lanes. The hint gets its own band below the top-left row, clear of the right-hand column (Chart, Log, map, gear)
+  // on every screen, including iPhone Safari with its address bar; the sideways notice sits under the right column in portrait.
+  let lanesT47 = 0;
+  function lanes47(dt) {
+    lanesT47 -= dt; if (lanesT47 > 0) return; lanesT47 = 0.3;
+    const row = document.getElementById("hudrow"); if (!row || !hint) return;
+    const W = innerWidth, H = innerHeight, rr = row.getBoundingClientRect();
+    const rects = ["map", "log", "chart", "pause", "windbox", "sail", "sides47", "anchor"].map(function (id) { const e = document.getElementById(id); if (!e || e.offsetParent === null) return null; const c = e.getBoundingClientRect(); return c.width ? c : null; }).filter(Boolean);
+    let top = Math.round(rr.bottom + 8);
+    if (H > W * 1.2) {
+      let low = rr.bottom; rects.forEach(function (c) { if (c.top < H * 0.45 && c.bottom > low) low = c.bottom; });
+      top = Math.round(low + 8);
+      if (portraitTip.style.display === "block") { const pt = top + "px"; if (portraitTip.style.top !== pt) portraitTip.style.top = pt; top += (portraitTip.offsetHeight || 28) + 6; }
+      hint.style.setProperty("top", top + "px", "important"); hint.style.setProperty("bottom", "auto", "important");
+      hint.style.setProperty("left", "50%", "important"); hint.style.setProperty("transform", "translateX(-50%)", "important"); hint.style.setProperty("max-width", (W - 24) + "px", "important");
+      return;
+    }
+    const left = Math.round(Math.max(12, rr.left));
+    let right = W - 12;
+    rects.forEach(function (c) { if (c.left > W * 0.4 && c.top < top + 70 && c.bottom > top - 4 && c.left - 8 < right) right = c.left - 8; });
+    const avail = Math.max(160, right - left);
+    hint.style.setProperty("top", top + "px", "important"); hint.style.setProperty("bottom", "auto", "important");
+    hint.style.setProperty("max-width", avail + "px", "important"); hint.style.setProperty("transform", "none", "important");
+    const hw = Math.min(avail, hint.offsetWidth || avail);
+    hint.style.setProperty("left", Math.round(left + (avail - hw) / 2) + "px", "important");
+  }
   function shrinkShipTags() {
     const list = foes.concat(consort ? [consort] : []);
     for (let i = 0; i < list.length; i++) {
@@ -13823,7 +13868,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     document.body.appendChild(wrap);
     return { box: box, close: close };
   }
-  function btn47(label, fn) { const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.style.cssText = "height:44px;font-size:15px;margin:6px 6px 0 0;padding:0 14px"; b.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); fn(b); }); return b; }
+  function btn47(label, fn) { const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.style.cssText = "height:44px;font-size:15px;margin:6px 6px 0 0;padding:0 14px"; tapBoth47(b, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } fn(b); }); return b; }
   function showExport47() {
     const code = saveCode47(), p = panel47("Export save");
     const note = document.createElement("div"); note.textContent = "Copy this code, or download the file, to move your voyage to another browser or to the app."; p.box.appendChild(note);
@@ -13947,9 +13992,40 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     // Soft footsteps ashore, faster when running.
     if (mode === "land" && person.moving && !menuOpen) { stepT47 -= dt; if (stepT47 <= 0) { stepT47 = run45 > 0.5 ? 0.27 : 0.38; noiseBurst(0.035, 0.05, 700 + Math.random() * 300); } } else stepT47 = 0.1;
   }
+  // Batch 47: Fire Port (left) and Fire Starboard (right). They fire that battery whatever the camera is doing, each with its own reload.
+  const sides47 = document.createElement("div");
+  sides47.id = "sides47";
+  sides47.style.cssText = "display:none;gap:6px;justify-content:flex-end;grid-column:1/-1;pointer-events:none";
+  const sideBtn47 = [1, -1].map(function (sg) {
+    const b = document.createElement("button");
+    b.type = "button"; b.id = sg > 0 ? "fireport47" : "firestbd47"; b.className = "side47";
+    b.textContent = sg > 0 ? "Fire Port" : "Fire Stbd";
+    b.setAttribute("aria-label", sg > 0 ? "Fire the port battery" : "Fire the starboard battery");
+    b.style.cssText = "pointer-events:auto;min-width:80px!important;height:34px!important;font-size:13px!important;padding:0 8px;white-space:nowrap;touch-action:manipulation";
+    b.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); if (typeof tap46 === "function") tap46(b); fire(sg); });
+    sides47.appendChild(b);
+    return b;
+  });
+  { const bb = document.getElementById("btns"); if (bb) bb.insertBefore(sides47, fireBtn); }
+  polishCss.textContent += "@media (max-height:520px){#sides47{position:absolute;right:calc(100% + 8px);bottom:0}}";
+  function updateSides47() {
+    const on = mode === "sea" && !titleOn && !fightOn;
+    const want = on ? "flex" : "none"; if (sides47.style.display !== want) sides47.style.display = want;
+    if (!on) return;
+    const full = Math.max(0.1, relMax45 || gunStats().reload || 6);
+    sideBtn47.forEach(function (b, i) {
+      const c = Math.min(coolS47[i], Math.max(0, fireCool) + (coolS47[i] > fireCool ? 0 : 0));
+      const txt = c > 0.05 ? (i === 0 ? "Port " : "Stbd ") + Math.ceil(c) : (i === 0 ? "Fire Port" : "Fire Stbd");
+      if (b.textContent !== txt) b.textContent = txt;
+      const dq = c > 0.05 ? String(Math.round(100 * clamp(1 - c / full, 0, 1) / 10) * 10) : "";
+      if (b.dataset.dq !== dq) { b.dataset.dq = dq; b.style.background = dq ? "linear-gradient(90deg, rgba(242,212,138,0.55) " + dq + "%, rgba(8,20,32,0.55) " + dq + "%)" : ""; }
+    });
+  }
   function toShip47(e) { if (e) { e.preventDefault(); e.stopPropagation(); } if (mode !== "land" || menuOpen || (fightOn && fight && fight.land)) return; if (typeof uiTick47 === "function") uiTick47(); boardShip(true); }
   shipBtn47.addEventListener("pointerdown", toShip47);
   function update47(dt) {
+    updateSides47();
+    lanes47(dt);
     { const want = mode === "land" && !titleOn && !menuOpen && !(fightOn && fight && fight.land) ? "" : "none"; if (shipBtn47.style.display !== want) shipBtn47.style.display = want; }
     updateMusic47(dt);
     if (!x3 || titleOn) return;
@@ -14048,7 +14124,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     knots46.style.display = showK ? "block" : "none";
     knotsT47 -= dt;
     watch47(dt);
-    if (showK && knotsT47 <= 0) { knotsT47 = 0.25; const r = sailBtn.getBoundingClientRect(); const kl = Math.round(r.left + 6) + "px", kt = Math.round(r.top - 14) + "px"; if (knots46.style.left !== kl) knots46.style.left = kl; if (knots46.style.top !== kt) knots46.style.top = kt; const kn = anchored ? "anchored" : (Math.abs(ship.speed || 0)).toFixed(1) + " kn" + (gustT > 0 ? " gust" : ""); if (knots46.textContent !== kn) knots46.textContent = kn; { const kc = Math.abs(ship.speed || 0) > MAX_SPEED * 0.8 ? "#9dffb0" : (anchored ? "#9fd8ff" : "#f2d48a"); if (knots46.dataset.c !== kc) { knots46.dataset.c = kc; knots46.style.color = kc; } } }
+    if (showK && knotsT47 <= 0) { knotsT47 = 0.25; const r = sailBtn.getBoundingClientRect(); const kw = knots46.offsetWidth || 48, kl = Math.round(Math.max(4, r.left - kw - 8)) + "px", kt = Math.round(r.top + r.height / 2 - 6) + "px"; if (knots46.style.left !== kl) knots46.style.left = kl; if (knots46.style.top !== kt) knots46.style.top = kt; const kn = anchored ? "anchored" : (Math.abs(ship.speed || 0)).toFixed(1) + " kn" + (gustT > 0 ? " gust" : ""); if (knots46.textContent !== kn) knots46.textContent = kn; { const kc = Math.abs(ship.speed || 0) > MAX_SPEED * 0.8 ? "#9dffb0" : (anchored ? "#9fd8ff" : "#f2d48a"); if (knots46.dataset.c !== kc) { knots46.dataset.c = kc; knots46.style.color = kc; } } }
   }
   function fightish45() { return foes.some(function (f) { return f.alive && !f.sinking && !f.gone && Math.hypot(f.x - ship.x, f.z - ship.z) < 60; }); }
   function update45(dt) {
@@ -14970,7 +15046,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     updateBatch26(dt);
     updateBatch27(dt);
     if (mode === "sea" && !titleOn) deoverlapShipTags(foes.concat(consort ? [consort] : []));
-    portraitTip.style.display = (!titleOn && innerHeight > innerWidth * 1.2) ? "block" : "none";
+    if (!titleOn && tipT47 > 0) { tipT47 -= 1 / 60; if ((mode === "sea" && Math.abs(ship.speed) > 0.6 && sail > 0 && tipT47 < 5) || (mode === "land" && moving47())) tipT47 = 0; }
+    portraitTip.style.display = (!titleOn && tipT47 > 0 && innerHeight > innerWidth * 1.2) ? "block" : "none";
     if (x3 && mode === "sea" && !paused && !titleOn) {
       x3.seaTime += dt;
       if (lastX !== null) { const d = Math.hypot(ship.x - lastX, ship.z - lastZ); if (d < 20) x3.dist += d; }
@@ -15106,6 +15183,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
   }
   function frame(now) {
+    // Batch 47: no frame cap on capable devices (the display's own rate, usually 60). Low graphics holds about 30 fps to save battery.
+    if (x3 && x3.lowGfx && worldReady && now - last < 30) { requestAnimationFrame(frame); return; }
     if (!guarded47) guardText47();
     const dt = Math.min(0.05, (now - last) / 1000);
     layoutHint(now);
@@ -15125,6 +15204,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     pauseClock = now;
     updateDaylight(now / 1000);
     if (!paused) windAngle += dt * (Math.PI * 2 / WIND_TURN);
+    if (!paused) { coolS47[0] = Math.max(0, Math.min(coolS47[0] - dt, Math.max(0, fireCool - dt))); coolS47[1] = Math.max(0, Math.min(coolS47[1] - dt, Math.max(0, fireCool - dt))); }
     if (fireCool > 0 && !paused) { fireCool -= dt; if (fireCool <= 0 && mode === "sea" && x3 && x3.tut >= 4) { try { if (audioCtx && x3.volume > 0) chime([1200], 0.05, 0.01); } catch (e) { /* optional */ } buzz(8); } }
     if (!titleOn && !paused) {
       const input = readSteer();
@@ -15437,6 +15517,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       knob.style.transform = "translate(" + dx + "px," + dy + "px)";
     }
     stick.addEventListener("pointerdown", function (e) {
+      if (e.cancelable) e.preventDefault();
       pid = e.pointerId;
       stick.setPointerCapture(e.pointerId);
       moveStick(e);
@@ -15454,6 +15535,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     stick.addEventListener("pointerup", endStick);
     stick.addEventListener("pointercancel", endStick);
+    stick.addEventListener("lostpointercapture", endStick);
 
     function lookBlocked(target) {
       if (!target || !target.closest) return false;
@@ -15762,7 +15844,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const qgo = function (e) { close(e); quickBattle(); };
     quick.addEventListener("pointerdown", qgo);
     box.appendChild(quick);
-    { const im = document.createElement("button"); im.type = "button"; im.id = "howimport47"; im.textContent = "Import a save"; im.style.cssText = "display:block;margin:10px auto 0;height:36px;font-size:14px;background:transparent;border:1px solid rgba(242,212,138,.5);color:#f2d48a;border-radius:10px;padding:0 14px"; im.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); showImport47(); }); box.appendChild(im); }
+    { const im = document.createElement("button"); im.type = "button"; im.id = "howimport47"; im.textContent = "Import a save"; im.style.cssText = "display:block;margin:10px auto 0;height:36px;font-size:14px;background:transparent;border:1px solid rgba(242,212,138,.5);color:#f2d48a;border-radius:10px;padding:0 14px"; tapBoth47(im, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } showImport47(); }); box.appendChild(im); }
     card.appendChild(box);
     document.body.appendChild(card);
   }
@@ -15884,8 +15966,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     boot.appendChild(tip);
     boot.appendChild(row);
-    { const cb = document.createElement("button"); cb.type = "button"; cb.id = "titlecredits47"; cb.textContent = "Credits"; cb.style.cssText = "margin:10px 0 0 8px;height:36px;font-size:14px;background:transparent;border:1px solid rgba(242,212,138,.5);color:#f2d48a;border-radius:10px;padding:0 14px"; cb.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); showCreditsPanel47(); }); setTimeout(function () { const im = document.getElementById("titleimport47"); if (im && im.parentNode) im.parentNode.insertBefore(cb, im.nextSibling); }, 0); }
-    { const im = document.createElement("button"); im.type = "button"; im.id = "titleimport47"; im.textContent = "Import a save"; im.style.cssText = "margin-top:10px;height:36px;font-size:14px;background:transparent;border:1px solid rgba(242,212,138,.5);color:#f2d48a;border-radius:10px;padding:0 14px"; im.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); showImport47(); }); boot.appendChild(im); }
+    { const cb = document.createElement("button"); cb.type = "button"; cb.id = "titlecredits47"; cb.textContent = "Credits"; cb.style.cssText = "margin:10px 0 0 8px;height:36px;font-size:14px;background:transparent;border:1px solid rgba(242,212,138,.5);color:#f2d48a;border-radius:10px;padding:0 14px"; tapBoth47(cb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } showCreditsPanel47(); }); setTimeout(function () { const im = document.getElementById("titleimport47"); if (im && im.parentNode) im.parentNode.insertBefore(cb, im.nextSibling); }, 0); }
+    { const im = document.createElement("button"); im.type = "button"; im.id = "titleimport47"; im.textContent = "Import a save"; im.style.cssText = "margin-top:10px;height:36px;font-size:14px;background:transparent;border:1px solid rgba(242,212,138,.5);color:#f2d48a;border-radius:10px;padding:0 14px"; tapBoth47(im, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } showImport47(); }); boot.appendChild(im); }
     const tv = document.createElement("div");
     tv.id = "titlever";
     tv.textContent = "Version: batch 47";
