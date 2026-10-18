@@ -3912,8 +3912,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   document.getElementById("ui").appendChild(squallBanner);
   // Batch 47: iOS Safari safe taps. Fires on pointerup (finger lifted on the same button) and on click, once per tap.
   function tapBoth47(el, fn) {
-    let downOn = false, lastT = 0;
-    const go = function (e) { const t = performance.now(); if (t - lastT < 450) { if (e && e.cancelable) e.preventDefault(); return; } lastT = t; fn.call(el, e); };
+    let downOn = false, lastT = 0, lastType = "";
+    // a click that follows our own pointerup for the same tap is skipped; separate taps always count
+    const go = function (e) { const t = performance.now(), ty = e ? e.type : ""; if (ty === "click" && lastType === "pointerup" && t - lastT < 450) { lastType = ""; if (e.cancelable) e.preventDefault(); return; } lastT = t; lastType = ty; fn.call(el, e); };
     el.addEventListener("pointerdown", function () { downOn = true; });
     el.addEventListener("pointerup", function (e) { if (!downOn) return; downOn = false; go(e); });
     el.addEventListener("pointercancel", function () { downOn = false; });
@@ -8667,9 +8668,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const vign44 = document.createElement("div"); vign44.id = "vign44";
   vign44.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:1";
   document.getElementById("ui").appendChild(vign44);
-  polishCss.textContent += "body.title47 #ui{visibility:hidden!important}body.title47 #howto{display:none}";
+  polishCss.textContent += "body.title47 #howto{display:none}body.title47 #ui{pointer-events:none}";
   // Batch 47: the title scrolls instead of clipping on short landscape screens, keeps clear of notches and the Safari bars, and tightens up below 460 px.
-  polishCss.textContent += "body.title47 #boot{overflow-y:auto;justify-content:safe center;box-sizing:border-box;padding:calc(12px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}body.title47 #boot>*{flex-shrink:0}@media (max-height:460px){body.title47 #boot>div:first-child{font-size:32px!important;margin-bottom:0!important}body.title47 #boot #titletip{display:none}body.title47 #boot button{height:44px!important}body.title47 #titlever{margin-top:8px!important}}";
+  polishCss.textContent += "body.title47 #boot{overflow-y:auto;justify-content:safe center;box-sizing:border-box;padding:calc(12px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}body.title47 #boot>*{flex-shrink:0}@media (max-height:460px){body.title47 #boot>div:first-child{font-size:32px!important;margin-bottom:0!important}body.title47 #boot #titletip{font-size:12px!important;margin-bottom:6px!important}body.title47 #boot button{height:44px!important}body.title47 #titlever{margin-top:8px!important}}";
   polishCss.textContent += "#sub,#hulllabel,#windlabel{text-shadow:0 1px 2px rgba(0,0,0,.75)}#btns button:active,#mbtns button:active{transform:scale(.95)}" +
     "@keyframes menuin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}#townmenu{animation:menuin .18s ease-out}" +
     "@keyframes toastin{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}#toast{animation:toastin .25s ease-out}" +
@@ -11433,7 +11434,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       fireBtn.style.display = "";
       if (shotBtn) shotBtn.style.display = "";
       glassBtn.style.display = "";
-      const cAll47 = Math.min(coolS47[0], coolS47[1], Math.max(0, fireCool));
+      // Batch 47: the main Fire shows the reload of the battery it would fire now; with no side chosen, the sooner of the two.
+      let cAll47 = Math.min(coolS47[0], coolS47[1], Math.max(0, fireCool));
+      { const vq = viewBearing(); const sq = vq.bear ? vq.sign : 0; if (sq) cAll47 = Math.min(coolS47[sq > 0 ? 0 : 1], Math.max(0, fireCool)); }
       fireBtn.textContent = cAll47 > 0.05 ? ("Reload " + Math.ceil(cAll47)) : ("Fire: " + shotWord());
       // Reload progress: the button fills left to right as the crew load the guns.
       if (cAll47 > 0.05) { const full = Math.max(1, gunStats().reload || 6); const k = Math.round(100 * clamp(1 - cAll47 / full, 0, 1)); fireBtn.style.backgroundImage = "linear-gradient(90deg, rgba(255,255,255,.38) " + k + "%, rgba(0,0,0,0) " + k + "%)"; }
@@ -12843,6 +12846,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const W = innerWidth, H = innerHeight, rr = row.getBoundingClientRect();
     const rects = ["map", "log", "chart", "pause", "windbox", "sail", "sides47", "anchor"].map(function (id) { const e = document.getElementById(id); if (!e || e.offsetParent === null) return null; const c = e.getBoundingClientRect(); return c.width ? c : null; }).filter(Boolean);
     let top = Math.round(rr.bottom + 8);
+    if (H <= W * 1.2 && mode !== "sea") {
+      // ashore in landscape the hint keeps its old place (the town labels already steer round it)
+      if (hint.dataset.lane47) { ["top", "bottom", "left", "transform", "max-width"].forEach(function (k) { hint.style.removeProperty(k); }); delete hint.dataset.lane47; }
+      return;
+    }
+    hint.dataset.lane47 = "1";
     if (H > W * 1.2) {
       let low = rr.bottom; rects.forEach(function (c) { if (c.top < H * 0.45 && c.bottom > low) low = c.bottom; });
       top = Math.round(low + 8);
@@ -15183,8 +15192,6 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
   }
   function frame(now) {
-    // Batch 47: no frame cap on capable devices (the display's own rate, usually 60). Low graphics holds about 30 fps to save battery.
-    if (x3 && x3.lowGfx && worldReady && now - last < 30) { requestAnimationFrame(frame); return; }
     if (!guarded47) guardText47();
     const dt = Math.min(0.05, (now - last) / 1000);
     layoutHint(now);
@@ -15204,6 +15211,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     pauseClock = now;
     updateDaylight(now / 1000);
     if (!paused) windAngle += dt * (Math.PI * 2 / WIND_TURN);
+    if (fireCool > Math.max(coolS47[0], coolS47[1]) + 0.05) { coolS47[0] = coolS47[1] = fireCool; } // fireCool set from outside (tests, events) loads both batteries
     if (!paused) { coolS47[0] = Math.max(0, Math.min(coolS47[0] - dt, Math.max(0, fireCool - dt))); coolS47[1] = Math.max(0, Math.min(coolS47[1] - dt, Math.max(0, fireCool - dt))); }
     if (fireCool > 0 && !paused) { fireCool -= dt; if (fireCool <= 0 && mode === "sea" && x3 && x3.tut >= 4) { try { if (audioCtx && x3.volume > 0) chime([1200], 0.05, 0.01); } catch (e) { /* optional */ } buzz(8); } }
     if (!titleOn && !paused) {
