@@ -8515,7 +8515,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const d = Math.hypot(dx, dz);
       if (d < 6 || d > reach) return;
       const cos = (dx * rx + dz * rz) / d;
-      if (cos < (rankOf() === 0 ? 0.68 : 0.72)) return;
+      if (cos < (rankOf() === 0 ? 0.52 : 0.56)) return; // Batch 50: the guns can be laid on a ship up to about 55-58 degrees off the beam (was 43-47), so a close ship on the quarter or bow is hit too
       if (d < bd) { bd = d; best = { x: o.x + (vx || 0) * flight, z: o.z + (vz || 0) * flight, name: o.name }; }
     };
     for (let i = 0; i < foes.length; i++) {
@@ -8599,7 +8599,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     buzz(25);
     ship.roll = (ship.roll || 0) - sign * 0.05; shakeCam(0.07);
     // Batch 48: a volley with nobody in reach says how far off she is, so short splashes make sense.
-    let far48 = ""; if (!assist) { const rch = gunReach48(gtv), nf = nearFoe47(rch * 2.2); if (nf && nf.sign === sign && nf.fromLine >= BEAR_MIN && nf.d > rch) far48 = " Out of reach: she is " + Math.round(nf.d) + " yd off, your guns carry about " + Math.round(rch) + "."; }
+    let far48 = ""; if (!assist) { const nf50 = nearFoe47(gunReach48(gtv)); if (nf50 && nf50.sign === sign && nf50.fromLine < BEAR_MIN + 0.35) far48 = " She is too far off the " + (nf50.ahead ? "bow" : "stern") + " for the guns: turn to bring her abeam."; }
+    if (!assist && !far48) { const rch = gunReach48(gtv), nf = nearFoe47(rch * 2.2); if (nf && nf.sign === sign && nf.fromLine >= BEAR_MIN && nf.d > rch) far48 = " Out of reach: she is " + Math.round(nf.d) + " yd off, your guns carry about " + Math.round(rch) + "."; }
     say((sign > 0 ? "Port battery" : "Starboard battery") + (assist && assist.name ? ", laid on " + assist.name + ". " : ". ") + word + far48, far48 ? 2.4 : 1.2);
   }
 
@@ -17300,6 +17301,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       shipAt: function (x, z) { ship.x = x; ship.z = z; ship.speed = 0; return [x, z]; },
       setBoss: function (h, c) { LEVIATHAN_HULL = h; LEVIATHAN_COOL = c; return [h, c]; },
       quickBattle: function () { quickBattle(); return { sail: sail, gold: ledger.gold }; },
+      fire50: function (sg) { const s0 = x3.shots; const st = { mode: mode, fightOn: fightOn, ball: !!ballTemplate, hull: ship.hull, c0: coolS47[0], c1: coolS47[1], fc: fireCool }; fire(sg); return Object.assign(st, { fired: x3.shots - s0 }); },
       h50: function (k) { if (k === "throw") throwOnce50 = true; if (k === "nan") { ship.x = NaN; if (foes[0]) foes[0].z = NaN; } return { errs: errs50.slice(), t: waterUniforms.uTime.value, x: ship.x, z: ship.z, fz: foes[0] ? foes[0].z : null, boot: boot.classList.contains("hide") ? "" : boot.textContent }; },
       saveNow: function () { lastSaveTxt50 = ""; writeSave(); return !!localStorage.getItem("salt-and-shot-3d-v1"); },
       setHull: function (n) { ship.hull = n; return ship.hull; },
