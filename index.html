@@ -4020,10 +4020,21 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   document.getElementById("ui").appendChild(chartPanel);
   let chartSnap = { labels: [], storms: 0, ships: 0, px: 0, pz: 0 };
 
+  // Batch 50: an error before the world is ready shows on the boot screen; once playing, errors are logged (window.__saltErrs) and the game keeps running instead of being covered by a "Could not start" screen.
+  const errs50 = window.__saltErrs = [];
+  function logErr50(m) { errs50.push({ t: Math.round(performance.now()), m: String(m).slice(0, 300) }); if (errs50.length > 20) errs50.shift(); }
   window.addEventListener("error", function (ev) {
+    logErr50(ev.message || ev.error);
+    try { if (worldReady) return; } catch (e) { /* not declared yet: still starting */ }
     boot.classList.remove("hide");
     boot.textContent = "Could not start: " + (ev.message || ev.error);
   });
+  // Batch 50: if the phone drops the WebGL context (memory pressure, app switch), save and reload cleanly when it comes back instead of showing a frozen black screen.
+  setTimeout(function () { try { const cv = renderer && renderer.domElement; if (!cv) return;
+    cv.addEventListener("webglcontextlost", function (e) { e.preventDefault(); logErr50("webgl context lost"); try { lastSaveTxt50 = ""; writeSave(); } catch (er) { /* best effort */ } });
+    cv.addEventListener("webglcontextrestored", function () { logErr50("webgl context restored"); setTimeout(function () { location.reload(); }, 300); });
+  } catch (e) { /* optional */ } }, 0);
+  window.addEventListener("unhandledrejection", function (ev) { logErr50("promise: " + (ev.reason && ev.reason.message || ev.reason)); });
 
   const ISLANDS = [
     { name: "Bramble Quay", x: 0, z: 0, landR: 42, h: 3.6, kind: "town" },
@@ -8589,6 +8600,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const SPL_GEO = { big: new THREE.SphereGeometry(0.6, 8, 6), small: new THREE.SphereGeometry(0.35, 8, 6), ring: new THREE.RingGeometry(0.5, 0.8, 20), ring2: new THREE.RingGeometry(0.3, 0.45, 20), spout: new THREE.CylinderGeometry(0.12, 0.45, 3.2, 8, 1, true) };
   Object.keys(SPL_GEO).forEach(function (k) { SPL_GEO[k].userData.shared = true; });
   function splashAt(x, z, big) {
+    if (splashes.length > 70 && !big) return; // Batch 50: cap small splashes in a heavy fight
     if (!big && !(x3 && x3.lowGfx)) { const sp = new THREE.Mesh(SPL_GEO.spout, new THREE.MeshBasicMaterial({ color: 0xeefaff, transparent: true, opacity: 0.7, depthWrite: false })); sp.position.set(x, 1.4, z); scene.add(sp); splashes.push({ mesh: sp, life: 0.45, spout: true }); }
     const mesh = new THREE.Mesh(
       big ? SPL_GEO.big : SPL_GEO.small,
@@ -11375,6 +11387,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     hurtSmoke49(dt);
     flutter49(dt);
+    if (smokes.length > 140) for (let i = 0; i < smokes.length - 140; i++) smokes[i].life = Math.min(smokes[i].life, 0.05); // Batch 50: never pile up more than ~140 smoke puffs
     for (let i = smokes.length - 1; i >= 0; i--) {
       const s = smokes[i];
       s.life -= dt;
@@ -13027,25 +13040,29 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     lanesT47 -= dt; if (lanesT47 > 0) return; lanesT47 = 0.3;
     const row = document.getElementById("hudrow"); if (!row || !hint) return;
     const W = innerWidth, H = innerHeight, rr = row.getBoundingClientRect();
-    const rects = ["map", "log", "chart", "pause", "windbox", "sail", "sides47", "anchor"].map(function (id) { const e = document.getElementById(id); if (!e || e.offsetParent === null) return null; const c = e.getBoundingClientRect(); return c.width ? c : null; }).filter(Boolean);
+    const rects = ["map", "log", "chart", "pause", "windbox", "sail", "sides47", "anchor", "safebadge"].map(function (id) { const e = document.getElementById(id); if (!e || e.offsetParent === null) return null; const c = e.getBoundingClientRect(); return c.width ? c : null; }).filter(Boolean);
     let top = Math.round(rr.bottom + 8);
     if (H <= W * 1.2 && mode !== "sea") {
       // ashore in landscape the hint keeps its old place (the town labels already steer round it)
-      if (hint.dataset.lane47) { ["top", "bottom", "left", "transform", "max-width"].forEach(function (k) { hint.style.removeProperty(k); }); delete hint.dataset.lane47; }
+      if (hint.dataset.lane47) { ["top", "bottom", "left", "transform", "max-width", "max-height", "overflow"].forEach(function (k) { hint.style.removeProperty(k); }); delete hint.dataset.lane47; }
       return;
     }
     hint.dataset.lane47 = "1";
     if (H > W * 1.2) {
       let low = rr.bottom; rects.forEach(function (c) { if (c.top < H * 0.45 && c.bottom > low) low = c.bottom; });
       top = Math.round(low + 8);
-      if (portraitTip.style.display === "block") { const pt = top + "px"; if (portraitTip.style.top !== pt) portraitTip.style.top = pt; top += (portraitTip.offsetHeight || 28) + 6; }
+      // Batch 50: the sideways tip goes below the map and right column (the stylesheet pinned it at 152 px with !important, over the map).
+      if (portraitTip.style.display === "block") { const pt = top + "px"; if (portraitTip.style.getPropertyValue("top") !== pt) portraitTip.style.setProperty("top", pt, "important"); top += (portraitTip.offsetHeight || 28) + 6; }
       hint.style.setProperty("top", top + "px", "important"); hint.style.setProperty("bottom", "auto", "important");
       hint.style.setProperty("left", "50%", "important"); hint.style.setProperty("transform", "translateX(-50%)", "important"); hint.style.setProperty("max-width", (W - 24) + "px", "important");
+      // Batch 50: a long hint stops short of the next control below it (it is cut to the lines that fit) instead of running over the Sail button.
+      { let below = H; rects.forEach(function (c) { if (c.top > top && c.top < below) below = c.top; }); const room = Math.max(36, below - top - 6); hint.style.setProperty("max-height", room + "px", "important"); hint.style.setProperty("overflow", "hidden", "important"); }
       return;
     }
     const left = Math.round(Math.max(12, rr.left));
     let right = W - 12;
     rects.forEach(function (c) { if (c.left > W * 0.4 && c.top < top + 70 && c.bottom > top - 4 && c.left - 8 < right) right = c.left - 8; });
+    hint.style.removeProperty("max-height"); hint.style.removeProperty("overflow");
     let avail = Math.max(160, right - left);
     // Batch 49: at sea the hint keeps to the left-hand side of its lane, at most about half the screen wide, so it never sits over your ship in the middle.
     const sea49 = mode === "sea";
@@ -15421,7 +15438,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       for (let i = n0; i < shots.length; i++) { shots[i].life = 0; shots[i].mesh.visible = false; }
     } catch (e) { /* warm-up optional */ }
   }
+  // Batch 50: the frame loop always schedules the next frame, even if one update throws, so a single bad frame can never freeze the game. The first few errors are re-thrown on a timer so tests still see them.
+  let frameErrs50 = 0;
   function frame(now) {
+    try { frameBody50(now); }
+    catch (e) { frameErrs50++; logErr50("frame: " + (e && e.stack ? e.stack.split("\n").slice(0, 2).join(" ") : e)); if (frameErrs50 <= 3) setTimeout(function () { throw e; }, 0); }
+    requestAnimationFrame(frame);
+  }
+  let throwOnce50 = false;
+  function frameBody50(now) {
+    if (throwOnce50) { throwOnce50 = false; throw new Error("test frame error"); }
     if (!warmed48 && worldReady) warm48();
     const work48 = performance.now();
     if (!guarded47) guardText47();
@@ -15506,7 +15532,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!titleOn || now - titleDraw47 > 80) { titleDraw47 = now; separatePlaceTags(); renderer.render(scene, camera); }
     perfGuard(now);
     probeFps48(now, performance.now() - work48);
-    requestAnimationFrame(frame);
+    if ((renownTick & 63) === 0) sanity50();
+  }
+  // Batch 50: a cheap check every 64 frames: a ship or foe with a broken position or hull is put right instead of poisoning the scene.
+  function sanity50() {
+    if (!isFinite(ship.x) || !isFinite(ship.z) || !isFinite(ship.heading)) { ship.x = 18; ship.z = 60; ship.heading = 0; ship.speed = 0; logErr50("sanity: ship position"); }
+    if (!isFinite(ship.speed)) ship.speed = 0;
+    if (!isFinite(ship.hull)) ship.hull = ship.hullMax || 100;
+    for (let i = 0; i < foes.length; i++) { const f = foes[i]; if (f.gone) continue; if (!isFinite(f.x) || !isFinite(f.z) || !isFinite(f.heading)) { const w = f.wps && f.wps[0]; f.x = w ? w[0] : 200; f.z = w ? w[1] : 200; f.heading = 0; f.speed = 0; logErr50("sanity: foe " + f.name); } if (!isFinite(f.hull)) f.hull = f.hullMax || 100; }
+    if (!isFinite(camera.position.x) || !isFinite(camera.position.y) || !isFinite(camera.position.z)) { camera.position.set(ship.x, 12, ship.z - 20); logErr50("sanity: camera"); }
   }
 
   function bindInput() {
@@ -15916,12 +15950,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!isFinite(ledger.gold)) ledger.gold = data.gold;
     try {
       const txt = JSON.stringify(data);
-      localStorage.setItem(SAVE_KEY, txt);
+      // Batch 50: skip the write when nothing changed (it ran every 4 s even standing still); if storage is full, drop the oldest spare copy and try once more.
       const now = Date.now();
+      if (txt === lastSaveTxt50 && now - lastSaveAt50 < 30000) return;
+      try { localStorage.setItem(SAVE_KEY, txt); } catch (qe) { try { localStorage.removeItem(SAVE_KEY + "-before-import"); localStorage.setItem(SAVE_KEY, txt); } catch (qe2) { logErr50("save failed: storage full"); return; } }
+      lastSaveTxt50 = txt; lastSaveAt50 = now;
       if (now - lastBackup > 60000) { localStorage.setItem(SAVE_KEY + "-backup", txt); lastBackup = now; }
     } catch (err) {}
   }
-  let lastBackup = 0, saveRepairs = 0;
+  let lastBackup = 0, saveRepairs = 0, lastSaveTxt50 = "", lastSaveAt50 = 0;
 
   function clearSave() {
     try { localStorage.removeItem(SAVE_KEY); } catch (err) {}
@@ -16170,7 +16207,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const tip = document.createElement("div");
     tip.id = "titletip";
     tip.textContent = "Tip: raise Sail, leave the harbour, then swipe to look and tap Fire for a broadside.";
-    tip.style.cssText = "margin-bottom:14px;max-width:320px;font-size:13px;opacity:0.8;font-style:italic";
+    tip.style.cssText = "margin-bottom:14px;max-width:320px;font-size:13px;opacity:0.8;font-style:italic;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden"; // Batch 50: long tips stop at two lines
     const row = document.createElement("div");
     row.style.cssText = "display:flex;gap:10px;justify-content:center;flex-wrap:wrap";
     let picked = false;
@@ -16227,7 +16264,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const tv = document.createElement("div");
     tv.id = "titlever";
     tv.textContent = "Version: batch 49";
-    tv.style.cssText = "margin-top:14px;font-size:12px;opacity:.55";
+    // Batch 50: the version sits in the bottom-right corner of the screen, so a long tip or a short screen can never push it out of view.
+    tv.style.cssText = "position:fixed;right:calc(8px + env(safe-area-inset-right));bottom:calc(6px + env(safe-area-inset-bottom));font-size:11px;opacity:.55;pointer-events:none;z-index:2";
     boot.appendChild(tv);
   }
 
@@ -17247,7 +17285,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       shipAt: function (x, z) { ship.x = x; ship.z = z; ship.speed = 0; return [x, z]; },
       setBoss: function (h, c) { LEVIATHAN_HULL = h; LEVIATHAN_COOL = c; return [h, c]; },
       quickBattle: function () { quickBattle(); return { sail: sail, gold: ledger.gold }; },
-      saveNow: function () { writeSave(); return !!localStorage.getItem("salt-and-shot-3d-v1"); },
+      h50: function (k) { if (k === "throw") throwOnce50 = true; if (k === "nan") { ship.x = NaN; if (foes[0]) foes[0].z = NaN; } return { errs: errs50.slice(), t: waterUniforms.uTime.value, x: ship.x, z: ship.z, fz: foes[0] ? foes[0].z : null, boot: boot.classList.contains("hide") ? "" : boot.textContent }; },
+      saveNow: function () { lastSaveTxt50 = ""; writeSave(); return !!localStorage.getItem("salt-and-shot-3d-v1"); },
       setHull: function (n) { ship.hull = n; return ship.hull; },
       setDayPhase: function (ph) { dayOffset = ph * DAY_LEN - lastDayT; updateDaylight(lastDayT); return dayU.value; },
       gullsShown: function () { let n = 0; for (let i = 0; i < gulls.length; i++) if (gulls[i].group.visible) n++; return n; },
