@@ -6732,6 +6732,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     foe.hull = Math.max(0, foe.hull - n);
     paintHullSprite(foe.bar, foe.hull, foe.hullMax);
     foe.pulse45 = 0.35;
+    if (!foe.boss) foe.heading += (Math.random() - 0.5) * 0.08;
     if (rankOf() >= 2 && !foe.boss) for (let i = 0; i < foes.length; i++) { const o = foes[i]; if (o === foe || !o.alive || o.sinking || o.gone || o.hunt || o.boss) continue; if (Math.hypot(o.x - foe.x, o.z - foe.z) < 110 && !playerSafe()) { o.hunt = true; floatText(o.x, 10, o.z, "joins the fight!", "#ffb4a8"); break; } }
     floatText(foe.x, 9, foe.z, "-" + n, n >= 15 ? "#ffa04a" : "#ffe08a");
     hitMark45(n);
@@ -7835,7 +7836,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       smokes.push({ mesh: mesh, life: 2.1 + k * 0.4, max: 2.1 + k * 0.4, y0: mesh.position.y, grow: 1.6 });
     }
     const fl = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffb04a, transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
-    fl.name = "gunsmoke"; fl.position.set(x, y, z); fl.scale.setScalar(3.2); scene.add(fl);
+    fl.name = "gunsmoke"; fl.position.set(x, y, z); fl.scale.setScalar(3.2 * (Math.hypot(x - ship.x, z - ship.z) < 12 ? Math.sqrt(hullSpec(playerHull.id).scale / 1.35) : 1)); scene.add(fl);
     smokes.push({ mesh: fl, life: 0.14, max: 0.14, y0: y, flash: true });
   }
   let rainTexC = null;
@@ -7962,7 +7963,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     else if (playerSafe()) { if (f.hunt) { f.hunt = false; f.wp = nearestFoeWp(f); if (!f.boss && safeWarnT <= 0) { say(f.name + " will not follow you into harbour.", 2.5); safeWarnT = 3; } } }
     else if (f.ignore <= 0) {
       if (f.hunt) {
-        if (pd > (f.hunter ? 420 : (dayU.value < 0.35 ? 100 : 130))) {
+        if (pd > (f.hunter ? 420 : (dayU.value < 0.35 ? 100 : 130)) || (!f.hunter && !f.boss && pd > 70 && inSquallAt(ship.x, ship.z) && !inSquallAt(f.x, f.z))) {
           f.hunt = false;
           if (!f.boss) f.search46 = { x: ship.x, z: ship.z, t: 20 };
           f.wp = nearestFoeWp(f);
@@ -8035,7 +8036,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const wp = f.wps[f.wp];
     const dx = wp[0] - f.x;
     const dz = wp[1] - f.z;
-    return { want: Math.atan2(dx, dz), dist: Math.hypot(dx, dz), hunting: false };
+    return { want: Math.hypot(dx, dz) > 30 ? avoid46(f, Math.atan2(dx, dz)) : Math.atan2(dx, dz), dist: Math.hypot(dx, dz), hunting: false };
   }
   // Batch 46: hunting captains look 16 yards ahead and bear away from land and shoals instead of grounding.
   function avoid46(f, want) {
@@ -8154,6 +8155,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
             const chain = Math.random() < 1 / 3;
             spawnShot("foe", sx, 3.4, sz, pdx2 * inv, 5.2, pdz2 * inv, Math.round((chain ? 10 : (f.boss ? (playerHull.id === "manowar" ? 16 : 20) : 28)) * diffK("foeDmg")), chain ? 20 : 0);
             batteryFlash(f.root, sign);
+            if (!(x3 && x3.lowGfx) && Math.hypot(f.x - ship.x, f.z - ship.z) < 140) puffAt(sx, 3.4, sz);
             f.roll = (f.roll || 0) - sign * 0.04;
             f.cool = f.boss ? LEVIATHAN_COOL * diffK("foeCool") : ((f.thin > 0 ? 10 : 7) - (foeTemper(f) === "bold" ? 1 : 0)) * diffK("foeCool");
             if (!f.boss && rankOf() === 0) f.cool *= 1.1;
@@ -8521,7 +8523,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   aimTip.style.cssText = "display:none;position:absolute;left:calc(72% - 90px);top:38%;width:180px;box-sizing:border-box;padding:10px 12px;border-radius:14px;background:rgba(242,212,138,.92);color:#1a1208;font-family:system-ui,sans-serif;font-weight:700;font-size:14px;line-height:1.3;pointer-events:none;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.4);animation:aimpulse 1.2s ease-in-out infinite";
   document.getElementById("ui").appendChild(aimTip);
   polishCss.textContent += "@media (max-height:440px){#howto>div{font-size:13px!important;line-height:1.3!important;padding:10px 14px!important;max-width:460px!important}#howto>div>div:first-child{margin-bottom:4px!important}#howto>div>div:nth-child(2){font-size:18px!important;margin-bottom:2px!important}#howto button{height:42px!important;margin-top:8px!important}}";
-  polishCss.textContent += "#ui button{-webkit-tap-highlight-color:transparent;transition:filter .15s}#ui button:active{filter:brightness(.82)}#board.ready45{animation:ready45 1.4s ease-in-out infinite}#ui button:disabled{filter:grayscale(.7) brightness(.85)}@keyframes menu46{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}#townmenu{animation:menu46 .18s ease-out}@keyframes gold46{0%{color:#ffe08a;text-shadow:0 0 8px rgba(255,214,90,.9)}100%{}}#sub.gold46{animation:gold46 .9s ease-out}@keyframes toast46{from{opacity:0;margin-top:-6px}to{opacity:1;margin-top:0}}#toast{animation:toast46 .22s ease-out}";
+  polishCss.textContent += "#ui button{-webkit-tap-highlight-color:transparent;transition:filter .15s}#ui button:active{filter:brightness(.82)}#board.ready45{animation:ready45 1.4s ease-in-out infinite}@keyframes rain46{from{background-position:0 0}to{background-position:-40px 200px}}@keyframes tap46{0%{filter:brightness(1.6)}100%{filter:none}}#fire.tap46,#sail.tap46,#anchor.tap46{animation:tap46 .35s ease-out}@keyframes hint46{from{opacity:0}to{opacity:1}}#hint{animation:hint46 .3s ease-out}#ui button:disabled{filter:grayscale(.7) brightness(.85)}@keyframes menu46{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}#townmenu{animation:menu46 .18s ease-out}@keyframes gold46{0%{color:#ffe08a;text-shadow:0 0 8px rgba(255,214,90,.9)}100%{}}#sub.gold46{animation:gold46 .9s ease-out}@keyframes toast46{from{opacity:0;margin-top:-6px}to{opacity:1;margin-top:0}}#toast{animation:toast46 .22s ease-out}";
   polishCss.textContent += "@keyframes ready45{0%,100%{box-shadow:0 0 0 2px rgba(242,212,138,.5)}50%{box-shadow:0 0 0 4px rgba(242,212,138,.95),0 0 14px rgba(242,212,138,.6)}}#act.ready45{animation:ready45 1.4s ease-in-out infinite}";
   polishCss.textContent += "@keyframes hullwarn{0%,100%{opacity:1}50%{opacity:.35}}#hullfill.hulllow{background:#e0473a!important;animation:hullwarn .9s ease-in-out infinite}" +
     "@keyframes logglow{0%,100%{box-shadow:0 0 0 2px #ffd65a}50%{box-shadow:0 0 0 5px rgba(255,214,90,.35)}}#log.fresh{animation:logglow 1.1s ease-in-out infinite}";
@@ -10949,6 +10951,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (!hit && s.from === "player" && s.age > 0.28 && fortShotHit(s)) hit = true;
       if (!hit && s.from === "player" && s.age > 0.28 && skirmishShotHit(s)) hit = true;
       if (s.chain) s.mesh.rotation.z += dt * 1.8;
+      if (!hit && s.from === "player" && !s.skip46 && s.mesh.position.y <= 0.2 && s.vy < 0 && s.vy > -9 && Math.hypot(s.vx, s.vz) > 14 && s.life > 0) {
+        // Batch 46: a flat, fast ball skips once off the water and flies on at a third of its height.
+        s.skip46 = true; s.vy = -s.vy * 0.35; s.vx *= 0.7; s.vz *= 0.7; s.mesh.position.y = 0.25;
+        splashAt(s.mesh.position.x, s.mesh.position.z, false);
+        continue;
+      }
       if (hit || s.mesh.position.y <= 0.2 || s.life <= 0) {
         if (hit || s.mesh.position.y <= 0.35) splashAt(s.mesh.position.x, s.mesh.position.z, !!hit);
         if (!hit && s.from === "player" && s.mesh.position.y <= 0.35) {
@@ -12812,6 +12820,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     x3.xp += n;
     const r1 = rankOf();
     if (r1 >= 5) { const l = Math.floor((x3.xp - RANK_XP[5]) / 500); if (l > x3.laurels) { x3.laurels = l; ledger.gold += 50; toast("Admiral's laurel number " + l + ". The admiralty sends 50 gold.", "Laurel"); addMorale(5); capTip("laurel", "Every 500 XP past Admiral earns another laurel and 50 gold."); } }
+    if (r1 > r0) flash46("rgba(255,214,90,.45)");
     if (r1 > r0) { toast("You are now " + RANKS[r1] + "." + " " + RANK_PERK[r1] + (r1 < 5 ? " " + RANKS[r1 + 1] + " at " + RANK_XP[r1 + 1] + " XP." : " The highest rank in the islands."), "Promotion"); fanfare(); buzz([40, 60, 40, 60, 80]); if (ship.root && mode === "sea") floatText(ship.x, 10, ship.z, "Promoted!", "#ffd27a"); addMorale(5, "the promotion"); ledger.gold += 25 * r1; say("The admiralty sends " + (25 * r1) + " gold with your new commission.", 3); capTip("rank", "Ranks raise order pay, treasure gold and shipyard discounts. The Log's Rank tab shows what each one brings."); checkDeeds(); writeSave(); }
   }
   // XP is paid from the game's own counters, so every source stays in one place. Big jumps (old saves, test setups) pay nothing.
@@ -13547,9 +13556,17 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const pts = [], a = Math.random() * Math.PI * 2, d = 90 + Math.random() * 120, bx = ship.x + Math.sin(a) * d, bz = ship.z + Math.cos(a) * d;
     let x = bx, z = bz; for (let y = 120; y >= 0; y -= 15) { pts.push(new THREE.Vector3(x, y, z)); x += (Math.random() - 0.5) * 12; z += (Math.random() - 0.5) * 12; }
     if (bolt45m) { scene.remove(bolt45m); bolt45m.geometry.dispose(); bolt45m.material.dispose(); }
+    if (Math.hypot(x - ship.x, z - ship.z) < 160) splashAt(x, z, true);
     bolt45m = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xeef4ff, transparent: true, opacity: 1, fog: false })); scene.add(bolt45m); boltT45 = 0.22;
   }
   // ---- Batch 46: ports, towns, ashore look and UI ----
+  let flashEl46 = null, rainEl46 = null, starT46 = 20, star46 = null, mist46 = [], phos46T = 0;
+  function tap46(el) { if (!el) return; el.classList.remove("tap46"); void el.offsetWidth; el.classList.add("tap46"); }
+  function flash46(col) {
+    if (!flashEl46) { flashEl46 = document.createElement("div"); flashEl46.id = "flash46"; flashEl46.style.cssText = "position:fixed;inset:0;z-index:4;pointer-events:none;opacity:0"; document.getElementById("ui").appendChild(flashEl46); }
+    flashEl46.style.background = col; flashEl46.style.transition = "none"; flashEl46.style.opacity = "1"; void flashEl46.offsetWidth; flashEl46.style.transition = "opacity .7s"; flashEl46.style.opacity = "0";
+  }
+  let lastDayV46 = 0;
   let idle46 = 0, chip46 = null, gold46 = null, plamp46 = null, torchGlow46 = [], dockRefl46 = [];
   let built46 = false, buoys46 = [], bunt46 = [], boats46 = [], dockLamps46 = [], flies46 = [], bflies46 = [], torches46 = [], doorRing46 = null, pblob46 = null, foeLamps46 = true, knots46 = null;
   const glowMat46 = function (c, op) { return new THREE.SpriteMaterial({ map: softTex(), color: c, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending }); };
@@ -13606,6 +13623,23 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     idle46 = mode === "land" && !menuOpen && Math.abs(landFwd || 0) < 0.05 && Math.abs(landSide || 0) < 0.05 ? idle46 + dt : 0;
     { const hf = document.getElementById("hullfill"); if (hf && hf.parentElement) { if (!chip46) { chip46 = document.createElement("div"); chip46.id = "hullchip"; const par = hf.parentElement; if (getComputedStyle(par).position === "static") par.style.position = "relative"; chip46.style.cssText = "position:absolute;left:0;top:0;bottom:0;background:rgba(255,236,200,.75);border-radius:inherit;transition:width .8s ease-in .35s;pointer-events:none"; par.insertBefore(chip46, hf); if (getComputedStyle(hf).position === "static") hf.style.position = "relative"; } if (chip46.style.width !== hf.style.width) chip46.style.width = hf.style.width; } }
     if (gold46 !== ledger.gold) { if (gold46 !== null && sub) { sub.classList.remove("gold46"); void sub.offsetWidth; sub.classList.add(ledger.gold > gold46 ? "gold46" : "gold46"); } gold46 = ledger.gold; }
+    // Rain streaks on the screen in a squall.
+    { const wet = sea && !titleOn && !low && inSquallAt(ship.x, ship.z); if (!rainEl46) { rainEl46 = document.createElement("div"); rainEl46.id = "rain46"; rainEl46.style.cssText = "position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0;transition:opacity 1.2s;background:repeating-linear-gradient(105deg,rgba(220,235,255,0) 0 22px,rgba(220,235,255,.10) 22px 23px);background-size:200px 200px;animation:rain46 .5s linear infinite"; document.getElementById("ui").appendChild(rainEl46); } const o = wet ? "1" : "0"; if (rainEl46.style.opacity !== o) rainEl46.style.opacity = o; }
+    // Shooting stars on clear nights.
+    if (sea && night > 0.7 && !low) { starT46 -= dt; if (starT46 <= 0) { starT46 = 25 + Math.random() * 30; const a = Math.random() * Math.PI * 2, x0 = camera.position.x + Math.sin(a) * 300, z0 = camera.position.z + Math.cos(a) * 300, y0 = 140 + Math.random() * 60; if (star46) { scene.remove(star46.l); star46.l.geometry.dispose(); star46.l.material.dispose(); } const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x0, y0, z0), new THREE.Vector3(x0 + 30, y0 - 12, z0 + 10)]), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, fog: false })); scene.add(l); star46 = { l: l, t: 0.8 }; } }
+    if (star46) { star46.t -= dt; star46.l.material.opacity = Math.max(0, star46.t / 0.8); if (star46.t <= 0) { scene.remove(star46.l); star46.l.geometry.dispose(); star46.l.material.dispose(); star46 = null; } }
+    // Dawn mist low on the water.
+    { const dawn = sea && !low && dayU.value > 0.3 && dayU.value < 0.6 && lastDayV46 < dayU.value; if (!mist46.length) for (let i = 0; i < 6; i++) { const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xe8eef2, transparent: true, opacity: 0, depthWrite: false })); m.scale.set(30, 5, 1); m.visible = false; scene.add(m); mist46.push({ m: m, a: i / 6 * Math.PI * 2 }); } mist46.forEach(function (q) { q.m.visible = dawn; if (dawn) { q.a += dt * 0.01; q.m.position.set(ship.x + Math.sin(q.a) * 45, 1.5, ship.z + Math.cos(q.a) * 45); q.m.material.opacity = 0.28 * (1 - Math.abs(dayU.value - 0.45) / 0.15); } }); lastDayV46 = dayU.value; }
+    // Glowing wake at night.
+    if (sea && night > 0.5 && !low && Math.abs(ship.speed || 0) > 3) { phos46T -= dt; if (phos46T <= 0) { phos46T = 0.12; const o = new THREE.Sprite(glowMat46(0x5ad8ff, 0.35)); o.position.set(ship.x - Math.sin(ship.heading) * 6 + (Math.random() - 0.5) * 2, 0.2, ship.z - Math.cos(ship.heading) * 6 + (Math.random() - 0.5) * 2); scene.add(o); gfxParts.push({ o: o, vx: 0, vy: 0, vz: 0, life: 1.6, max: 1.6, g: 0, grow: 1.4, op: 0.35 }); } }
+    // Incoming balls whistle as they pass close.
+    for (let i = 0; i < shots.length; i++) { const b = shots[i]; if (b.from === "player" || b.whistle46) continue; if (Math.hypot(b.mesh.position.x - ship.x, b.mesh.position.z - ship.z) < 9) { b.whistle46 = true; try { noiseBurst(0.04, 0.25, 3200); } catch (e) { /* optional */ } } }
+    // Gulls rest on harbour buoys by day; ripple rings round the buoys.
+    buoys46.forEach(function (b) { if (!b.gull) { b.gull = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false })); b.gull.scale.set(0.5, 0.3, 1); scene.add(b.gull); b.ring = flat45(RING45, 0xeef8ff, 0.3); } b.gull.visible = night < 0.3 && !low && (b.ph | 0) % 2 === 0; b.gull.position.set(b.x, b.m.position.y + 1, b.z); b.ring.position.set(b.x, 0.12, b.z); const u = (t * 0.4 + b.ph) % 1; b.ring.scale.setScalar(0.8 + u * 1.6); b.ring.material.opacity = (1 - u) * 0.35; b.ring.visible = !low; });
+    // Kegs drift toward a ship close by.
+    kegs45.forEach(function (k) { const d = Math.hypot(ship.x - k.x, ship.z - k.z); if (sea && d < 14 && d > 1) { k.x += (ship.x - k.x) / d * dt * 2.5; k.z += (ship.z - k.z) / d * dt * 2.5; } });
+    // An anchored ship slowly swings head to wind.
+    if (sea && anchored) { let dh = (windAngle + Math.PI) - ship.heading; while (dh > Math.PI) dh -= Math.PI * 2; while (dh < -Math.PI) dh += Math.PI * 2; ship.heading += dh * Math.min(1, dt * 0.05); }
     // Speed readout beside the sail button.
     if (!knots46) { knots46 = document.createElement("div"); knots46.id = "knots46"; knots46.style.cssText = "position:fixed;z-index:5;pointer-events:none;font:700 12px/1 system-ui,sans-serif;color:#f2d48a;text-shadow:0 1px 2px #000;display:none"; document.getElementById("ui").appendChild(knots46); }
     const showK = sea && !titleOn && !menuOpen && sailBtn && sailBtn.offsetParent !== null;
@@ -14230,6 +14264,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     lightningK = x3 && x3.lowGfx ? 0.5 : 1;
     lightningSeen += 1; addSight("lightning");
     bolt45();
+    if (!(x3 && x3.lowGfx)) flash46("rgba(235,242,255,.35)");
     try { noiseBurst(0.12, 1.2, 160); } catch (e) { /* optional */ }
   }
   let lightningSeen = 0;
@@ -14888,6 +14923,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       skillPanel.style.display = "none";
     });
     sailBtn.addEventListener("pointerdown", function (e) {
+      tap46(sailBtn);
       e.preventDefault();
       sail = (sail + 1) % 3;
       buzz(12);
@@ -14903,6 +14939,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (mode !== "sea") return;
       anchored = !anchored;
       anchorBtn.classList.toggle("on", anchored);
+      tap46(anchorBtn);
       if (anchored) { splashAt(ship.x + Math.sin(ship.heading) * 5, ship.z + Math.cos(ship.heading) * 5, false); buzz(20); }
       ship.speed = 0;
       ship.yawRate = 0;
@@ -14924,6 +14961,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       e.preventDefault();
       fire();
       fireHeld45 = true;
+      tap46(fireBtn);
     });
     ["pointerup", "pointercancel", "pointerleave"].forEach(function (ev) { fireBtn.addEventListener(ev, function () { fireHeld45 = false; }); });
     actBtn.addEventListener("pointerdown", function (e) {
