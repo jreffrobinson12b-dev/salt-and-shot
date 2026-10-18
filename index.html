@@ -6316,6 +6316,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       o.connect(g); g.connect(audioOut());
       o.start(t); o.stop(t + 0.36);
       noiseBurst(0.22, 0.4, 900);
+      { const s2 = audioCtx.createOscillator(), g2 = audioCtx.createGain(); s2.type = "sine"; s2.frequency.setValueAtTime(62, t); s2.frequency.exponentialRampToValueAtTime(30, t + 0.5); g2.gain.setValueAtTime(0.16, t); g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.55); s2.connect(g2); g2.connect(audioOut()); if (mus47 && mus47.rev) g2.connect(mus47.rev.in); s2.start(t); s2.stop(t + 0.6); }
+      duckMusic47(0.6, 0.6);
     } catch (e) { /* audio optional */ }
   }
 
@@ -6351,7 +6353,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (audioCtx.createDynamicsCompressor) {
         const comp = audioCtx.createDynamicsCompressor();
         comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.22;
-        comp.connect(audioCtx.destination);
+        const soft = audioCtx.createBiquadFilter(); soft.type = "highshelf"; soft.frequency.value = 7000; soft.gain.value = -4;
+        comp.connect(soft); soft.connect(audioCtx.destination);
         tail = comp;
       }
       masterGain.connect(tail);
@@ -6361,7 +6364,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       });
     }
     const v = x3 ? [0, 0.4, 1][x3.volume] : 1;
-    masterGain.gain.value = v == null ? 1 : v;
+    { const vv = v == null ? 1 : v; if (Math.abs(masterGain.gain.value - vv) > 0.001 && !masterGain.ramp47) { masterGain.ramp47 = true; masterGain.gain.setTargetAtTime(vv, audioCtx.currentTime, 0.08); setTimeout(function () { masterGain.ramp47 = false; }, 400); } }
     return masterGain;
   }
 
@@ -6622,7 +6625,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       v.project(camera);
       let px = (v.x * 0.5 + 0.5) * w, py = (-v.y * 0.5 + 0.5) * h;
       // Never show a label across the HUD: while the eased spot crosses a button or panel the label fades out.
-      const overHud = (ud.od.dx !== chosen.dx || ud.od.dy !== chosen.dy) && hitsHud(px, py, it.ww, it.hw);
+      const overHud = ((ud.od.dx !== chosen.dx || ud.od.dy !== chosen.dy) && hitsHud(px, py, it.ww, it.hw)) || hitsLabels(px, py, it.ww, it.hw);
       if (ud.scr && Math.abs(px - ud.scr.x) < 0.9 && Math.abs(py - ud.scr.y) < 0.9) { px = ud.scr.x; py = ud.scr.y; }
       else { px = Math.round(px); py = Math.round(py); }
       ud.scr = { x: px, y: py, z: v.z };
@@ -8547,7 +8550,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return 20;
   }
   function x3Defaults() {
-    return { aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, tipSafe: false, tipGoods: false, tipWind: false, tipAshore: false, tipBeam: false, tipDusk: false, tipFull: false, tipAim: false, tipSlip: false, tipCross: false, tipShort: false, posting: "", postingAge: 0, postings: 0, salvaged: 0, pumps: false, nest: false, figure: false, saltBarrels: false, bell: false, spars: false, fishValue: 0, bigFish: "", lowGfx: false, sights: "", dives: 0, wrestleWins: 0, shipName: "", favBramble: 0, favSalt: 0, favLorenzo: 0, favBelle: 0, deserted: 0, waves: 0, veers: 0, pods: 0, whales: 0, wrecks: 0, stars: 0, turtles: 0, flyers: 0, xp: 0, orders: 0, order: "", orderBase: 0, orderGoal: 0, shots: 0, crits: 0, topSpeed: 0, master: false, storms: 0, seaXp: 0, battleShots: 0, battleHits: 0, mapX: 0, mapZ: 0, hasMap: false, maps: 0, battleDmg: 0, flawless: 0, reefed: 0, dishAt: "", hints: "", hintsOff: false, bookTab: "voyage", seenDeeds: 0, seenSights: 0, seenRank: 0, checkDone: false, openedLog: false, commission: false, commissions: 0, laurels: 0, pinned: "", pinDone: 0, autoReef: false, rampages: 0, goldFish: 0, glows: 0, powder: false, deepHold: false, bench: false, stormCanvas: false, chainLock: false, fineLines: false, ptbramble: 0, ptsalt: 0, ptlorenzo: 0, ptbelle: 0, tradeSpent: 0, tradeEarned: 0, benchMend: 0, marketBuys: 0, qFiddle: 0, qFiddleX: 0, qFiddleZ: 0, qMail: 0, qMailPort: "", qMailT: 0, qBells: 0, qOil: 0, qLedger: 0, qLedgerFoe: "", qSignal: 0, qSignalX: 0, qSignalZ: 0, qSignalT: 0, qSignalCd: 420, questsDone: 0, questsSeen: "", qPilgrim: 0, qPilgrimPort: "", qSilk: 0, qCook: 0, sCroweLog: 0, sCacheX: 0, sCacheZ: 0, sManifest: 0, sDinner: 0, sToast: "", lTess: 0, lJory: 0, lIvo: 0, lMaud: 0, qVigil: 0, qVigilAt: 0, barrels: 0, barrelCd: 300, storyGold: 0, lostRuns: 0, fiddleNext: 0, ledgerNext: 0, pilgrimNext: 0, cookNext: 0, overboardSaved: 0, overboardLost: 0, frags: 0, fragMaps: 0, qRelic: 0, relicHits: 0, qSmuggle: 0, lTess2: 0, lJory2: 0, lIvo2: 0, lMaud2: 0, diceDay: -1, diceN: 0, diceWon: 0, traderCd: 360, traders: 0, diceStreak: 0, smuggleCaught: 0, qRiddle: 0, qContest: 0, qContestT: 0, qContestAt: 0, customsCd: 300, customsPaid: 0, customsRun: 0, riddles: 0, qSmug: 0, smugRuns: 0, riddleT: 0, receiptT: 0, fullWarnT: 0, bait: 0, contestWins: 0, contestBest: 0, lifebuoys: false, slowToasts: false, nightWins: 0, flawlessRun: 0, richChests: 0, bestChest: 0, rerollDay: -1, sailsFlown: "", orderHalf: "", hullWarnT: 0, ate: "", meals: 0, battleCrits: 0, mapSaid: false, fish: 0, fishCaught: 0, raceBest: 0, races: 0, rakes: 0, shadow: 0, soldAt: "", bestStreak: 0, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false, met: "", metSunk: "", hunters: 0, seaTime: 0, dist: 0, bigBtn: false, flash: true };
+    return { music: 1, aimed: false, crew: crewMaxFor(playerHull.id), gunner: false, navigator: false, surgeon: false, guns: "long", bountyAccepted: false, bountyDown: false, bountyPaid: false, wrightAccepted: false, wrightPaid: false, copper: false, reinforced: false, silkAccepted: false, silkPaid: false, tipFoe: false, tipLow: false, tipSafe: false, tipGoods: false, tipWind: false, tipAshore: false, tipBeam: false, tipDusk: false, tipFull: false, tipAim: false, tipSlip: false, tipCross: false, tipShort: false, posting: "", postingAge: 0, postings: 0, salvaged: 0, pumps: false, nest: false, figure: false, saltBarrels: false, bell: false, spars: false, fishValue: 0, bigFish: "", lowGfx: false, sights: "", dives: 0, wrestleWins: 0, shipName: "", favBramble: 0, favSalt: 0, favLorenzo: 0, favBelle: 0, deserted: 0, waves: 0, veers: 0, pods: 0, whales: 0, wrecks: 0, stars: 0, turtles: 0, flyers: 0, xp: 0, orders: 0, order: "", orderBase: 0, orderGoal: 0, shots: 0, crits: 0, topSpeed: 0, master: false, storms: 0, seaXp: 0, battleShots: 0, battleHits: 0, mapX: 0, mapZ: 0, hasMap: false, maps: 0, battleDmg: 0, flawless: 0, reefed: 0, dishAt: "", hints: "", hintsOff: false, bookTab: "voyage", seenDeeds: 0, seenSights: 0, seenRank: 0, checkDone: false, openedLog: false, commission: false, commissions: 0, laurels: 0, pinned: "", pinDone: 0, autoReef: false, rampages: 0, goldFish: 0, glows: 0, powder: false, deepHold: false, bench: false, stormCanvas: false, chainLock: false, fineLines: false, ptbramble: 0, ptsalt: 0, ptlorenzo: 0, ptbelle: 0, tradeSpent: 0, tradeEarned: 0, benchMend: 0, marketBuys: 0, qFiddle: 0, qFiddleX: 0, qFiddleZ: 0, qMail: 0, qMailPort: "", qMailT: 0, qBells: 0, qOil: 0, qLedger: 0, qLedgerFoe: "", qSignal: 0, qSignalX: 0, qSignalZ: 0, qSignalT: 0, qSignalCd: 420, questsDone: 0, questsSeen: "", qPilgrim: 0, qPilgrimPort: "", qSilk: 0, qCook: 0, sCroweLog: 0, sCacheX: 0, sCacheZ: 0, sManifest: 0, sDinner: 0, sToast: "", lTess: 0, lJory: 0, lIvo: 0, lMaud: 0, qVigil: 0, qVigilAt: 0, barrels: 0, barrelCd: 300, storyGold: 0, lostRuns: 0, fiddleNext: 0, ledgerNext: 0, pilgrimNext: 0, cookNext: 0, overboardSaved: 0, overboardLost: 0, frags: 0, fragMaps: 0, qRelic: 0, relicHits: 0, qSmuggle: 0, lTess2: 0, lJory2: 0, lIvo2: 0, lMaud2: 0, diceDay: -1, diceN: 0, diceWon: 0, traderCd: 360, traders: 0, diceStreak: 0, smuggleCaught: 0, qRiddle: 0, qContest: 0, qContestT: 0, qContestAt: 0, customsCd: 300, customsPaid: 0, customsRun: 0, riddles: 0, qSmug: 0, smugRuns: 0, riddleT: 0, receiptT: 0, fullWarnT: 0, bait: 0, contestWins: 0, contestBest: 0, lifebuoys: false, slowToasts: false, nightWins: 0, flawlessRun: 0, richChests: 0, bestChest: 0, rerollDay: -1, sailsFlown: "", orderHalf: "", hullWarnT: 0, ate: "", meals: 0, battleCrits: 0, mapSaid: false, fish: 0, fishCaught: 0, raceBest: 0, races: 0, rakes: 0, shadow: 0, soldAt: "", bestStreak: 0, renown: "", bottles: "", bossDown: false, morale: 70, deeds: "", hits: 0, sail: "white", sailsOwned: "|white|", job: "", jobsDone: 0, volume: 2, vibrate: true, forts: "", sunk: 0, earned: 0, consort: "", diff: "normal", bigText: false, tut: 0, calm: false, met: "", metSunk: "", hunters: 0, seaTime: 0, dist: 0, bigBtn: false, flash: true };
   }
   let x3 = null;
   function x3Load(raw) {
@@ -8580,6 +8583,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   document.getElementById("ui").appendChild(aimTip);
   polishCss.textContent += "@media (max-height:440px){#howto>div{font-size:13px!important;line-height:1.3!important;padding:10px 14px!important;max-width:460px!important}#howto>div>div:first-child{margin-bottom:4px!important}#howto>div>div:nth-child(2){font-size:18px!important;margin-bottom:2px!important}#howto button{height:42px!important;margin-top:8px!important}}";
   polishCss.textContent += "#ui button{-webkit-tap-highlight-color:transparent}#ui button:active{opacity:.85}#board.ready45{box-shadow:0 0 0 3px rgba(242,212,138,.85),0 0 10px rgba(242,212,138,.5)}@keyframes rain46{from{background-position:0 0}to{background-position:-40px 200px}}@keyframes tap46{0%{opacity:.6}100%{opacity:1}}#fire.tap46,#sail.tap46,#anchor.tap46{animation:tap46 .35s ease-out}@keyframes hint46{from{opacity:0}to{opacity:1}}@keyframes gust46{0%,100%{color:inherit}50%{color:#9dffb0}}#windlabel.gust46{color:#9dffb0}#hint{animation:hint46 .3s ease-out}#ui button:disabled{opacity:.6}@keyframes menu46{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}#townmenu{animation:menu46 .18s ease-out}@keyframes gold46{0%{color:#ffe08a;text-shadow:0 0 8px rgba(255,214,90,.9)}100%{}}#sub.gold46{animation:gold46 .9s ease-out}@keyframes toast46{from{opacity:0;margin-top:-6px}to{opacity:1;margin-top:0}}#toast{animation:toast46 .22s ease-out}";
+  polishCss.textContent += "#ui button{transition:transform .08s ease-out}#ui button:active{transform:scale(.95)}button:focus-visible{outline:2px solid #f2d48a;outline-offset:2px}#setbtns{overscroll-behavior:contain;scroll-behavior:smooth}#savepanel47 button{border-radius:10px}#savepanel47 textarea:focus{outline:2px solid #f2d48a}#toast{box-shadow:0 6px 22px rgba(0,0,0,.45);border-radius:12px}#hint{border-radius:12px}";
   polishCss.textContent += "@keyframes ready45{0%,100%{box-shadow:0 0 0 2px rgba(242,212,138,.5)}50%{box-shadow:0 0 0 4px rgba(242,212,138,.95),0 0 14px rgba(242,212,138,.6)}}#act.ready45{box-shadow:0 0 0 3px rgba(242,212,138,.85),0 0 10px rgba(242,212,138,.5)}";
   polishCss.textContent += "@keyframes hullwarn{0%,100%{opacity:1}50%{opacity:.35}}#hullfill.hulllow{background:#e0473a!important;animation:hullwarn .9s ease-in-out 6}" +
     "@keyframes logglow{0%,100%{box-shadow:0 0 0 2px #ffd65a}50%{box-shadow:0 0 0 5px rgba(255,214,90,.35)}}#log.fresh{animation:logglow 1.1s ease-in-out 6}";
@@ -9152,7 +9156,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const b = document.createElement("button");
     b.type = "button"; b.textContent = label;
     b.style.cssText = "height:48px;font-size:16px;width:100%";
-    b.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); fn(); });
+    b.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); uiTick47(); fn(); });
     return b;
   }
   function renderSettings() {
@@ -9172,6 +9176,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       info.appendChild(more);
     }
     box.appendChild(setRow("Sound: " + ["off", "low", "full"][x3.volume], function () { x3.volume = (x3.volume + 2) % 3; if (audioCtx) audioOut(); writeSave(); renderSettings(); }));
+    box.appendChild(setRow("Music: " + ["off", "low", "full"][x3.music == null ? 1 : x3.music], function () { x3.music = ((x3.music == null ? 1 : x3.music) + 1) % 3; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Vibration: " + (x3.vibrate ? "on" : "off"), function () { x3.vibrate = !x3.vibrate; if (x3.vibrate) buzz(40); writeSave(); renderSettings(); }));
     box.appendChild(setRow("Invert helm: " + (invertHelm ? "on" : "off"), function () { invertHelm = !invertHelm; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Difficulty: " + DIFF_WORD[x3.diff], function () { const o = ["easy", "normal", "hard"]; x3.diff = o[(o.indexOf(x3.diff) + 1) % 3]; writeSave(); renderSettings(); }));
@@ -9188,11 +9193,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow("Large text: " + (x3.bigText ? "on" : "off"), function () { x3.bigText = !x3.bigText; applyBigText(); writeSave(); renderSettings(); }));
     if (pauseKind === "pause") box.appendChild(setRow("Open the logbook", function () { closeSettings(); logPanel.style.display = "none"; logBtn.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); }));
     if (pauseKind === "pause") box.appendChild(setRow("Photo mode (tap to bring buttons back)", photoMode));
+    box.appendChild(setRow("Export save (code or file)", function () { showExport47(); }));
+    box.appendChild(setRow("Import save", function () { showImport47(); }));
     box.appendChild(setRow("Credits", showCredits));
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 46";
+    ver.textContent = "Version: batch 47";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -13654,6 +13661,160 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3 && !x3.lowGfx && mem47.trips >= 2) { x3.lowGfx = true; applyGfx(); writeSave(); say("Memory was running high, so graphics switched to low. You can change it in Settings.", 4); }
     mem47.t = 10;
   }
+  // ---- Batch 47: save export/import, music and sound polish, UI and controls feel ----
+  const SAVE_CODE_PREFIX47 = "SALT1-";
+  function hash47(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16).padStart(8, "0"); }
+  function saveCode47() { writeSave(); const raw = localStorage.getItem(SAVE_KEY) || ""; const b64 = btoa(unescape(encodeURIComponent(raw))); return SAVE_CODE_PREFIX47 + b64 + "-" + hash47(raw); }
+  function validSave47(d) { return !!(d && typeof d.gold === "number" && isFinite(d.gold) && typeof d.x === "number" && isFinite(d.x) && typeof d.z === "number" && isFinite(d.z)); }
+  // Accepts a SALT1 code, a raw save file (JSON), with any spaces or line breaks from copying.
+  function decodeSave47(text) {
+    let t = String(text || "").trim();
+    if (!t) return { err: "Paste a save code or choose a save file first." };
+    let raw = null;
+    if (t.charAt(0) === "{") raw = t;
+    else {
+      t = t.replace(/\s+/g, "");
+      if (t.indexOf(SAVE_CODE_PREFIX47) !== 0) return { err: "That is not a Salt & Shot save code (it should start with SALT1-)." };
+      const body = t.slice(SAVE_CODE_PREFIX47.length), cut = body.lastIndexOf("-");
+      if (cut < 0) return { err: "The save code is cut short. Copy the whole code and try again." };
+      try { raw = decodeURIComponent(escape(atob(body.slice(0, cut)))); } catch (e) { return { err: "The save code is damaged. Copy the whole code and try again." }; }
+      if (hash47(raw) !== body.slice(cut + 1)) return { err: "The save code does not check out: part of it is missing or changed." };
+    }
+    let d = null; try { d = JSON.parse(raw); } catch (e) { return { err: "The save could not be read." }; }
+    if (!validSave47(d)) return { err: "That save is missing its gold or position, so it was not loaded." };
+    return { raw: raw, data: d };
+  }
+  function importSave47(text) {
+    const r = decodeSave47(text);
+    if (r.err) return r;
+    try { const cur = localStorage.getItem(SAVE_KEY); if (cur) localStorage.setItem(SAVE_KEY + "-before-import", cur); localStorage.setItem(SAVE_KEY, r.raw); localStorage.setItem(SAVE_KEY + "-backup", r.raw); } catch (e) { return { err: "The browser would not store the save (storage full or blocked)." }; }
+    return { ok: true, gold: r.data.gold };
+  }
+  function panel47(title) {
+    const wrap = document.createElement("div");
+    wrap.id = "savepanel47";
+    wrap.style.cssText = "position:fixed;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;background:rgba(4,12,20,.72);padding:14px;font-family:system-ui,sans-serif;color:#f4efe2";
+    const box = document.createElement("div");
+    box.style.cssText = "width:100%;max-width:420px;max-height:92vh;overflow:auto;background:rgba(10,26,40,.97);border:2px solid #f2d48a;border-radius:16px;padding:14px 16px;font-size:14px;line-height:1.4;box-shadow:0 10px 40px rgba(0,0,0,.5)";
+    const h = document.createElement("div"); h.textContent = title; h.style.cssText = "font-family:Georgia,serif;font-size:20px;color:#f2d48a;margin-bottom:8px";
+    box.appendChild(h); wrap.appendChild(box);
+    const close = function () { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); };
+    wrap.addEventListener("pointerdown", function (e) { if (e.target === wrap) close(); });
+    document.body.appendChild(wrap);
+    return { box: box, close: close };
+  }
+  function btn47(label, fn) { const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.style.cssText = "height:44px;font-size:15px;margin:6px 6px 0 0;padding:0 14px"; b.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); fn(b); }); return b; }
+  function showExport47() {
+    const code = saveCode47(), p = panel47("Export save");
+    const note = document.createElement("div"); note.textContent = "Copy this code, or download the file, to move your voyage to another browser or to the app."; p.box.appendChild(note);
+    const ta = document.createElement("textarea"); ta.id = "savecode47"; ta.readOnly = true; ta.value = code; ta.style.cssText = "width:100%;height:96px;margin-top:8px;font:11px/1.3 ui-monospace,monospace;background:#081520;color:#f4efe2;border:1px solid #3a5a70;border-radius:8px;padding:6px;word-break:break-all";
+    p.box.appendChild(ta);
+    const msg = document.createElement("div"); msg.id = "savemsg47"; msg.style.cssText = "min-height:18px;margin-top:6px;color:#9dffb0"; p.box.appendChild(msg);
+    p.box.appendChild(btn47("Copy code", function () { ta.select(); let done = false; try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(code).then(function () { msg.textContent = "Copied."; }, function () { msg.textContent = document.execCommand && document.execCommand("copy") ? "Copied." : "Select the code and copy it by hand."; }); done = true; } } catch (e) { done = false; } if (!done) msg.textContent = document.execCommand && document.execCommand("copy") ? "Copied." : "Select the code and copy it by hand."; uiTick47(); }));
+    p.box.appendChild(btn47("Download file", function () { try { const raw = localStorage.getItem(SAVE_KEY) || ""; const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([raw], { type: "application/json" })); a.download = "salt-and-shot-save.json"; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000); msg.textContent = "Saved as salt-and-shot-save.json."; } catch (e) { msg.textContent = "This browser would not download the file. Use Copy code instead."; } uiTick47(); }));
+    p.box.appendChild(btn47("Close", function () { p.close(); }));
+    return p;
+  }
+  function showImport47() {
+    const p = panel47("Import save");
+    const note = document.createElement("div"); note.textContent = "Paste a save code or choose a save file. This replaces the voyage in this browser (the old one is kept as a spare copy)."; p.box.appendChild(note);
+    const ta = document.createElement("textarea"); ta.id = "saveimport47"; ta.placeholder = "SALT1-..."; ta.style.cssText = "width:100%;height:96px;margin-top:8px;font:11px/1.3 ui-monospace,monospace;background:#081520;color:#f4efe2;border:1px solid #3a5a70;border-radius:8px;padding:6px";
+    p.box.appendChild(ta);
+    const file = document.createElement("input"); file.type = "file"; file.accept = ".json,.txt,application/json,text/plain"; file.style.display = "none";
+    file.addEventListener("change", function () { const f = file.files && file.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = function () { ta.value = String(rd.result || ""); msg.textContent = "File read. Tap Load to use it."; msg.style.color = "#9dffb0"; }; rd.readAsText(f); });
+    p.box.appendChild(file);
+    const msg = document.createElement("div"); msg.id = "importmsg47"; msg.style.cssText = "min-height:18px;margin-top:6px"; p.box.appendChild(msg);
+    let armed = false;
+    p.box.appendChild(btn47("Choose file", function () { file.click(); }));
+    const load = btn47("Load", function (b) {
+      const chk = decodeSave47(ta.value);
+      if (chk.err) { msg.textContent = chk.err; msg.style.color = "#ff9a8a"; uiTick47(); return; }
+      if (!armed && localStorage.getItem(SAVE_KEY)) { armed = true; b.textContent = "Tap again to replace this voyage"; msg.textContent = "Found a voyage with " + Math.round(chk.data.gold) + " gold."; msg.style.color = "#f2d48a"; return; }
+      const r = importSave47(ta.value);
+      if (r.err) { msg.textContent = r.err; msg.style.color = "#ff9a8a"; return; }
+      msg.textContent = "Loaded. Restarting..."; msg.style.color = "#9dffb0";
+      importReload47 = true; setTimeout(function () { location.reload(); }, 400);
+    });
+    load.id = "importload47";
+    p.box.appendChild(load);
+    p.box.appendChild(btn47("Cancel", function () { p.close(); }));
+    return p;
+  }
+  let importReload47 = false;
+  // The first tap or key unlocks sound, so music starts without waiting for the first cannon.
+  function unlockAudio47() { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === "suspended") audioCtx.resume(); if (!noiseBuf) noiseBurst(0.0001, 0.01, 100); } catch (e) { /* audio optional */ } }
+  window.addEventListener("pointerdown", unlockAudio47, true);
+  window.addEventListener("keydown", unlockAudio47, true);
+
+  // Music: a small generative score in D dorian. Moods: title, sea, night, town, battle. Moods crossfade; cannon fire ducks the music.
+  let mus47 = null;
+  const SCALE47 = [0, 2, 3, 5, 7, 9, 10];
+  function midiHz47(n) { return 440 * Math.pow(2, (n - 69) / 12); }
+  function reverb47() {
+    if (mus47 && mus47.rev) return mus47.rev;
+    const len = Math.floor(audioCtx.sampleRate * 1.6), buf = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+    const cv = audioCtx.createConvolver(); cv.buffer = buf; const g = audioCtx.createGain(); g.gain.value = 0.28; cv.connect(g); g.connect(audioOut());
+    return { in: cv, out: g };
+  }
+  function musicLevel47() { return x3 ? [0, 0.5, 1][x3.music == null ? 1 : x3.music] : 0.5; }
+  function moodNow47() {
+    if (titleOn) return "title";
+    if (typeof fightish45 === "function" && fightish45()) return "battle";
+    if (fightOn) return "battle";
+    if (mode === "land") return "town";
+    return dayU.value < 0.3 ? "night" : "sea";
+  }
+  const MOODS47 = { title: { bpm: 66, root: 50, dens: 0.45, pad: 1, drum: 0, oct: 0 }, sea: { bpm: 84, root: 50, dens: 0.6, pad: 0.8, drum: 0, oct: 12 }, night: { bpm: 64, root: 45, dens: 0.35, pad: 1, drum: 0, oct: 0 }, town: { bpm: 96, root: 55, dens: 0.7, pad: 0.5, drum: 0.3, oct: 12 }, battle: { bpm: 124, root: 50, dens: 0.75, pad: 0.6, drum: 1, oct: 0 } };
+  function note47(t, hz, dur, vol, type, cut, dest) {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(), f = audioCtx.createBiquadFilter();
+    o.type = type; o.frequency.setValueAtTime(hz, t); f.type = "lowpass"; f.frequency.setValueAtTime(cut, t); f.Q.value = 0.7;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f); f.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function drum47(t, kick, vol, dest) {
+    if (kick) { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = "sine"; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.18); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3); o.connect(g); g.connect(dest); o.start(t); o.stop(t + 0.32); }
+    else { if (!noiseBuf) return; const s = audioCtx.createBufferSource(), f = audioCtx.createBiquadFilter(), g = audioCtx.createGain(); s.buffer = noiseBuf; f.type = "bandpass"; f.frequency.value = 1800; f.Q.value = 0.9; g.gain.setValueAtTime(vol * 0.6, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12); s.connect(f); f.connect(g); g.connect(dest); s.start(t, Math.random() * 0.5); s.stop(t + 0.14); }
+  }
+  function updateMusic47(dt) {
+    try {
+      if (!audioCtx || audioCtx.state !== "running") return;
+      if (!mus47) { const bus = audioCtx.createGain(); bus.gain.value = 0; const duck = audioCtx.createGain(); duck.gain.value = 1; bus.connect(duck); duck.connect(audioOut()); mus47 = { bus: bus, duck: duck, next: audioCtx.currentTime + 0.2, step: 0, mood: "", bar: 0, deg: 0, chord: 0 }; mus47.rev = reverb47(); bus.connect(mus47.rev.in); }
+      const t = audioCtx.currentTime, mood = moodNow47(), M = MOODS47[mood];
+      const want = (paused || document.hidden || menuOpen && mode === "land" ? 0.35 : 1) * musicLevel47() * (mood === "battle" ? 0.16 : 0.12);
+      mus47.bus.gain.setTargetAtTime(want, t, mood !== mus47.mood ? 1.2 : 0.4);
+      mus47.mood = mood;
+      if (musicLevel47() <= 0) { mus47.next = t + 0.2; return; }
+      const beat = 60 / M.bpm / 2;
+      let guard = 0;
+      while (mus47.next < t + 0.25 && guard++ < 8) {
+        const at = Math.max(mus47.next, t + 0.01), st = mus47.step;
+        if (st % 16 === 0) { mus47.bar++; mus47.chord = [0, 3, 4, 0, 5, 3, 6, 4][mus47.bar % 8]; }
+        const chordRoot = M.root + SCALE47[mus47.chord % 7];
+        if (st % 16 === 0 && M.pad > 0) { [0, 7, 15].forEach(function (iv) { note47(at, midiHz47(chordRoot + iv - 12 + M.oct * 0), beat * 15, 0.05 * M.pad, "sawtooth", 700, mus47.bus); }); }
+        if (st % 4 === 0) note47(at, midiHz47(chordRoot - 12), beat * 3.5, 0.11, "sine", 400, mus47.bus);
+        if (Math.random() < M.dens && st % 2 === 0) { mus47.deg = clamp(mus47.deg + [-2, -1, -1, 1, 1, 2, 0][Math.floor(Math.random() * 7)], -2, 9); const d = mus47.deg, n = M.root + M.oct + Math.floor(d / 7) * 12 + SCALE47[((d % 7) + 7) % 7]; note47(at, midiHz47(n), beat * 1.8, 0.07, "triangle", 2600, mus47.bus); }
+        if (M.drum > 0) { if (st % 8 === 0 || (mood === "battle" && st % 8 === 3)) drum47(at, true, 0.22 * M.drum, mus47.bus); if (st % 4 === 2) drum47(at, false, 0.12 * M.drum, mus47.bus); }
+        mus47.step++; mus47.next += beat;
+      }
+      if (mus47.next < t) mus47.next = t + 0.05;
+    } catch (e) { /* music optional */ }
+  }
+  function duckMusic47(depth, secs) { try { if (!mus47 || !audioCtx) return; const t = audioCtx.currentTime, g = mus47.duck.gain; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(1 - depth, t + 0.03); g.setTargetAtTime(1, t + 0.1, secs); } catch (e) { /* optional */ } }
+  // Small UI and handling sounds.
+  function uiTick47() { try { if (!audioCtx || audioCtx.state !== "running") return; const t = audioCtx.currentTime; note47(t, 1450, 0.05, 0.035, "triangle", 3200, audioOut()); note47(t + 0.012, 720, 0.06, 0.025, "sine", 2000, audioOut()); } catch (e) { /* optional */ } }
+  function flap47() { try { if (!audioCtx || !noiseBuf) return; const t = audioCtx.currentTime; for (let i = 0; i < 3; i++) { const s = audioCtx.createBufferSource(), f = audioCtx.createBiquadFilter(), g = audioCtx.createGain(); s.buffer = noiseBuf; f.type = "bandpass"; f.frequency.value = 500 + i * 140; f.Q.value = 1.4; g.gain.setValueAtTime(0.0001, t + i * 0.07); g.gain.exponentialRampToValueAtTime(0.06, t + i * 0.07 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.07 + 0.12); s.connect(f); f.connect(g); g.connect(audioOut()); s.start(t + i * 0.07, Math.random() * 0.5); s.stop(t + i * 0.07 + 0.14); } } catch (e) { /* optional */ } }
+  function chain47() { try { if (!audioCtx) return; const t = audioCtx.currentTime; for (let i = 0; i < 7; i++) note47(t + i * 0.055 + Math.random() * 0.02, 2200 + Math.random() * 900, 0.05, 0.03, "square", 4200, audioOut()); } catch (e) { /* optional */ } }
+  let sail47 = null, anch47 = null, whoosh47 = false;
+  function update47(dt) {
+    updateMusic47(dt);
+    if (!x3 || titleOn) return;
+    if (sail47 !== null && sail !== sail47) { flap47(); buzz(12); }
+    sail47 = sail;
+    if (anch47 !== null && anchored !== anch47) chain47();
+    anch47 = anchored;
+    const mo = !!menuOpen; if (mo !== whoosh47) { whoosh47 = mo; try { if (audioCtx && noiseBuf) noiseBurst(0.03, 0.18, mo ? 1400 : 900); } catch (e) { /* optional */ } }
+  }
   let built46 = false, buoys46 = [], bunt46 = [], boats46 = [], dockLamps46 = [], flies46 = [], bflies46 = [], torches46 = [], doorRing46 = null, pblob46 = null, foeLamps46 = true, knots46 = null;
   const glowMat46 = function (c, op) { return new THREE.SpriteMaterial({ map: softTex(), color: c, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending }); };
   function build46() {
@@ -14803,6 +14964,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     updateAimTip();
     syncSternLamp();
     updateAmbience();
+    update47(dt);
     updateGfx25(dt);
     updateGulls();
     watchGold();
@@ -14874,7 +15036,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function bindInput() {
     window.addEventListener("keydown", function (e) {
+      if (e.target && /^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName || "")) return;
       const k = e.key.toLowerCase();
+      { const sp = document.getElementById("savepanel47"); if (sp) { if (k === "escape") sp.remove(); return; } }
+      if (k === "m" && !e.repeat && x3 && !titleOn && !fightOn && !menuOpen) { x3.music = (x3.music == null ? 1 : x3.music) === 0 ? 1 : 0; toast(x3.music ? "Music on." : "Music off.", "Settings"); writeSave(); return; }
       if (titleOn) { e.preventDefault(); return; }
       keys[k] = true;
       if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].indexOf(k) !== -1) e.preventDefault();
@@ -14923,6 +15088,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       }
     });
     window.addEventListener("keyup", function (e) { keys[e.key.toLowerCase()] = false; });
+    // Batch 47: switching windows mid-press no longer leaves a key held down.
+    window.addEventListener("blur", function () { Object.keys(keys).forEach(function (k) { keys[k] = false; }); });
     window.addEventListener("contextmenu", function (e) { e.preventDefault(); });
     window.addEventListener("touchmove", function (e) { e.preventDefault(); }, { passive: false });
 
@@ -15195,7 +15362,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
 
   function writeSave() {
-    if (!worldReady || titleOn) return;
+    if (!worldReady || titleOn || importReload47) return;
     const data = {
       gold: ledger.gold,
       sugar: ledger.sugar,
@@ -15430,6 +15597,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const qgo = function (e) { close(e); quickBattle(); };
     quick.addEventListener("pointerdown", qgo);
     box.appendChild(quick);
+    { const im = document.createElement("button"); im.type = "button"; im.id = "howimport47"; im.textContent = "Import a save"; im.style.cssText = "display:block;margin:10px auto 0;height:36px;font-size:14px;background:transparent;border:1px solid rgba(242,212,138,.5);color:#f2d48a;border-radius:10px;padding:0 14px"; im.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); showImport47(); }); box.appendChild(im); }
     card.appendChild(box);
     document.body.appendChild(card);
   }
@@ -15538,9 +15706,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     boot.appendChild(tip);
     boot.appendChild(row);
+    { const im = document.createElement("button"); im.type = "button"; im.id = "titleimport47"; im.textContent = "Import a save"; im.style.cssText = "margin-top:10px;height:36px;font-size:14px;background:transparent;border:1px solid rgba(242,212,138,.5);color:#f2d48a;border-radius:10px;padding:0 14px"; im.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); showImport47(); }); boot.appendChild(im); }
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 46";
+    tv.textContent = "Version: batch 47";
     tv.style.cssText = "margin-top:14px;font-size:12px;opacity:.55";
     boot.appendChild(tv);
   }
@@ -16425,6 +16594,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       market47: function () { const d = doors.filter(function (q) { return q.kind === "merchant" && q.port === "bramble"; })[0]; return d ? { x: d.x, z: d.z } : null; },
       flags47: function () { return { nofx: NOFX47, lowflag: LOWGFX47, soft0: SOFT0_47, low: !!(x3 && x3.lowGfx), pr: renderer.getPixelRatio(), shadows: renderer.shadowMap.enabled, aa: !!(renderer.getContext().getContextAttributes() || {}).antialias, frames: renderer.info.render.frame, titleOn: titleOn, parts: gfxParts.length }; },
       tagScreen47: function () { const w = renderer.domElement.clientWidth || innerWidth, h = renderer.domElement.clientHeight || innerHeight, v = new THREE.Vector3(); return placeTags.map(function (t, i) { return [t, i]; }).filter(function (q) { const t = q[0]; return t.visible && t.parent && t.material.opacity > 0.05; }).map(function (q) { const t = q[0]; v.set(t.userData.homeX, t.userData.homeY, t.userData.homeZ).project(camera); const ax = (v.x * 0.5 + 0.5) * w, ay = (-v.y * 0.5 + 0.5) * h; v.copy(t.position).project(camera); return { od: t.userData.od ? [Math.round(t.userData.od.dx), Math.round(t.userData.od.dy)] : null, si: t.userData.shiftI, ax: +ax.toFixed(2), ay: +ay.toFixed(2), l: t.userData.label + "#" + q[1], x: +((v.x * 0.5 + 0.5) * w).toFixed(2), y: +((-v.y * 0.5 + 0.5) * h).toFixed(2), o: +t.material.opacity.toFixed(2), s: +t.scale.y.toFixed(3) }; }); },
+      save47: { code: function () { return saveCode47(); }, decode: function (t) { const r = decodeSave47(t); return r.err ? { err: r.err } : { ok: true, gold: r.data.gold }; }, imp: function (t) { return importSave47(t); }, exportPanel: function () { showExport47(); return !!document.getElementById("savecode47"); }, importPanel: function () { showImport47(); return !!document.getElementById("saveimport47"); } },
+      music47: function () { return { mood: moodNow47(), level: musicLevel47(), setting: x3 ? x3.music : null, bus: !!mus47, gain: mus47 ? mus47.bus.gain.value : 0, step: mus47 ? mus47.step : 0, ctx: audioCtx ? audioCtx.state : null }; },
       q47: function () { const cs = getComputedStyle(document.getElementById("windlabel") || document.body); const rn = document.getElementById("rain46"); let anims = 0; try { anims = document.getAnimations ? document.getAnimations().filter(function (x) { return x.effect && x.effect.getTiming && x.effect.getTiming().iterations === Infinity && x.playState === "running"; }).length : -1; } catch (e) { anims = -1; } return { mem: mem47.last, trips: mem47.trips, port1: waterUniforms.uPort1.value.toArray(), rainDisp: rn ? rn.style.display : null, infAnims: anims, floaters: floaters.length, parts: gfxParts.length, sails: ship.sails, speed: ship.speed, fogT: fogT, inSquall: inSquallAt(ship.x, ship.z), target: (function () { const t = aimTarget47(); return t ? { sign: t.sign, d: t.d } : null; })(), bearing: viewBearing(), fireText: fireBtn.textContent, howto: (document.getElementById("howto") || {}).textContent || "" }; },
       watch47: function (n) { mem47.t = 0; const g = gfxParts.length; for (let i = 0; i < (n || 0); i++) { const o = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex() })); scene.add(o); gfxParts.push({ o: o, vx: 0, vy: 0, vz: 0, life: 99, max: 99, g: 0 }); } return g; },
       ft47: function (t) { floatText(ship.x, 4, ship.z, t || "x", "#fff"); return floaters.length; },
