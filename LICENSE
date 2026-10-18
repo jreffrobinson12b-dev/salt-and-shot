@@ -1,0 +1,12 @@
+Copyright (c) 2026 Jeff Robinson. All rights reserved.
+
+Salt & Shot, including its source code, design, graphics work and generated
+music and sound, is proprietary. No permission is granted to copy, modify,
+merge, publish, distribute, sublicense, sell or otherwise redistribute this
+software or any part of it, in source or compiled form, without the prior
+written permission of Jeff Robinson.
+
+Third-party components included in the build (three.js under the MIT License,
+and Kenney assets under CC0 1.0) remain under their own licenses, as listed in
+CREDITS.md. Nothing in this file restricts the rights those licenses give you
+in those components.
