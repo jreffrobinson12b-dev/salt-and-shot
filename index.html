@@ -3936,6 +3936,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   glassBtn.textContent = "\u25CE Glass";
   glassBtn.style.cssText = "pointer-events:auto;min-width:72px;height:32px;font-size:13px;padding:0 10px";
   hudRow.appendChild(glassBtn);
+  // Batch 47: ashore there is always a way home. Return to ship sits where the Glass button is at sea.
+  const shipBtn47 = document.createElement("button");
+  shipBtn47.id = "toship47";
+  shipBtn47.type = "button";
+  shipBtn47.textContent = "\u26F5 To ship";
+  shipBtn47.style.cssText = "display:none;pointer-events:auto;min-width:72px;height:32px;font-size:13px;padding:0 10px";
+  hudRow.appendChild(shipBtn47);
   const setBtn = document.createElement("button");
   setBtn.id = "settings";
   setBtn.type = "button";
@@ -5757,6 +5764,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function nearGangplank() {
     if (!ashorePort) return false;
+    // Batch 47: anywhere on the quay (or a step off its edge) counts as at the gangplank.
+    { const d = ashorePort.dock; if (d && person.x >= d.x0 - 2.5 && person.x <= d.x1 + 2.5 && person.z >= d.z0 - 2.5 && person.z <= d.z1 + 2.5) return true; }
     if (ashoreBeach && Math.hypot(person.x - ashoreBeach.stand.x, person.z - ashoreBeach.stand.z) < 8) return true;
     return Math.hypot(person.x - ashorePort.gang.x, person.z - ashorePort.gang.z) < 5.5;
   }
@@ -6134,8 +6143,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       dress(m[0], "crate.glb", m[1] + 0.3, m[2] + 0.2, 0.9 + i, 0.75);
       dress(m[0], "barrel.glb", m[1] - 0.6, m[2] - 0.4, 0.2 + i, 0.8);
       dress(m[0], "crate.glb", m[1] + 2.1, m[2] - 1.0, 1.7 + i, 0.65);
+      blocks.push({ x: m[1] + 2.1, z: m[2] - 1.0, r: 0.5 }); // Batch 47: the loose crate is solid too, so the slide-along collision handles it
       const ca = Math.atan2(m[0].x - st.x, m[0].z - st.z);
-      doors.push({ kind: "merchant", x: st.x + Math.sin(ca) * 2.9, z: st.z + Math.cos(ca) * 2.9, port: st.port, label: "Market", stall: true });
+      doors.push({ kind: "merchant", x: st.x + Math.sin(ca) * 2.9, z: st.z + Math.cos(ca) * 2.9, port: st.port, label: "Market", stall: true, sx: st.x, sz: st.z });
       addQuayLantern(st.port, st.x + 1.9 * Math.cos(rot), st.z - 1.9 * Math.sin(rot) - 0.6, sy);
       quayLanterns[quayLanterns.length - 1].userData.market = true;
       blocks.push({ x: st.x + 1.9 * Math.cos(rot), z: st.z - 1.9 * Math.sin(rot) - 0.6, r: 0.35 });
@@ -8643,6 +8653,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const vign44 = document.createElement("div"); vign44.id = "vign44";
   vign44.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:1";
   document.getElementById("ui").appendChild(vign44);
+  polishCss.textContent += "body.title47 #ui{visibility:hidden!important}body.title47 #howto{display:none}";
   polishCss.textContent += "#sub,#hulllabel,#windlabel{text-shadow:0 1px 2px rgba(0,0,0,.75)}#btns button:active,#mbtns button:active{transform:scale(.95)}" +
     "@keyframes menuin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}#townmenu{animation:menuin .18s ease-out}" +
     "@keyframes toastin{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}#toast{animation:toastin .25s ease-out}" +
@@ -9794,8 +9805,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     writeSave();
   }
 
-  function boardShip() {
-    if (!nearGangplank()) return;
+  function boardShip(force) {
+    if (!force && !nearGangplank()) return;
     if (ashorePort) lastPort = ashorePort.id;
     ashoreBeach = null;
     mode = "sea";
@@ -10079,7 +10090,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function updateSea(dt, input) {
     const align = windAlign();
-    const windFactor = Math.max(x3 && x3.tut < 4 ? 0.45 : 0, 0.2 + 0.8 * Math.max(0, align));
+    // Batch 47: a simple polar. Head to wind is slow; close-hauled (about 50-60 degrees off) and a beam reach now make real way.
+    const offWind47 = Math.PI - Math.acos(clamp(align, -1, 1));
+    const polar47 = offWind47 < 0.55 ? 0.15 : offWind47 < 1.0 ? 0.15 + (offWind47 - 0.55) / 0.45 * 0.4 : offWind47 < 1.6 ? 0.55 + (offWind47 - 1.0) / 0.6 * 0.25 : 0.8;
+    const windFactor = Math.max(x3 && x3.tut < 4 ? 0.45 : 0, 0.2 + 0.8 * Math.max(0, align), polar47);
     const squall = inSquallAt(ship.x, ship.z);
     let nx = ship.x;
     let nz = ship.z;
@@ -10891,7 +10905,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     let bd = 3.6;
     for (let i = 0; i < doors.length; i++) {
       if (ashorePort && doors[i].port && doors[i].port !== ashorePort.id) continue;
-      const d = Math.hypot(person.x - doors[i].x, person.z - doors[i].z);
+      let d = Math.hypot(person.x - doors[i].x, person.z - doors[i].z);
+      // Batch 47: a market stall answers from all round the stall and its sign, not just its front step.
+      if (doors[i].stall) d = Math.min(d, Math.max(0, Math.hypot(person.x - doors[i].sx, person.z - doors[i].sz) - 1.6));
       if (d < bd) { bd = d; best = doors[i]; }
     }
     if (!best) return null;
@@ -10966,9 +10982,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       else if (tryMove(nx, person.z)) { person.x = nx; stuckT45 = 0; }
       else if (tryMove(person.x, nz)) { person.z = nz; stuckT45 = 0; }
       else {
-        // Batch 45: slide along a shore or wall at 45 degrees before giving up.
+        // Batch 47: slide along the block we hit (crates, stalls, posts) by moving along its tangent.
         let moved = false;
-        for (const da of [0.8, -0.8, 1.4, -1.4]) { const ax = person.x + Math.sin(face + da) * sp * dt, az = person.z + Math.cos(face + da) * sp * dt; if (tryMove(ax, az)) { person.x = ax; person.z = az; moved = true; break; } }
+        { let hb = null, hd = 1e9; for (let i = 0; i < blocks.length; i++) { const q = blocks[i], d = Math.hypot(nx - q.x, nz - q.z) - q.r; if (d < hd) { hd = d; hb = q; } }
+          if (hb && hd < 0.35) { let nxv = person.x - hb.x, nzv = person.z - hb.z; const nl = Math.hypot(nxv, nzv) || 1; nxv /= nl; nzv /= nl; const dot = mvx * nxv + mvz * nzv; let tx = mvx - dot * nxv, tz = mvz - dot * nzv; const tl = Math.hypot(tx, tz);
+            if (tl > 0.05) { tx /= tl; tz /= tl; const k = sp * dt * Math.max(0.6, tl); const ax = person.x + tx * k + nxv * 0.02, az = person.z + tz * k + nzv * 0.02; if (tryMove(ax, az)) { person.x = ax; person.z = az; moved = true; } } } }
+        // Batch 45: slide along a shore or wall at 45 degrees before giving up.
+        if (!moved) for (const da of [0.8, -0.8, 1.4, -1.4]) { const ax = person.x + Math.sin(face + da) * sp * dt, az = person.z + Math.cos(face + da) * sp * dt; if (tryMove(ax, az)) { person.x = ax; person.z = az; moved = true; break; } }
         if (!moved) { stuckT45 += dt; if (stuckT45 > 0.6) { stuckT45 = 0; unstick45(); } } else stuckT45 = 0;
       }
       setMoving(true);
@@ -11283,8 +11303,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       camera.position.lerp(desired, k);
       camLook.lerp(look, k);
       if (mode === "land") { camBlock44(camera.position, person.x, person.group.position.y + 1.4, person.z); if (hitsBlock(camera.position.x, camera.position.z, 0.3)) { for (let i = 0; i < 8 && hitsBlock(camera.position.x, camera.position.z, 0.3); i++) camera.position.lerp(tmpCam47.set(person.x, camera.position.y, person.z), 0.25); } }
+      // Batch 47: never jam the camera into the head. When walls pull it in closer than 2.2 m, lift it to look down over the shoulder instead.
+      if (mode === "land") { const hx = camera.position.x - person.x, hz = camera.position.z - person.z, hh = Math.hypot(hx, hz), py0 = person.group.position.y; if (hh < 2.2) { const minY = py0 + 1.6 + (2.2 - hh) * 1.4; if (camera.position.y < minY) camera.position.y = minY; } }
     }
-    { const nr = mode === "land" ? 0.08 : 0.2; if (camera.near !== nr) { camera.near = nr; camera.updateProjectionMatrix(); } }
+    { const nr = mode === "land" ? 0.22 : 0.3; if (camera.near !== nr) { camera.near = nr; camera.updateProjectionMatrix(); } }
     if (mode === "sea") {
       camLean = damp(camLean, (x3 && x3.calm) ? 0 : ((ship.roll || 0) + (ship.list || 0)) * 0.22, dt, 2.5);
       const lean = camLean;
@@ -11488,6 +11510,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
                     ? "Weather ahead."
                     : (inIrons
                       ? "In irons. Fall off the wind."
+                      : sail > 0 && Math.abs(into) < 0.9 && ship.speed < 3.2
+                      ? "Too close to the wind. Bear away to about 55 degrees off it, then tack across to zig-zag upwind."
                       : sailNames[sail] + " sail, " + feel.toLowerCase() + ". Sugar is cheap at Salt Cay and dearest at San Lorenzo. Rum is cheapest at San Lorenzo."))))));
       }
     } else {
@@ -13850,7 +13874,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function reverb47() {
     if (mus47 && mus47.rev) return mus47.rev;
     const len = Math.floor(audioCtx.sampleRate * 1.6), buf = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
-    for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+    let ns47 = 9187; for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < len; i++) { ns47 = (ns47 * 16807) % 2147483647; d[i] = (ns47 / 1073741823.5 - 1) * Math.pow(1 - i / len, 2.6); } } // own noise source: audio set-up never draws on Math.random
     const cv = audioCtx.createConvolver(); cv.buffer = buf; const g = audioCtx.createGain(); g.gain.value = 0.28; cv.connect(g); g.connect(audioOut());
     return { in: cv, out: g };
   }
@@ -13900,7 +13924,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   function duckMusic47(depth, secs) { try { if (!mus47 || !audioCtx) return; const t = audioCtx.currentTime, g = mus47.duck.gain; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(1 - depth, t + 0.03); g.setTargetAtTime(1, t + 0.1, secs); } catch (e) { /* optional */ } }
   // Small UI and handling sounds.
-  function uiTick47() { try { if (!audioCtx || audioCtx.state !== "running") return; const t = audioCtx.currentTime; const pv = 0.94 + Math.random() * 0.12; note47(t, 1450 * pv, 0.05, 0.035, "triangle", 3200, audioOut()); note47(t + 0.012, 720 * pv, 0.06, 0.025, "sine", 2000, audioOut()); } catch (e) { /* optional */ } }
+  function uiTick47() { try { if (!audioCtx || audioCtx.state !== "running") return; const t = audioCtx.currentTime; uiTick47.n = ((uiTick47.n || 0) + 1) % 5; const pv = 0.94 + uiTick47.n * 0.03; /* no Math.random here: a button tick must not change game dice */ note47(t, 1450 * pv, 0.05, 0.035, "triangle", 3200, audioOut()); note47(t + 0.012, 720 * pv, 0.06, 0.025, "sine", 2000, audioOut()); } catch (e) { /* optional */ } }
   function flap47(big) { big = big || 1; try { if (!audioCtx || !noiseBuf) return; const t = audioCtx.currentTime; for (let i = 0; i < Math.round(2 + big); i++) { const s = audioCtx.createBufferSource(), f = audioCtx.createBiquadFilter(), g = audioCtx.createGain(); s.buffer = noiseBuf; f.type = "bandpass"; f.frequency.value = 500 + i * 140; f.Q.value = 1.4; g.gain.setValueAtTime(0.0001, t + i * 0.07); g.gain.exponentialRampToValueAtTime(0.045 * big, t + i * 0.07 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.07 + 0.12); s.connect(f); f.connect(g); g.connect(audioOut()); s.start(t + i * 0.07, Math.random() * 0.5); s.stop(t + i * 0.07 + 0.14); } } catch (e) { /* optional */ } }
   function chain47() { try { if (!audioCtx) return; const t = audioCtx.currentTime; for (let i = 0; i < 7; i++) note47(t + i * 0.055 + Math.random() * 0.02, 2200 + Math.random() * 900, 0.05, 0.03, "square", 4200, audioOut()); } catch (e) { /* optional */ } }
   let sail47 = null, anch47 = null, whoosh47 = false;
@@ -13923,7 +13947,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     // Soft footsteps ashore, faster when running.
     if (mode === "land" && person.moving && !menuOpen) { stepT47 -= dt; if (stepT47 <= 0) { stepT47 = run45 > 0.5 ? 0.27 : 0.38; noiseBurst(0.035, 0.05, 700 + Math.random() * 300); } } else stepT47 = 0.1;
   }
+  function toShip47(e) { if (e) { e.preventDefault(); e.stopPropagation(); } if (mode !== "land" || menuOpen || (fightOn && fight && fight.land)) return; if (typeof uiTick47 === "function") uiTick47(); boardShip(true); }
+  shipBtn47.addEventListener("pointerdown", toShip47);
   function update47(dt) {
+    { const want = mode === "land" && !titleOn && !menuOpen && !(fightOn && fight && fight.land) ? "" : "none"; if (shipBtn47.style.display !== want) shipBtn47.style.display = want; }
     updateMusic47(dt);
     if (!x3 || titleOn) return;
     updateAmb47(dt);
@@ -15497,8 +15524,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
   }
 
+  let practice47 = false; // Batch 47: a quick battle started from the title over a saved voyage is practice and never overwrites the save
   function writeSave() {
-    if (!worldReady || titleOn || importReload47) return;
+    if (!worldReady || titleOn || importReload47 || practice47) return;
     const data = {
       gold: ledger.gold,
       sugar: ledger.sugar,
@@ -15673,6 +15701,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function dismissTitle() {
     titleOn = false;
+    document.body.classList.remove("title47");
     boot.style.background = "";
     boot.classList.add("hide");
     boot.innerHTML = "";
@@ -15786,6 +15815,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function showTitle(data) {
     titleOn = true;
+    // Batch 47: nothing from the game HUD (Log, toasts, buttons) shows or takes taps behind the title.
+    document.body.classList.add("title47");
+    if (typeof logPanel !== "undefined") logPanel.style.display = "none";
     boot.classList.remove("hide");
     boot.innerHTML = "";
     boot.style.flexDirection = "column";
@@ -15831,8 +15863,18 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       });
       return b;
     }
-    row.appendChild(choice("Play", startNew));
-    row.appendChild(choice("Continue", function () { startContinue(data); }));
+    if (data) {
+      row.appendChild(choice("Play", startNew));
+      row.appendChild(choice("Continue", function () { startContinue(data); }));
+    } else {
+      note.textContent = "A new captain, a borrowed cutter and an empty hold.";
+      row.appendChild(choice("Play", function () { if (!x3) x3Load(null); dismissTitle(); showHowTo(); }));
+    }
+    { const qb = choice("Quick battle", function () {
+        if (data) { applySave(data); practice47 = true; } else if (!x3) x3Load(null);
+        dismissTitle(); quickBattle();
+        if (data) setTimeout(function () { say("Practice fight: your saved voyage is not changed. Reload and Continue to go back to it.", 5); }, 7600);
+      }); qb.id = "titlequick47"; qb.style.minWidth = "120px"; qb.style.background = "rgba(20,32,46,.9)"; qb.style.color = "#f2d48a"; row.appendChild(qb); }
     boot.appendChild(h);
     boot.appendChild(tag);
     boot.appendChild(note);
@@ -15872,7 +15914,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     worldReady = true;
     last = performance.now();
     const saved = readSave();
+    // Batch 47: the title shows on every load. Only local file:// test runs without ?title=1 keep the old straight-to-how-to start.
     if (saved) showTitle(saved);
+    else if (location.protocol !== "file:" || /[?&]title=1/.test(location.search)) showTitle(null);
     else { if (!x3) x3Load(null); boot.classList.add("hide"); showHowTo(); }
     requestAnimationFrame(frame);
   }).catch(function (err) {
@@ -16531,7 +16575,18 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           return Math.round(best * 10) / 10;
         }
         const spots = [];
-        doors.forEach(function (d) { if (d.port === id) spots.push({ what: d.label, gap: reach(d.x, d.z) }); });
+        // Batch 47: a door counts only if some reachable spot actually gets Enter for that door.
+        function enterable(d) {
+          const px = person.x, pz = person.z; let okE = false;
+          const ci = Math.round((d.x - x0) / step), cj = Math.round((d.z - z0) / step);
+          for (let a = ci - 8; a <= ci + 8 && !okE; a++) for (let b = cj - 8; b <= cj + 8 && !okE; b++) {
+            if (a < 0 || b < 0 || a >= n || b >= n || !seen[a * n + b]) continue;
+            person.x = x0 + a * step; person.z = z0 + b * step;
+            if (closestDoor() === d) okE = true;
+          }
+          person.x = px; person.z = pz; return okE;
+        }
+        doors.forEach(function (d) { if (d.port === id) spots.push({ what: d.label, gap: reach(d.x, d.z), enter: enterable(d), door: true }); });
         townWalkers.forEach(function (w, i) { if (w.port === id) w.pts.forEach(function (pt, k) { spots.push({ what: "walker" + i + "." + k, gap: reach(pt.x, pt.z) }); }); });
         CHESTS.forEach(function (c) { if (c.port === id) spots.push({ what: "chest", gap: reach(c.x, c.z) }); });
         locals.forEach(function (l) { if (l.port === id) spots.push({ what: l.name, gap: reach(l.x, l.z) }); });
