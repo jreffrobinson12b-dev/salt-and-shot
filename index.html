@@ -3842,7 +3842,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     "#hudrow{flex-wrap:wrap;max-width:min(250px,calc(100vw - 150px))}" +
     "@media (max-width:560px){#pause{top:calc(62px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}}" +
     "#townmenu{padding:calc(20px + env(safe-area-inset-top)) 18px calc(20px + env(safe-area-inset-bottom))!important;touch-action:pan-y!important}#mpurse{display:inline-block;background:rgba(242,212,138,.14);border:1px solid rgba(242,212,138,.5);border-radius:10px;padding:6px 10px;margin:4px 0}#mbtns button{width:100%;text-align:left;padding:0 14px}" +
-    "@media (min-width:560px){#townmenu>div{max-width:620px!important}#mbtns{display:grid!important;grid-template-columns:1fr 1fr}}" +
+    "@media (min-width:560px){#townmenu>div{max-width:620px!important}#mbtns{display:grid!important;grid-template-columns:1fr 1fr}}#mbtns>button{height:auto!important;min-height:46px;white-space:normal}" +
     "#needle{width:36px!important;height:36px!important}#needle i{top:4px!important;border-bottom-width:13px!important;transform-origin:50% 14px!important}#windlabel{font-size:11px;line-height:13px;margin-top:1px}" +
     "#skills,#glass,#log,#chart,#settings,#pause{height:38px!important;font-size:14px!important;min-width:76px!important}#log{top:calc(228px + env(safe-area-inset-top))!important}#logpanel{top:calc(272px + env(safe-area-inset-top))!important}" +
     "#mbtns button,#fight button,#skillpanel button,#logclose,#chartclose{min-height:46px;font-size:16px}" +
@@ -4107,9 +4107,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   const HULLS = {
     cutter: { id: "cutter", mesh: "ship-pirate-medium.glb", scale: 1.35, points: 100, damage: 34, chain: 12, chainSail: 35, reload: 6, turn: 1, accel: 1, shadow: 4.8, wake: 4.4 },
-    brig: { id: "brig", mesh: "ship-pirate-large.glb", scale: 1.72, points: 100, damage: 44, chain: 17, chainSail: 35, reload: 7, turn: 0.72, accel: 0.74, shadow: 6.8, wake: 6.2 },
-    frigate: { id: "frigate", mesh: "ship-pirate-large.glb", scale: 1.72 * 1.22, points: 130, damage: 52, chain: 20, chainSail: 47, reload: 8, turn: 0.50, accel: 0.60, shadow: 6.8 * 1.22, wake: 6.2 * 1.22 },
-    manowar: { id: "manowar", mesh: "ship-pirate-large.glb", scale: 1.72 * 1.45, points: 170, damage: 66, chain: 25, chainSail: 58, reload: 9, turn: 0.42, accel: 0.48, shadow: 6.8 * 1.45, wake: 6.2 * 1.45 }
+    brig: { id: "brig", mesh: "ship-pirate-large.glb", scale: 1.72, points: 140, damage: 44, chain: 17, chainSail: 35, reload: 7, turn: 0.72, accel: 0.74, shadow: 6.8, wake: 6.2 },
+    frigate: { id: "frigate", mesh: "ship-pirate-large.glb", scale: 1.72 * 1.22, points: 175, damage: 52, chain: 20, chainSail: 47, reload: 8, turn: 0.50, accel: 0.60, shadow: 6.8 * 1.22, wake: 6.2 * 1.22 },
+    manowar: { id: "manowar", mesh: "ship-pirate-large.glb", scale: 1.72 * 1.45, points: 220, damage: 66, chain: 25, chainSail: 58, reload: 9, turn: 0.42, accel: 0.48, shadow: 6.8 * 1.45, wake: 6.2 * 1.45 }
   };
   let playerHull = { id: "cutter", name: "Bramble cutter", captured: false };
   const ship = {
@@ -4181,7 +4181,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const QUIET_RUM = 14;
   let lastPort = "bramble";
   const doors = [];
-  const ledger = { gold: 42, sugar: 3, rum: 1, coffee: 0, tobacco: 0, silk: 0 };
+  const ledger = { gold: 80, sugar: 3, rum: 1, coffee: 0, tobacco: 0, silk: 0 };
   let invertHelm = false;
   let calmT = 0;
   let seaEventT = 0;
@@ -7524,8 +7524,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!here) return null;
     for (const g of GOOD_NAMES) for (const pid in PRICES) {
       if (pid === id) continue;
-      const gain = PRICES[pid][g].sell - here[g].buy;
-      if (!best || gain > best.gain) best = { good: g, to: pid, gain: gain, buy: here[g].buy, sell: PRICES[pid][g].sell };
+      // Batch 48: standing in this port's market, quote the price on the counter (market day, buying-up), not the list price.
+      const hb = mode === "land" && ashorePort && ashorePort.id === id ? buyOf(g) : here[g].buy;
+      const gain = PRICES[pid][g].sell - hb;
+      if (!best || gain > best.gain) best = { good: g, to: pid, gain: gain, buy: hb, sell: PRICES[pid][g].sell };
     }
     return best;
   }
@@ -10946,7 +10948,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
 
   let stuckT45 = 0, rope45 = null, groundT45 = 0, menuGhost47 = 0;
-  const WALK47 = 4.0;
+  const WALK47 = 6.5; // Batch 48: was 4.0; Games 2 found walking far too slow
   // Batch 47: slow a little in the last metres before a door so the captain stops at it instead of overshooting.
   function doorEase47() { let dd = 9; for (let i = 0; i < doors.length; i++) { const d = Math.hypot(person.x - doors[i].x, person.z - doors[i].z); if (d < dd) dd = d; } return dd >= 3.6 ? 1 : 0.55 + 0.45 * (dd / 3.6); }
   // Batch 45: a captain wedged between the surf line and a wall steps back to the nearest open ground.
@@ -11000,7 +11002,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       person.yaw = dampAngle(person.yaw, face, dt, 10);
       const n = Math.min(1, (Math.min(1, mag) - 0.18) / 0.82);
       run45 = n > 0.85 ? run45 + dt : 0;
-      const sp = WALK47 * (0.4 + 0.6 * n) * (run45 > 0.35 ? 1.5 : 1) * doorEase47();
+      const sp = WALK47 * (0.4 + 0.6 * n) * ((run45 > 0.35 || keys["shift"]) ? 1.6 : 1) * doorEase47(); // full stick for a moment, or Shift, runs
       if (person.walk) person.walk.timeScale = (0.7 + 0.5 * n) * (run45 > 0.5 ? 1.3 : 1);
       const mvx = Math.sin(face), mvz = Math.cos(face);
       const nx = person.x + mvx * sp * dt;
@@ -11265,6 +11267,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     lookHeld = holding;
     if (holding) lookIdle = 0;
     else {
+      // Batch 48: ashore, a look you set stays put: it becomes the walking direction instead of swinging back after 2 s.
+      if (mode === "land" && landYaw !== null && lookYaw !== 0) { landYaw += lookYaw; lookYaw = 0; }
       lookIdle += dt;
       if (lookIdle > 2) {
         lookYaw = dampAngle(lookYaw, 0, dt, 2.4);
@@ -11318,7 +11322,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const fx = Math.sin(yaw);
       const fz = Math.cos(yaw);
       const py = person.group.position.y;
-      const hDist = Math.max(4, LAND_LOOK_DIST * Math.cos(lookPitch)) * (1 - 0.12 * sm45(3, 5, idle46));
+      const hDist = Math.max(4, LAND_LOOK_DIST * Math.cos(lookPitch)); // Batch 48: no idle dolly-in, the camera holds still between walks
       const camY = py + Math.max(1.2, LAND_LOOK_DIST * Math.sin(lookPitch));
       desired.set(person.x - fx * hDist, camY, person.z - fz * hDist);
       const gy = feetY(desired.x, desired.z);
@@ -13095,7 +13099,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function updateXp(dt) {
     if (!x3 || titleOn) { xpSeen = null; return; }
     xpT -= dt; if (xpT > 0) return; xpT = 0.5;
-    if (!xpSeen) { xpSeen = {}; for (const k in XP_SRC) xpSeen[k] = x3[k]; if (sessionXp0 == null) sessionXp0 = x3.xp; return; }
+    if (!xpSeen) { xpSeen = {}; for (const k in XP_SRC) xpSeen[k] = x3[k]; if (sessionXp0 == null) sessionXp0 = x3.xp; if (earned0 == null) earned0 = x3.earned || 0; return; }
     if (mode === "sea" && x3.tut >= 4) x3.seaXp = Math.floor(x3.seaTime / 120);
     const sc = sightCount(), dc = deedCount();
     if (xpSeen.sights == null) { xpSeen.sights = sc; xpSeen.deeds = dc; }
@@ -15226,6 +15230,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     fps48.held = capped ? fps48.held + gap : 0;
     if (fps48.held > 8000 && !fps48.told && IS_PHONE) { fps48.told = true; say("Your phone is holding the browser at 30 fps. Turn off Power saving (and any Game Booster frame limit) for smooth 60.", 6); }
   }
+  let shadow48 = 0;
   function frame(now) {
     const work48 = performance.now();
     if (!guarded47) guardText47();
@@ -15244,6 +15249,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     last = now;
     waterUniforms.uTime.value = now / 1000;
     if (paused) dayOffset -= (now - pauseClock) / 1000;
+    else if (mode === "land" && !titleOn && now - pauseClock < 250) dayOffset -= (now - pauseClock) / 1000 * 0.6; // Batch 48: ashore the day runs at 40% speed
     pauseClock = now;
     updateDaylight(now / 1000);
     if (!paused) windAngle += dt * (Math.PI * 2 / WIND_TURN);
@@ -15304,6 +15310,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     updateWeather(dt);
     updateGrapples();
     updateBatch11(dt, waterUniforms.uTime.value);
+    // Batch 48: on phones the shadow map redraws every other frame (the sun barely moves), cutting the extra shadow pass that made walking and gunfire stutter.
+    if (IS_PHONE && renderer.shadowMap.enabled) { renderer.shadowMap.autoUpdate = false; shadow48 = (shadow48 + 1) % 2; if (shadow48 === 0) renderer.shadowMap.needsUpdate = true; }
     if (!titleOn || now - titleDraw47 > 80) { titleDraw47 = now; separatePlaceTags(); renderer.render(scene, camera); }
     perfGuard(now);
     probeFps48(now, performance.now() - work48);
@@ -15662,6 +15670,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       rum: ledger.rum,
       coffee: ledger.coffee,
       hull: ship.hull,
+      hullMax48: ship.hullMax,
       sails: ship.sails,
       x: ship.x,
       z: ship.z,
@@ -15820,6 +15829,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       ship.root.position.set(ship.x, 0, ship.z);
       ship.root.rotation.y = ship.heading;
     }
+    // Batch 48: brig 100->140, frigate 130->175, man-of-war 170->220. Saves from before keep their hull fraction.
+    if (typeof data.hullMax48 !== "number" && typeof data.hull === "number") { const OLD48 = { cutter: 100, brig: 100, frigate: 130, manowar: 170 }; const old = OLD48[playerHull.id]; if (old && old !== hullPoints(playerHull.id)) ship.hull = Math.round(Math.min(data.hull, old) / old * hullPoints(playerHull.id)); }
     ship.hullMax = Math.max(hullPoints(playerHull.id), ship.hull);
     ship.hull = clamp(ship.hull, 1, ship.hullMax);
     x3Load(data.x3);
@@ -15907,7 +15918,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     standing.spain = 0;
     standing.france = 0;
     standing.pirates = 0;
-    ledger.gold = 42;
+    ledger.gold = 80; // Batch 48: was 42, a mild early boost
     ledger.sugar = 3;
     ledger.rum = 1;
     ledger.coffee = 0;
@@ -15995,7 +16006,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (data) {
       // Batch 48: Play over a saved voyage asks once more and backs the old save up first.
       { const pb = document.createElement("button"); pb.type = "button"; pb.id = "titleplay48"; pb.textContent = "Play"; pb.style.cssText = "min-width:140px;height:54px;font-size:18px"; let armed = 0;
-        const go = function (e) { e.preventDefault(); e.stopPropagation(); if (picked) return; const now = performance.now(); if (!armed || now - armed > 5000) { armed = now; pb.textContent = "New game? Tap again"; note.textContent = "This starts over from Bramble Quay with 42 gold. Your current voyage is backed up on this phone first."; return; } if (now - armed < 250) return; picked = true; try { const cur = localStorage.getItem(SAVE_KEY); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); } catch (err) { /* storage optional */ } startNew(); };
+        const go = function (e) { e.preventDefault(); e.stopPropagation(); if (picked) return; const now = performance.now(); if (!armed || now - armed > 5000) { armed = now; pb.textContent = "New game? Tap again"; note.textContent = "This starts over from Bramble Quay with 80 gold. Your current voyage is backed up on this phone first."; return; } if (now - armed < 250) return; picked = true; try { const cur = localStorage.getItem(SAVE_KEY); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); } catch (err) { /* storage optional */ } startNew(); };
         pb.addEventListener("pointerdown", go); pb.addEventListener("click", function (e) { e.preventDefault(); }); row.appendChild(pb); }
       row.appendChild(choice("Continue", function () { startContinue(data); }));
     } else {
@@ -16018,6 +16029,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boot.appendChild(row);
     { const cb = document.createElement("button"); cb.type = "button"; cb.id = "titlecredits47"; cb.textContent = "Credits"; cb.style.cssText = "margin:10px 0 0 8px;height:36px;font-size:14px;background:transparent;border:1px solid rgba(242,212,138,.5);color:#f2d48a;border-radius:10px;padding:0 14px"; tapBoth47(cb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } showCreditsPanel47(); }); setTimeout(function () { const im = document.getElementById("titleimport47"); if (im && im.parentNode) im.parentNode.insertBefore(cb, im.nextSibling); }, 0); }
     { const im = document.createElement("button"); im.type = "button"; im.id = "titleimport47"; im.textContent = "Import a save"; im.style.cssText = "margin-top:10px;height:36px;font-size:14px;background:transparent;border:1px solid rgba(242,212,138,.5);color:#f2d48a;border-radius:10px;padding:0 14px"; tapBoth47(im, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } showImport47(); }); boot.appendChild(im); }
+    // Batch 48: Play over a save keeps a backup; this brings it back.
+    { let bk = null; try { bk = localStorage.getItem(SAVE_KEY + "-before-new"); } catch (e) { bk = null; }
+      if (bk) { const rb = document.createElement("button"); rb.type = "button"; rb.id = "titlerestore48"; rb.textContent = "Restore previous voyage"; rb.style.cssText = "margin:10px 0 0 8px;height:36px;font-size:14px;background:transparent;border:1px solid rgba(242,212,138,.5);color:#f2d48a;border-radius:10px;padding:0 14px"; let armedR = 0;
+        tapBoth47(rb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } const now = performance.now(); if (!armedR || now - armedR > 5000) { armedR = now; rb.textContent = "Swap back? Tap again"; return; } try { const cur = localStorage.getItem(SAVE_KEY); localStorage.setItem(SAVE_KEY, bk); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); else localStorage.removeItem(SAVE_KEY + "-before-new"); } catch (err) { return; } importReload47 = true; location.reload(); }); boot.appendChild(rb); } }
     const tv = document.createElement("div");
     tv.id = "titlever";
     tv.textContent = "Version: batch 47";
@@ -16043,6 +16058,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     addDockDecks();
     makeBottles();
     if (!/nomerge/.test(location.search)) mergeStatic();
+    // Batch 48: the first broadside hitched for ~120 ms while splash, smoke and splinter shaders compiled; compile them during loading.
+    try { splashAt(0, -3000, true); splashAt(0, -3000, false); puffAt(0, 3, -3000); splinters44(0, -3000, 40); renderer.compile(scene, camera); } catch (e) { /* warm-up optional */ }
     worldReady = true;
     last = performance.now();
     const saved = readSave();
