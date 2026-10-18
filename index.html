@@ -8523,7 +8523,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   aimTip.style.cssText = "display:none;position:absolute;left:calc(72% - 90px);top:38%;width:180px;box-sizing:border-box;padding:10px 12px;border-radius:14px;background:rgba(242,212,138,.92);color:#1a1208;font-family:system-ui,sans-serif;font-weight:700;font-size:14px;line-height:1.3;pointer-events:none;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.4);animation:aimpulse 1.2s ease-in-out infinite";
   document.getElementById("ui").appendChild(aimTip);
   polishCss.textContent += "@media (max-height:440px){#howto>div{font-size:13px!important;line-height:1.3!important;padding:10px 14px!important;max-width:460px!important}#howto>div>div:first-child{margin-bottom:4px!important}#howto>div>div:nth-child(2){font-size:18px!important;margin-bottom:2px!important}#howto button{height:42px!important;margin-top:8px!important}}";
-  polishCss.textContent += "#ui button{-webkit-tap-highlight-color:transparent;transition:filter .15s}#ui button:active{filter:brightness(.82)}#board.ready45{animation:ready45 1.4s ease-in-out infinite}@keyframes rain46{from{background-position:0 0}to{background-position:-40px 200px}}@keyframes tap46{0%{filter:brightness(1.6)}100%{filter:none}}#fire.tap46,#sail.tap46,#anchor.tap46{animation:tap46 .35s ease-out}@keyframes hint46{from{opacity:0}to{opacity:1}}#hint{animation:hint46 .3s ease-out}#ui button:disabled{filter:grayscale(.7) brightness(.85)}@keyframes menu46{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}#townmenu{animation:menu46 .18s ease-out}@keyframes gold46{0%{color:#ffe08a;text-shadow:0 0 8px rgba(255,214,90,.9)}100%{}}#sub.gold46{animation:gold46 .9s ease-out}@keyframes toast46{from{opacity:0;margin-top:-6px}to{opacity:1;margin-top:0}}#toast{animation:toast46 .22s ease-out}";
+  polishCss.textContent += "#ui button{-webkit-tap-highlight-color:transparent;transition:filter .15s}#ui button:active{filter:brightness(.82)}#board.ready45{animation:ready45 1.4s ease-in-out infinite}@keyframes rain46{from{background-position:0 0}to{background-position:-40px 200px}}@keyframes tap46{0%{filter:brightness(1.6)}100%{filter:none}}#fire.tap46,#sail.tap46,#anchor.tap46{animation:tap46 .35s ease-out}@keyframes hint46{from{opacity:0}to{opacity:1}}@keyframes gust46{0%,100%{color:inherit}50%{color:#9dffb0}}#windlabel.gust46{animation:gust46 1s ease-in-out infinite}#hint{animation:hint46 .3s ease-out}#ui button:disabled{filter:grayscale(.7) brightness(.85)}@keyframes menu46{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}#townmenu{animation:menu46 .18s ease-out}@keyframes gold46{0%{color:#ffe08a;text-shadow:0 0 8px rgba(255,214,90,.9)}100%{}}#sub.gold46{animation:gold46 .9s ease-out}@keyframes toast46{from{opacity:0;margin-top:-6px}to{opacity:1;margin-top:0}}#toast{animation:toast46 .22s ease-out}";
   polishCss.textContent += "@keyframes ready45{0%,100%{box-shadow:0 0 0 2px rgba(242,212,138,.5)}50%{box-shadow:0 0 0 4px rgba(242,212,138,.95),0 0 14px rgba(242,212,138,.6)}}#act.ready45{animation:ready45 1.4s ease-in-out infinite}";
   polishCss.textContent += "@keyframes hullwarn{0%,100%{opacity:1}50%{opacity:.35}}#hullfill.hulllow{background:#e0473a!important;animation:hullwarn .9s ease-in-out infinite}" +
     "@keyframes logglow{0%,100%{box-shadow:0 0 0 2px #ffd65a}50%{box-shadow:0 0 0 5px rgba(255,214,90,.35)}}#log.fresh{animation:logglow 1.1s ease-in-out infinite}";
@@ -13469,7 +13469,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       k.m.visible = k.t > 4 || Math.sin(k.t * 12) > 0;
       const got = mode === "sea" && !fightOn && Math.hypot(ship.x - k.x, ship.z - k.z) < 6.5;
       const kv = 5 + rankOf();
-      if (got) { ledger.gold += kv; if (x3) x3.earned = (x3.earned || 0) + kv; floatText(k.x, 4, k.z, "+" + kv, "#ffe08a"); coins45(k.x, k.z); buzz(15); }
+      if (got) { addMorale(1); ledger.gold += kv; if (x3) x3.earned = (x3.earned || 0) + kv; floatText(k.x, 4, k.z, "+" + kv, "#ffe08a"); coins45(k.x, k.z); buzz(15); }
       if (got || k.t <= 0) { scene.remove(k.m); kegs45.splice(i, 1); }
     }
   }
@@ -13566,7 +13566,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!flashEl46) { flashEl46 = document.createElement("div"); flashEl46.id = "flash46"; flashEl46.style.cssText = "position:fixed;inset:0;z-index:4;pointer-events:none;opacity:0"; document.getElementById("ui").appendChild(flashEl46); }
     flashEl46.style.background = col; flashEl46.style.transition = "none"; flashEl46.style.opacity = "1"; void flashEl46.offsetWidth; flashEl46.style.transition = "opacity .7s"; flashEl46.style.opacity = "0";
   }
-  let lastDayV46 = 0;
+  let lastDayV46 = 0, ticks46 = null;
   let idle46 = 0, chip46 = null, gold46 = null, plamp46 = null, torchGlow46 = [], dockRefl46 = [];
   let built46 = false, buoys46 = [], bunt46 = [], boats46 = [], dockLamps46 = [], flies46 = [], bflies46 = [], torches46 = [], doorRing46 = null, pblob46 = null, foeLamps46 = true, knots46 = null;
   const glowMat46 = function (c, op) { return new THREE.SpriteMaterial({ map: softTex(), color: c, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending }); };
@@ -13640,6 +13640,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     kegs45.forEach(function (k) { const d = Math.hypot(ship.x - k.x, ship.z - k.z); if (sea && d < 14 && d > 1) { k.x += (ship.x - k.x) / d * dt * 2.5; k.z += (ship.z - k.z) / d * dt * 2.5; } });
     // An anchored ship slowly swings head to wind.
     if (sea && anchored) { let dh = (windAngle + Math.PI) - ship.heading; while (dh > Math.PI) dh -= Math.PI * 2; while (dh < -Math.PI) dh += Math.PI * 2; ship.heading += dh * Math.min(1, dt * 0.05); }
+    // Quarter ticks on the hull bar.
+    if (chip46 && !ticks46) { ticks46 = document.createElement("div"); ticks46.id = "hullticks"; ticks46.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:2;background:repeating-linear-gradient(90deg,transparent 0 calc(25% - 1px),rgba(0,0,0,.35) calc(25% - 1px) 25%)"; chip46.parentElement.appendChild(ticks46); }
+    // Wind label pulses in a gust.
+    if (windlabel) { const g = gustT > 0 && sea; if (g !== windlabel.classList.contains("gust46")) windlabel.classList.toggle("gust46", g); }
+    // Shot button border shows the loaded shot.
+    if (shotBtn) { const c = shotKind === "chain" ? "#7fb8e8" : (shotKind === "grape" ? "#c8ccd0" : "#f2d48a"); if (shotBtn.dataset.c46 !== c) { shotBtn.dataset.c46 = c; shotBtn.style.borderColor = c; } }
     // Speed readout beside the sail button.
     if (!knots46) { knots46 = document.createElement("div"); knots46.id = "knots46"; knots46.style.cssText = "position:fixed;z-index:5;pointer-events:none;font:700 12px/1 system-ui,sans-serif;color:#f2d48a;text-shadow:0 1px 2px #000;display:none"; document.getElementById("ui").appendChild(knots46); }
     const showK = sea && !titleOn && !menuOpen && sailBtn && sailBtn.offsetParent !== null;
@@ -16303,6 +16309,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       ground45: function () { return { onLand: onLand(person.x, person.z), block: hitsBlock(person.x, person.z, 0.35) }; },
       unstick45: function () { return unstick45(); },
       kegs45: function (x, z) { if (x != null) kegDrop45(x, z); return kegs45.map(function (k) { return [k.x, k.z, k.t]; }); },
+      q46: function () { const vis = function (arr) { return arr.filter(function (o) { return o.visible; }).length; }; return { built: built46, buoys: buoys46.length, buoyLights: buoys46.filter(function (b) { return b.l.visible; }).length, bunting: bunt46.length, boats: boats46.length, dockLamps: vis(dockLamps46), flies: flies46.filter(function (f) { return f.o.visible; }).length, bflies: bflies46.filter(function (f) { return f.o.visible; }).length, torches: vis(torches46), doorRing: !!(doorRing46 && doorRing46.visible), knots: knots46 ? knots46.textContent : "", knotsShown: !!(knots46 && knots46.style.display !== "none"), chip: !!chip46, ticks: !!ticks46, rain: rainEl46 ? rainEl46.style.opacity : "", plamp: !!(plamp46 && plamp46.visible), idle: idle46, fov: camera.fov, heading: ship.heading, flee: foes.filter(function (f) { return f.flee46; }).length, search: foes.filter(function (f) { return f.search46; }).length, lamps: foes.filter(function (f) { return f.lamp46 && f.lamp46.visible; }).length, mode: mode }; },
+      avoid46: function (i, want) { const f = foes[i]; return f ? avoid46(f, want) : null; },
+      foeHull46: function (i, h) { const f = foes[i]; if (!f) return null; if (h != null) { f.hull = h; f.hunt = false; f.search46 = null; } return { hull: f.hull, max: f.hullMax, hunt: f.hunt }; },
+      lose46: function (i) { const f = foes[i]; if (!f) return null; f.hunt = true; f.x = ship.x + 300; f.z = ship.z; f.ignore = 0; foeSteer(f); return { hunt: f.hunt, search: f.search46 }; },
+      skipShot46: function () { const b = shots.find(function (q) { return q.from === "player"; }); return b ? { y: b.mesh.position.y, skip: !!b.skip46 } : null; },
       look45: function (y) { lookYaw = y; lookHeld = true; return viewBearing(); },
       fireHold45: function (v) { fireHeld45 = !!v; return fireHeld45; },
       bait: function () { return x3.bait; }, landYaw: function () { return landYaw; }, q44: function () { return { smug: x3.qSmug, runs: x3.smugRuns, cd: x3.customsCd, bait: x3.bait, ring: !!(ring44 && ring44.visible), ob: overboard41 ? { t: overboard41.t, x: overboard41.x, z: overboard41.z } : null, barrelCd: x3.barrelCd, saved: x3.overboardSaved, debris: debris44.length, heading: ship.heading, align: windAlign(), aimTip: aimTip.style.display, act: actBtn.style.visibility, vign: vign44.className }; }, hitFoe44: function (n) { const f = foes.find(function (o) { return o.alive && !o.sinking; }); if (f) damageFoe(f, n); return !!f; }, fishSet: function (t, anc) { if (anc !== undefined) anchored = anc; if (t !== undefined) fishT = t; return { fishT: fishT, anchored: anchored, fish: x3.fish, bait: x3.bait }; }, setDay43: function (v) { dayU.value = v; return true; },
