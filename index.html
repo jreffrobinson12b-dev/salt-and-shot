@@ -5704,6 +5704,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function spawn(name, x, y, z, rotY, scale) {
     const g = cache[name].scene.clone(true);
     shade(g);
+    if (name.indexOf("rocks") === 0) { g.userData.rock52 = scale || 1; g.userData.noCam51 = true; doorProps51.push(g); } // Batch 52: rocks hide when the camera is inside or in front of them
     g.position.set(x, y, z);
     g.rotation.y = rotY || 0;
     if (scale) g.scale.setScalar(scale);
@@ -7924,7 +7925,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3) lines.push("Galley: " + (x3.ate ? x3.ate.split("||").length : 0) + " of 4 port dishes tasted \u00B7 " + x3.meals + " meals bought");
     if (x3) lines.push("Treasure: " + (x3.hasMap ? "a map, " + Math.round(Math.hypot(x3.mapX - ship.x, x3.mapZ - ship.z)) + " yards away to the " + ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"][((Math.round(Math.atan2(x3.mapX - ship.x, -(x3.mapZ - ship.z)) / (Math.PI / 4)) % 8) + 8) % 8] : "no map") + " \u00B7 found " + x3.maps + " \u00B7 flawless battles " + x3.flawless + " \u00B7 squalls ridden reefed " + x3.reefed + (glint && !glint.treasure ? " \u00B7 a golden shimmer " + Math.round(Math.hypot(glint.x - ship.x, glint.z - ship.z)) + " yards off" : ""));
     if (x3) lines.push("Career shots fired: " + x3.shots + " \u00B7 accuracy " + (x3.shots ? Math.round(100 * Math.min(x3.hits, x3.shots) / x3.shots) : 0) + "% \u00B7 critical hits: " + x3.crits + " \u00B7 top speed: " + x3.topSpeed + " knots" + (hotT > 0 ? " \u00B7 gun crews on fire" : ""));
-    if (x3) lines.push("Gunnery: " + x3.hits + " hits \u00B7 " + x3.rakes + " raking \u00B7 best streak " + x3.bestStreak + " \u00B7 slipped past " + x3.shadow + " patrols at night");
+    if (x3) lines.push("Career gunnery: " + x3.hits + " hits \u00B7 " + x3.rakes + " raking \u00B7 best streak " + x3.bestStreak + " \u00B7 slipped past " + x3.shadow + " patrols at night");
     if (x3) {
       lines.push("");
       lines.push("Deeds " + deedCount() + " of " + DEEDS.length + ":");
@@ -9679,16 +9680,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   // Batch 51 (Games 2): one tap acts once whether the browser sends pointerdown, click or both (QA menu sometimes needed a second tap).
   function tap51(el, fn) { let last = 0; const go = function (e) { e.preventDefault(); e.stopPropagation(); const now = performance.now(); if (now - last < 450) return; last = now; fn(e); }; el.addEventListener("pointerdown", go); el.addEventListener("click", go); el.style.touchAction = "manipulation"; }
-  if (/[?&]qa=1\b/.test(location.search)) { const qs = document.createElement("button"); qs.type = "button"; qs.id = "qaspawn51"; qs.textContent = "QA ▾"; qs.style.cssText = "position:fixed;left:calc(50% + 62px);top:calc(4px + env(safe-area-inset-top));z-index:60;height:28px;font-size:12px;padding:0 10px;opacity:.75"; tap51(qs, function (e) { qp.style.display = qp.style.display === "flex" ? "none" : "flex"; }); document.body.appendChild(qs);
+  if (/[?&]qa=1\b/.test(location.search)) { const qs = document.createElement("button"); qs.type = "button"; qs.id = "qaspawn51"; qs.style.visibility = "hidden"; qs.textContent = "QA ▾"; qs.style.cssText = "position:fixed;left:calc(50% + 62px);top:calc(4px + env(safe-area-inset-top));z-index:60;height:28px;font-size:12px;padding:0 10px;opacity:.75"; tap51(qs, function (e) { qp.style.display = qp.style.display === "flex" ? "none" : "flex"; }); document.body.appendChild(qs);
     // Batch 51 (Games 2): QA menu with spawn and teleport shortcuts.
-    const qp = document.createElement("div"); qp.id = "qapanel51"; qp.style.cssText = "display:none;flex-direction:column;gap:4px;position:fixed;left:calc(50% + 62px);top:calc(36px + env(safe-area-inset-top));z-index:61;background:rgba(10,16,22,.85);padding:6px;border-radius:8px";
+    const qp = document.createElement("div"); qp.id = "qapanel51"; qp.style.visibility = "hidden"; qp.style.cssText = "display:none;flex-direction:column;gap:4px;position:fixed;left:calc(50% + 62px);top:calc(36px + env(safe-area-inset-top));z-index:61;background:rgba(10,16,22,.85);padding:6px;border-radius:8px";
     const qa = function (label, id, fn) { const b = document.createElement("button"); b.type = "button"; b.id = id; b.textContent = label; b.style.cssText = "height:30px;font-size:12px;padding:0 10px"; tap51(b, function (e) { qp.style.display = "none"; try { fn(window.__salt.b4); } catch (err) { say("QA: " + err.message, 2); } }); qp.appendChild(b); };
     qa("Spawn enemy nearby", "qaspawnnear51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } spawnNear51(45); });
     qa("Spawn enemy alongside (in range)", "qaspawnside51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } spawnNear51(Math.min(26, gunReach48() * 0.75)); });
-    qa("Teleport: Bramble shipyard", "qayard51", function (b) { b.ashoreAt("bramble"); const d = doors.find(function (o) { return o.kind === "shipyard" && (!o.port || o.port === "bramble"); }); if (d) b.putPerson48(d.x + 2, d.z + 2); });
+    qa("Teleport: Bramble shipyard", "qayard51", function (b) { b.ashoreAt("bramble"); const d = doors.find(function (o) { return o.kind === "shipyard" && (!o.port || o.port === "bramble"); }); if (d) { let hb = null, hd = 1e9; blocks.forEach(function (q) { const dd = Math.hypot(q.x - d.x, q.z - d.z); if (q.r > 1.5 && dd < hd) { hd = dd; hb = q; } }); const ox = hb ? (d.x - hb.x) / (hd || 1) : 0, oz = hb ? (d.z - hb.z) / (hd || 1) : 1; b.putPerson48(d.x + ox * 3.5, d.z + oz * 3.5); snapCamFacing52(Math.atan2(-ox, -oz)); } /* Batch 52: stand in front of the door facing it, camera snapped behind you (no slide through the yard posts) */ });
     qa("Teleport: town gate", "qagate51", function (b) { b.ashoreAt("bramble"); setTimeout(function () { const g = b.g51(); if (g.gate) b.putPerson48(g.gate.x - g.dir[0] * 3, g.gate.z - g.dir[1] * 3); }, 300); });
     qa("Teleport: bandits (wilds)", "qabandit51", function (b) { b.ashoreAt("bramble"); setTimeout(function () { const g = b.g51(); if (g.gate) b.putPerson48(g.gate.x + g.dir[0] * 10, g.gate.z + g.dir[1] * 10); }, 300); });
-    qa("Spawn squall here", "qasquall51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } qbCalm47 = 0; if (!storms.length) makeStorm(ship.x, ship.z + 200, 30, 0, 0); const s = storms[0]; s.x = ship.x + Math.sin(ship.heading) * (s.r * 0.6); s.z = ship.z + Math.cos(ship.heading) * (s.r * 0.6); /* Batch 51: right over you, and the quick-battle calm no longer pushes it away */ if (s.group) s.group.position.set(s.x, s.group.position.y, s.z); say("QA: you are in a squall. Full sail tears after 3 s.", 2); setTimeout(function () { qbCalm47 = 0; const s2 = storms[0]; if (s2 && !inSquallAt(ship.x, ship.z)) { s2.x = ship.x; s2.z = ship.z; if (s2.group) s2.group.position.set(s2.x, s2.group.position.y, s2.z); } }, 400); /* Batch 51: re-check once, in case practice or a boarding move pushed it */ });
+    qa("Spawn squall here", "qasquall51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } qbCalm47 = 0; if (!storms.length) makeStorm(ship.x, ship.z + 200, 30, 0, 0); const s = storms[0]; s.x = ship.x + Math.sin(ship.heading) * (s.r * 0.6); s.z = ship.z + Math.cos(ship.heading) * (s.r * 0.6); /* Batch 51: right over you, and the quick-battle calm no longer pushes it away */ if (s.group) s.group.position.set(s.x, s.group.position.y, s.z); squallHold52 = 12; say("QA: you are in a squall. Full sail tears after 3 s.", 2); toast("QA squall spawned on you.", "QA"); setTimeout(function () { qbCalm47 = 0; const s2 = storms[0]; if (s2 && !inSquallAt(ship.x, ship.z)) { s2.x = ship.x; s2.z = ship.z; if (s2.group) s2.group.position.set(s2.x, s2.group.position.y, s2.z); } }, 400); /* Batch 51: re-check once, in case practice or a boarding move pushed it */ });
     qa("Teleport: Gull Rock", "qagull51", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.toTreasure51(); });
     document.body.appendChild(qp); const sk = document.getElementById("qasink48"); if (sk) sk.style.transform = "translateX(calc(-50% - 62px))"; }
   // Batch 48: phones often skip pagehide when you swipe away, so also save when the tab is hidden and every 20 s, so Continue picks up mid-battle hull and position.
@@ -10531,8 +10532,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
   }
 
-  let qbCalm47 = 0, qbFoe47 = null;
+  let qbCalm47 = 0, qbFoe47 = null, squallHold52 = 0;
   function updateStorms(dt) {
+    if (squallHold52 > 0) { squallHold52 -= dt; qbCalm47 = 0; const s0 = storms[0]; if (s0 && Math.hypot(s0.x - ship.x, s0.z - ship.z) > s0.r * 0.5) { s0.x = ship.x + Math.sin(ship.heading) * s0.r * 0.3; s0.z = ship.z + Math.cos(ship.heading) * s0.r * 0.3; if (s0.group) s0.group.position.set(s0.x, s0.group.position.y, s0.z); } } // Batch 52: a QA squall stays on you for 12 s whatever else is running
     if (qbCalm47 > 0) {
       qbCalm47 -= dt;
       if (!qbFoe47 || !qbFoe47.alive || qbFoe47.gone || qbFoe47.sinking || mode !== "sea") { qbCalm47 = Math.min(qbCalm47, 20); if (mode !== "sea") qbCalm47 = 0; }
@@ -11763,8 +11765,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const b = o.userData.bs51; return Math.hypot(b.x - x, b.z - z) < 22 + b.r;
   }
   // Batch 51 (Games 2): small door props (shipyard post and sign) hide while the camera is inside or right next to them, so it never clips through.
+  function snapCamFacing52(yaw) { person.yaw = yaw; landYaw = yaw; lookYaw = 0; if (person.group) person.group.rotation.y = yaw; const py = feetY(person.x, person.z); camera.position.set(person.x - Math.sin(yaw) * 6, py + 3.2, person.z - Math.cos(yaw) * 6); camera.lookAt(person.x, py + 1.3, person.z); }
   function hideNearProps51() {
-    for (let i = 0; i < doorProps51.length; i++) { const o = doorProps51[i]; if (!o || !o.parent) continue; const near = Math.hypot(camera.position.x - o.position.x, camera.position.z - o.position.z) < 2.6 && camera.position.y < o.position.y + 5; o.visible = !near; }
+    const L52 = doorProps51.concat(signs47); const fx = person && mode === "land" ? person.x : ship.x, fz = person && mode === "land" ? person.z : ship.z;
+    for (let i = 0; i < L52.length; i++) { const o = L52[i]; if (!o || !o.parent) continue; const rr = o.userData.rock52 ? 2.8 * o.userData.rock52 : 2.6; const cx = camera.position.x, cz = camera.position.z; let near = Math.hypot(cx - o.position.x, cz - o.position.z) < rr && camera.position.y < o.position.y + 5;
+      if (!near && o.userData.rock52) { const vx = fx - cx, vz = fz - cz, L = vx * vx + vz * vz; if (L > 1) { const t = ((o.position.x - cx) * vx + (o.position.z - cz) * vz) / L; if (t > 0 && t < 0.9 && Math.hypot(cx + vx * t - o.position.x, cz + vz * t - o.position.z) < rr * 0.8 && Math.hypot(cx - o.position.x, cz - o.position.z) < 14) near = true; } }
+      if (o.visible === near) o.visible = !near; }
   }
   function camBlock44(d, x, y, z) {
     const now = performance.now();
@@ -14621,7 +14627,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function toShip47(e) { if (e) { e.preventDefault(); e.stopPropagation(); } if (mode !== "land" || (fightOn && fight && fight.land)) return; if (menuOpen) closeMenu(); /* Batch 51 (Games 2): one tap boards even straight out of the shipyard */ if (typeof uiTick47 === "function") uiTick47(); boardShip(true); }
   shipBtn47.addEventListener("pointerdown", toShip47);
   // Batch 51 (Games 2): the title screen hides the ship stats, which would show defaults until Continue loads your save.
-  setInterval(function () { const v = titleOn ? "hidden" : ""; ["top", "sub", "hudrow", "windbox"].forEach(function (id) { const el = document.getElementById(id); if (el && el.style.visibility !== v) el.style.visibility = v; }); }, 250);
+  setInterval(function () { const bt52 = document.getElementById("boot"), v = titleOn || (bt52 && !bt52.classList.contains("hide")) ? "hidden" : ""; /* Batch 52: QA buttons hide on the title and loading screens too */ ["qaspawn51", "qapanel51"].forEach(function (id) { const el = document.getElementById(id); if (el && el.style.visibility !== v) el.style.visibility = v; }); ["top", "sub", "hudrow", "windbox"].forEach(function (id) { const el = document.getElementById(id); if (el && el.style.visibility !== v) el.style.visibility = v; }); }, 250);
   function update47(dt) {
     updateSides47();
     lanes47(dt);
@@ -15809,6 +15815,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (ballTemplate) spawnShot("player", px + 1, py, pz, 0, 0, 0, 0, 0, "grape");
       splashAt(px, pz, true); splashAt(px + 2, pz, false); puffAt(px, py, pz); splinters44(px, pz, 30); floatText(px, py + 2, pz, " ", "#ffffff");
       if (ship.root) batteryFlash(ship.root, 1);
+      hideNearProps51(); // Batch 52: every frame, at sea and ashore
       renderer.render(scene, camera);
       for (let i = n0; i < shots.length; i++) { shots[i].life = 0; shots[i].mesh.visible = false; }
     } catch (e) { /* warm-up optional */ }
@@ -17974,6 +17981,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       callsNow: function () { gullCallT = 0.01; creakT = 0.01; return true; },
       setMorale: function (n) { x3.morale = n; return n; },
       setSail: function (n) { sail = n; return sail; },
+      squall52: function () { return { in: inSquallAt(ship.x, ship.z), n: storms.length, d: storms[0] ? Math.round(Math.hypot(storms[0].x - ship.x, storms[0].z - ship.z)) : null, r: storms[0] ? storms[0].r : null, calm: qbCalm47, mode: mode }; },
       deco52: function () { return { n: deco52.length, vis: deco52.filter(function (d) { return d.o.visible; }).length, houses: deco52.filter(function (d) { return d.blk && d.blk.r > 1.2; }).length, walls: scene.children.filter(function (o) { return o.userData.wall52; }).length }; },
       gfx: function () { return { low: !!x3.lowGfx, shadows: renderer.shadowMap.enabled, pr: renderer.getPixelRatio(), moon: !!(moonDisc && moonDisc.visible), sunCol: sun.color.getHexString(), fog: scene.fog.color.getHexString(), lightning: lightningSeen, parts: gfxParts.length, smokes: smokes.length, streaks: windStreaks ? windStreaks.filter(function (w) { return w.m.visible; }).length : 0, halo: !!(lampHalo && lampHalo.visible), quay: !!(quayGlows && quayGlows[0].visible), shallows: shallows ? shallows.length : 0, vignette: !vignette.classList.contains("low"), cloud: cloudMat ? cloudMat.color.getHexString() : "" }; },
       fps48: function () { return { interval: fps48.iv, work: fps48.work, fps: 1000 / fps48.iv, n: fps48.n, held: fps48.held, told: fps48.told, pr: renderer.getPixelRatio(), dpr: window.devicePixelRatio, low: !!(x3 && x3.lowGfx), steps: perfState.steps }; },
