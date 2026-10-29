@@ -5887,7 +5887,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
   }
   function applyDeco52(lo) { for (let i = 0; i < deco52.length; i++) { const d = deco52[i], show = !(lo && d.low); d.o.visible = show; d.o.userData.decoOn52 = show; if (d.blk) { if (d.blk.r52 === undefined) d.blk.r52 = d.blk.r; d.blk.r = show ? d.blk.r52 : 0; } } }
-  function camHits52(x, z, pad) { for (let i = 0; i < blocks.length; i++) { const b = blocks[i]; if (!b.house52 && Math.hypot(x - b.x, z - b.z) < b.r + pad) return true; } return false; } // Batch 52: the camera may sit inside a town house (it fades), so only real walls push it in
+  const pierChests53 = [];
+  function camHits52(x, z, pad) { for (let i = 0; i < blocks.length; i++) { const b = blocks[i]; if (!b.house52 && !b.tree53 && Math.hypot(x - b.x, z - b.z) < b.r + pad) return true; } return false; } // Batch 52: the camera may sit inside a town house (it fades), so only real walls push it in
   function hitsBlock(x, z, pad) {
     for (let i = 0; i < blocks.length; i++) {
       const b = blocks[i];
@@ -6221,7 +6222,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     spawn("chest.glb", cay.x - 2, islandHeight(cay, cay.x - 2, cay.z + 6), cay.z + 6, 1, 1);
     const salt = PORTS[1];
     closedHouse(cay, -250, 230, 0, "merchant", "salt");
-    { const c52 = spawn("chest.glb", salt.gang.x + 2.2, salt.dock.deck, salt.gang.z, 0.4, 1); c52.userData.noCam51 = true; c52.userData.rock52 = 0.6; doorProps51.push(c52); } // Batch 52 (Games 2): pier chests fade when they would hide you
+    { const c52 = spawn("chest.glb", salt.gang.x + 2.2, salt.dock.deck, salt.gang.z, 0.4, 1); c52.userData.noCam51 = true; c52.userData.rock52 = 0.6; doorProps51.push(c52); pierChests53.push(c52); } // Batch 52 (Games 2): pier chests fade when they would hide you
     spawn("barrel.glb", -246.5, islandHeight(cay, -246.5, 233), 233, 0.6, 1);
     for (let z = 244; z <= 264; z += 2.45) {
       spawn("structure-platform-dock.glb", -250, salt.dock.deck - 1.31, z, 0, 1);
@@ -6238,7 +6239,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
     spawn("rocks-sand-a.glb", lore.x - 14, islandHeight(lore, lore.x - 14, lore.z - 4), lore.z - 4, 0.4, 1.1);
     spawn("barrel.glb", 96, islandHeight(lore, 96, -280), -280, 0.5, 1);
-    { const c52 = spawn("chest.glb", san.gang.x + 2.2, san.dock.deck, san.gang.z, 0.4, 1); c52.userData.noCam51 = true; c52.userData.rock52 = 0.6; doorProps51.push(c52); } // Batch 52 (Games 2): pier chests fade when they would hide you
+    { const c52 = spawn("chest.glb", san.gang.x + 2.2, san.dock.deck, san.gang.z, 0.4, 1); c52.userData.noCam51 = true; c52.userData.rock52 = 0.6; doorProps51.push(c52); pierChests53.push(c52); } // Batch 52 (Games 2): pier chests fade when they would hide you
     for (let z = -268; z <= -248; z += 2.45) {
       spawn("structure-platform-dock.glb", 90, san.dock.deck - 1.31, z, 0, 1);
     }
@@ -6279,7 +6280,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
     spawn("rocks-sand-a.glb", belleIsl.x + 12, islandHeight(belleIsl, belleIsl.x + 12, belleIsl.z + 10), belleIsl.z + 10, 0.5, 1);
     spawn("barrel.glb", -424, islandHeight(belleIsl, -424, -34), -34, 0.4, 1);
-    { const c52 = spawn("chest.glb", belle.gang.x - 2.2, belle.dock.deck, belle.gang.z, 0.2, 1); c52.userData.noCam51 = true; c52.userData.rock52 = 0.6; doorProps51.push(c52); } // Batch 52 (Games 2): pier chests fade when they would hide you
+    { const c52 = spawn("chest.glb", belle.gang.x - 2.2, belle.dock.deck, belle.gang.z, 0.2, 1); c52.userData.noCam51 = true; c52.userData.rock52 = 0.6; doorProps51.push(c52); pierChests53.push(c52); } // Batch 52 (Games 2): pier chests fade when they would hide you
     for (let x = -398; x <= -370; x += 2.45) {
       spawn("structure-platform-dock.glb", x, belle.dock.deck - 1.31, -30, Math.PI / 2, 1);
     }
@@ -6468,7 +6469,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
 
     makeTownWalkers();
-    try { buildWalls51(); seedLandFoes51(); } catch (e) { logErr50("ground51: " + e); }
+    try { buildWalls51(); seedLandFoes51(); try { seedCritters53(); } catch (e2) { logErr50("critters53: " + e2); } } catch (e) { logErr50("ground51: " + e); }
     const char = cache["character-a.glb"].scene;
     shade(char);
     char.rotation.y = 0;
@@ -6719,10 +6720,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     g.fillText(text, 128, 46);
     const tex = new THREE.CanvasTexture(canvas);
     const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+    // Batch 53 (Games 2): numbers that pop near each other within 0.9 s step up and sideways instead of stacking; gold text is smaller still.
+    { const nowS = performance.now(), land = mode === "land", rr = land ? 2.2 : 6; let k = 0; for (let i = 0; i < floaters.length; i++) { const m = floaters[i]; if (m.t53 && nowS - m.t53 < 900 && Math.abs(m.x53 - x) < rr && Math.abs(m.z53 - z) < rr) k++; } spr.userData.k53 = k; spr.userData.t53 = nowS; if (k) { y += (land ? 0.55 : 1.4) * k; x += (k % 2 ? 1 : -1) * (land ? 0.5 : 1.2); } }
     spr.position.set(x, y, z);
-    if (mode === "land") spr.scale.set(3.2, 0.8, 1); else spr.scale.set(5.6, 1.4, 1); /* Batch 52 (Games 2): smaller, crisper float text */
+    const gold53 = / gold$/.test(text);
+    if (mode === "land") spr.scale.set(gold53 ? 2.3 : 3.2, gold53 ? 0.58 : 0.8, 1); else spr.scale.set(gold53 ? 4.2 : 5.6, gold53 ? 1.05 : 1.4, 1); /* Batch 52 (Games 2): smaller, crisper float text */
     scene.add(spr);
-    floaters.push({ mesh: spr, life: 1.15, max: 1.15 });
+    floaters.push({ mesh: spr, life: 1.15, max: 1.15, t53: spr.userData.t53, x53: x, z53: z });
   }
 
   function nameSprite(text, y) {
@@ -7962,6 +7966,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3) lines.push("Career shots fired: " + x3.shots + " \u00B7 accuracy " + (x3.shots ? Math.round(100 * Math.min(x3.hits, x3.shots) / x3.shots) : 0) + "% \u00B7 critical hits: " + x3.crits + " \u00B7 top speed: " + x3.topSpeed + " knots" + (hotT > 0 ? " \u00B7 gun crews on fire" : ""));
     if (x3) { const seen = ISLANDS.filter(function (L) { return L.kind === "outpost" && (x3.outSeen52 || "").indexOf("|" + L.name + "|") >= 0; }).map(function (L) { return L.name; }); lines.push("Ashore: " + (x3.amb52 || 0) + " alley ambushes beaten, " + (x3.ambLost52 || 0) + " lost" + (x3.ambLast52 ? " (last one " + x3.ambLast52 + ")" : "") + " \u00B7 outposts traded at: " + (seen.length ? seen.join(", ") : "none yet")); } // Batch 52
     if (x3) lines.push("Career gunnery: " + x3.hits + " hits \u00B7 " + x3.rakes + " raking \u00B7 best streak " + x3.bestStreak + " \u00B7 slipped past " + x3.shadow + " patrols at night");
+    if (x3 && (x3.swordHits53 || x3.landKills51)) lines.push("Ashore with steel: " + (x3.swordHits53 || 0) + " sword cuts \u00B7 " + (x3.swordKills53 || 0) + " dropped by the sword \u00B7 " + (x3.dodged53 || 0) + " blows dodged" + (x3.cutlass53 ? " \u00B7 cutlass" : "")); // Batch 53
     if (x3) {
       lines.push("");
       lines.push("Deeds " + deedCount() + " of " + DEEDS.length + ":");
@@ -9099,7 +9104,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (raw && typeof raw === "object") {
       for (const k in d) if (typeof raw[k] === typeof d[k]) d[k] = raw[k];
       // Batch 51 (Games 2): batch 51 fields (brace of pistols, cannon tier, land kills, chest timer...) have no default, so keep them too.
-      for (const k in raw) if (!(k in d) && /51$/.test(k) && ["number", "boolean", "string"].indexOf(typeof raw[k]) >= 0) d[k] = raw[k];
+      for (const k in raw) if (!(k in d) && /5[1-9]$/.test(k) && ["number", "boolean", "string"].indexOf(typeof raw[k]) >= 0) d[k] = raw[k];
     }
     if (LOWGFX47) { d.lowGfx0 = d.lowGfx; d.lowGfx = true; }
     d.crew = Math.max(2, Math.min(crewMaxFor(playerHull.id), Math.round(d.crew)));
@@ -9735,7 +9740,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     qa("Teleport: Thornkey outpost", "qathorn52", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.outpost52(0); updateCamera.ready = false; });
     qa("Teleport: Mosswood outpost", "qamoss52", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.outpost52(1); /* Batch 52 (Games 2): QA lands you clear of warships */ foes.forEach(function (f) { if (!f || f.gone || f.sunk) return; const dx = f.x - ship.x, dz = f.z - ship.z, dd = Math.hypot(dx, dz); if (dd < 260) { const k = 300 / Math.max(1, dd); f.x = ship.x + dx * k; f.z = ship.z + dz * k; f.hunt = false; } }); updateCamera.ready = false; });
     qa("Force alley ambush (Bramble)", "qaamb52", function (b) { b.ashoreAt("bramble"); const al = bestAlley52(ashorePort.island); if (!al) return; b.ambush52(true); b.putPerson48(al.x - al.ax * (al.half + 3), al.z - al.az * (al.half + 3)); snapCamFacing52(Math.atan2(al.ax, al.az)); updateCamera.ready = false; setTimeout(function () { b.putPerson48(al.x, al.z); }, 400); });
-    qa("Teleport: washing line (natural ambush)", "qaline52", function (b) { b.ashoreAt("bramble"); const ls = alleys52.filter(function (a) { return a.isl === ashorePort.island; }); if (!ls.length) return; const al = ls[(qaLineI52++) % ls.length]; ambushAlley52 = null; b.putPerson48(al.x - al.ax * (al.half + 5), al.z - al.az * (al.half + 5)); updateCamera.ready = false; setTimeout(function () { b.putPerson48(al.x, al.z); }, 450); });
+    qa("Teleport: washing line (natural ambush)", "qaline52", function (b) { b.ashoreAt("bramble"); const ls = alleys52.filter(function (a) { return a.isl === ashorePort.island; }); if (!ls.length) return; const al = ls[(qaLineI52++) % ls.length]; ambushAlley52 = null; { let put = false; for (let e = 2.5; e < 9 && !put; e += 1) for (let sd = 0; sd < 3 && !put; sd++) { const lat = [0, 2.5, -2.5][sd], x = al.x - al.ax * (al.half + e) + al.az * lat, z = al.z - al.az * (al.half + e) - al.ax * lat; const r = b.putPerson48(x, z); if (r.land && !r.blocked && !alleyHere52()) put = true; } if (!put) b.putPerson48(al.x - al.ax * (al.half + 5), al.z - al.az * (al.half + 5)); } updateCamera.ready = false; person.yaw = Math.atan2(al.ax, al.az); if (person.group) person.group.rotation.y = person.yaw; landYaw = null; lookYaw = 0; updateCamera.ready = false; say("QA: the washing line is just ahead. Walk under it for a chance of an ambush.", 2.5); }); // Batch 53 (Games 2): land beside the line, not under it
+    qa("Teleport: map edge (N, E, S, W in turn)", "qaedge53", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } const E = [[0, -370], [490, 0], [0, 370], [-490, 0]][(qaEdgeI53++) % 4]; window.__salt.placeShip(E[0], E[1]); ship.speed = 0; sail = 0; updateCamera.ready = false; say("QA: map edge " + ["north", "east", "south", "west"][(qaEdgeI53 - 1) % 4] + ".", 2); });
+    qa("Teleport: pier chest (each in turn)", "qachest53", function (b) { if (!pierChests53.length) return; const c = pierChests53[(qaChestI53++) % pierChests53.length]; let best = null, bd = 1e9; PORTS.forEach(function (P) { const dd = Math.hypot(P.harbour.x - c.position.x, P.harbour.z - c.position.z); if (dd < bd) { bd = dd; best = P; } }); if (best) b.ashoreAt(best.id); const r = b.putPerson48(c.position.x - 1.6, c.position.z); if (!r.land || r.blocked) b.putPerson48(c.position.x + 1.6, c.position.z); updateCamera.ready = false; });
     qa("Teleport: Gull Rock", "qagull51", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.toTreasure51(); ship.speed = 0; sail = 0; setTimeout(function () { if (mode === "sea") goAshore(); updateCamera.ready = false; }, 150); });
     document.body.appendChild(qp); const sk = document.getElementById("qasink48"); if (sk) sk.style.transform = "translateX(calc(-50% - 62px))"; }
   // Batch 48: phones often skip pagehide when you swipe away, so also save when the tab is hidden and every 20 s, so Continue picks up mid-battle hull and position.
@@ -9790,7 +9797,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 52";
+    ver.textContent = "Version: batch 53";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -16041,6 +16048,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (t < 3) { const n = CANNON51[t + 1]; box.appendChild(menuButton("Cannon tier " + (t + 1) + ": " + n.name + " (" + n.cost + " gold): " + n.note, buyCannon51)); }
     if (!x3.brace51) box.appendChild(menuButton("Brace of pistols (" + BRACE_COST51 + " gold): two shots ashore, more damage", buyBrace51));
     else body.textContent += " Brace of pistols.";
+    if (!x3.cutlass53) box.appendChild(menuButton("Cutlass (" + CUTLASS_COST53 + " gold): sword reach 2.4 -> 2.9 m, cuts 20 -> 28, quicker swings (0.9 -> 0.75 s)", buyCutlass53));
+    else body.textContent += " Cutlass.";
   }
 
   // The wilds: one jungle lobe joined to each town island, behind a wall with a gate.
@@ -16062,16 +16071,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       wilds51.push(w);
       const px = -uz, pz = ux;
       for (let s = -1; s <= 1; s += 2) {
-        const len = hc + 14 - 1.9, mid = s * (1.9 + len / 2); // Batch 51 (Games 2): the wall runs 6 m out into the shallows so nobody wades round its end
+        const len = hc + 14 - 3.0, mid = s * (3.0 + len / 2); // Batch 53 (Games 2): a wider gate (6 m clear) so its posts never clip you // Batch 51 (Games 2): the wall runs 6 m out into the shallows so nobody wades round its end
         const cx = w.gate.x + px * mid, cz = w.gate.z + pz * mid;
-        const wall = new THREE.Mesh(new THREE.BoxGeometry(len, 3.2, 0.9), wallMat51);
-        wall.position.set(cx, 0.9, cz); wall.rotation.y = Math.atan2(px, pz) - Math.PI / 2;
-        wall.castShadow = true; scene.add(wall);
-        for (let t = 1.9; t <= hc + 14; t += 1.0) blocks.push({ x: w.gate.x + px * s * t, z: w.gate.z + pz * s * t, r: 0.75 });
+        // Batch 53 (Games 2): the wall is built from 4 m pieces; the pieces near the camera or between it and you fade like rocks, so the wall no longer fills the view by the gate.
+        { const nSeg = Math.max(1, Math.round(len / 4)), sl = len / nSeg, segGeo = new THREE.BoxGeometry(sl, 3.2, 0.9); for (let q = 0; q < nSeg; q++) { const off = s * (3.0 + sl * (q + 0.5)); const wall = new THREE.Mesh(segGeo, wallMat51); wall.position.set(w.gate.x + px * off, 0.9, w.gate.z + pz * off); wall.rotation.y = Math.atan2(px, pz) - Math.PI / 2; wall.castShadow = true; wall.userData.rock52 = 1.4; wall.userData.noCam51 = true; scene.add(wall); doorProps51.push(wall); } }
+        for (let t = 3.0; t <= hc + 14; t += 1.0) blocks.push({ x: w.gate.x + px * s * t, z: w.gate.z + pz * s * t, r: 0.75 });
         const post = new THREE.Mesh(new THREE.BoxGeometry(1.1, 4.2, 1.1), wallMat51);
-        post.position.set(w.gate.x + px * s * 2.2, 1.4, w.gate.z + pz * s * 2.2); scene.add(post); post.userData.rock52 = 1; post.userData.noCam51 = true; doorProps51.push(post); // Batch 52 (Games 2): gate posts fade instead of hiding you
+        post.position.set(w.gate.x + px * s * 3.3, 1.4, w.gate.z + pz * s * 3.3); blocks.push({ x: w.gate.x + px * s * 3.3, z: w.gate.z + pz * s * 3.3, r: 0.7 }); scene.add(post); post.userData.rock52 = 1; post.userData.noCam51 = true; doorProps51.push(post); // Batch 52 (Games 2): gate posts fade instead of hiding you
       }
-      const lintel = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.6, 1.1), wallMat51);
+      const lintel = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.6, 1.1), wallMat51);
       lintel.position.set(w.gate.x, 3.6, w.gate.z); lintel.rotation.y = Math.atan2(px, pz) - Math.PI / 2; scene.add(lintel); lintel.userData.rock52 = 1; lintel.userData.noCam51 = true; doorProps51.push(lintel);
       const sign = nameSprite("Gate", 4.6); sign.scale.set(sign.scale.x * 0.13, sign.scale.y * 0.13, 1); /* Batch 52 (Games 2): a door-sized tag, not a 22 m banner */ if (sign.material) { sign.material.depthTest = true; } sign.position.x += w.gate.x; sign.position.z += w.gate.z; scene.add(sign); w.sign = sign;
       // Jungle: instanced trunks and crowns, kept off the dirt path from the gate.
@@ -16082,7 +16090,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         const along = (x - w.gate.x) * ux + (z - w.gate.z) * uz, off = Math.abs((x - w.gate.x) * px + (z - w.gate.z) * pz);
         if (!outside51(w, x, z) || along < 4 || off < 3.2) continue;
         if (Math.hypot(x - T.x, z - T.z) < R - 1) continue;
-        spots.push([x, z]); blocks.push({ x: x, z: z, r: 0.55 });
+        spots.push([x, z]); blocks.push({ x: x, z: z, r: 0.55, tree53: true });
       }
       const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.22, 0.32, 3.4, 6), new THREE.MeshLambertMaterial({ color: 0x5a3f28 }), spots.length);
       const crowns = new THREE.InstancedMesh(new THREE.ConeGeometry(1.9, 3.2, 7), new THREE.MeshLambertMaterial({ color: 0x1f5a2a }), spots.length);
@@ -16092,8 +16100,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         m.makeTranslation(p[0], y + 1.6, p[1]); trunks.setMatrixAt(k, m);
         const sc = 0.8 + ((k * 0.37) % 0.5); m.makeScale(sc, sc, sc); m.setPosition(p[0], y + 3.8 * sc, p[1]); crowns.setMatrixAt(k, m);
       });
+      trunks.userData.noCam51 = true; crowns.userData.noCam51 = true; // Batch 53 (Games 2): jungle trees never pull the camera in; the ones in the way hide instead
       scene.add(trunks); scene.add(crowns);
-      w.spots = spots;
+      w.spots = spots; w.trunks53 = trunks; w.crowns53 = crowns; w.hid53 = "";
     }
   }
 
@@ -16114,15 +16123,116 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const hpMax = kind === "pirate" ? 60 : 70;
     paintHullSprite(bar, hpMax, hpMax);
     g.visible = false; scene.add(g);
-    return { kind: kind, g: g, mixer: made.mixer, bar: bar, x: x, z: z, hx: x, hz: z, hp: hpMax, hpMax: hpMax, cd: 1 + Math.random(), dead: false, fall: 0, yaw: 0 };
+    return { kind: kind, g: g, mixer: made.mixer, bar: bar, x: x, z: z, hx: x, hz: z, hp: hpMax, hpMax: hpMax, cd: 1 + Math.random(), dead: false, fall: 0, yaw: 0, wind53: -1 };
+  }
+  // Batch 53: wild animals in the jungle past the walls. Feral dogs hunt in a pack of three (fast, weak, quick little bites); a boar paws the ground with a "!" then charges in a straight line (big hit, but Dodge sideways and he is left winded for an easy cut). Simple shared low-poly bodies, no skeletons, so phones stay smooth.
+  let animalRes53 = null;
+  function animalRes() {
+    if (animalRes53) return animalRes53;
+    animalRes53 = { box: new THREE.BoxGeometry(1, 1, 1), dog: new THREE.MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.9 }), boar: new THREE.MeshStandardMaterial({ color: 0x3e3029, roughness: 0.95 }), tusk: new THREE.MeshStandardMaterial({ color: 0xeee6cc, roughness: 0.5 }), eye: new THREE.MeshBasicMaterial({ color: 0x1a0f08 }) };
+    return animalRes53;
+  }
+  function makeAnimal53(kind, x, z) {
+    const A = animalRes(), boar = kind === "boar", m = boar ? A.boar : A.dog, g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+    const part = function (sx, sy, sz, px, py, pz, mat) { const q = new THREE.Mesh(A.box, mat || m); q.scale.set(sx, sy, sz); q.position.set(px, py, pz); q.castShadow = false; body.add(q); return q; };
+    const L = boar ? 0.32 : 0.42, H = boar ? 0.62 : 0.58;
+    if (boar) { part(0.62, 0.55, 1.15, 0, L + 0.3, 0); part(0.46, 0.42, 0.4, 0, L + 0.3, 0.72); part(0.05, 0.05, 0.2, 0.14, L + 0.18, 0.95, A.tusk); part(0.05, 0.05, 0.2, -0.14, L + 0.18, 0.95, A.tusk); part(0.06, 0.18, 0.5, 0, L + 0.62, -0.05); }
+    else { part(0.34, 0.32, 0.86, 0, L + 0.16, 0); part(0.26, 0.26, 0.34, 0, L + 0.36, 0.52); part(0.16, 0.13, 0.2, 0, L + 0.3, 0.74); part(0.07, 0.14, 0.05, 0.08, L + 0.55, 0.48); part(0.07, 0.14, 0.05, -0.08, L + 0.55, 0.48); part(0.07, 0.07, 0.4, 0, L + 0.3, -0.56); }
+    part(0.05, 0.05, 0.02, 0.07, L + (boar ? 0.38 : 0.4), boar ? 0.93 : 0.69, A.eye); part(0.05, 0.05, 0.02, -0.07, L + (boar ? 0.38 : 0.4), boar ? 0.93 : 0.69, A.eye);
+    const legs = []; [[0.12, 0.3], [-0.12, 0.3], [0.12, -0.3], [-0.12, -0.3]].forEach(function (o) { const lg = part(boar ? 0.13 : 0.08, L, boar ? 0.13 : 0.08, o[0] * (boar ? 1.6 : 1), L / 2, o[1] * (boar ? 1.4 : 1.1)); legs.push(lg); });
+    const bar = hullSprite(); bar.scale.set(1.0, 0.25, 1); bar.position.y = H + 0.75; g.add(bar);
+    const hpMax = boar ? 90 : 30; paintHullSprite(bar, hpMax, hpMax);
+    g.visible = false; scene.add(g);
+    return { kind: kind, animal53: true, g: g, legs53: legs, mixer: { update: function () {} }, bar: bar, x: x, z: z, hx: x, hz: z, hp: hpMax, hpMax: hpMax, cd: 1 + Math.random(), dead: false, fall: 0, yaw: Math.random() * 6.28, wind53: -1, ch53: 0, chT53: 0, tired53: 0, ph53: Math.random() * 6 };
+  }
+  // ===== Batch 53: harmless island life, for looks only (no collision, no taps). Towns: chickens, goats, a dog, a cat, a donkey. Jungle: parrots in the trees, iguanas, monkeys. Beaches: crabs. Boxy shared meshes; only critters within 45 m of you move, and low graphics keeps just a couple per town. =====
+  const critters53 = [];
+  function makeCritter53(kind, x, z) {
+    const A = animalRes(); const C = critMats53();
+    const g = new THREE.Group(), legs = [];
+    const P = function (sx, sy, sz, px, py, pz, mat, leg) { const q = new THREE.Mesh(A.box, mat); q.scale.set(sx, sy, sz); q.position.set(px, py, pz); g.add(q); if (leg) legs.push(q); return q; };
+    let fly = 0, spd = 0.5, R = 4;
+    if (kind === "chicken") { P(0.22, 0.2, 0.3, 0, 0.22, 0, C.white); P(0.12, 0.13, 0.12, 0, 0.38, 0.15, C.white); P(0.04, 0.06, 0.05, 0, 0.47, 0.17, C.red); P(0.04, 0.03, 0.06, 0, 0.37, 0.24, C.yellow); P(0.03, 0.12, 0.03, 0.05, 0.06, 0, C.yellow, 1); P(0.03, 0.12, 0.03, -0.05, 0.06, 0, C.yellow, 1); spd = 0.7; R = 3; }
+    else if (kind === "goat") { P(0.3, 0.32, 0.7, 0, 0.62, 0, C.goat); P(0.2, 0.22, 0.28, 0, 0.82, 0.42, C.goat); P(0.04, 0.16, 0.04, 0.06, 0.98, 0.38, C.dark); P(0.04, 0.16, 0.04, -0.06, 0.98, 0.38, C.dark); [[0.1, 0.25], [-0.1, 0.25], [0.1, -0.25], [-0.1, -0.25]].forEach(function (o) { P(0.07, 0.46, 0.07, o[0], 0.23, o[1], C.goat, 1); }); spd = 0.4; R = 4; }
+    else if (kind === "dog" || kind === "cat") { const c = kind === "cat" ? 0.62 : 1; P(0.28 * c, 0.26 * c, 0.7 * c, 0, 0.45 * c, 0, kind === "cat" ? C.ginger : C.tan); P(0.22 * c, 0.22 * c, 0.26 * c, 0, 0.62 * c, 0.42 * c, kind === "cat" ? C.ginger : C.tan); P(0.05, 0.05, 0.38 * c, 0, 0.55 * c, -0.44 * c, kind === "cat" ? C.ginger : C.tan); [[0.09, 0.22], [-0.09, 0.22], [0.09, -0.22], [-0.09, -0.22]].forEach(function (o) { P(0.06 * c, 0.34 * c, 0.06 * c, o[0] * c, 0.17 * c, o[1] * c, kind === "cat" ? C.ginger : C.tan, 1); }); spd = kind === "cat" ? 0.35 : 0.8; R = 5; }
+    else if (kind === "donkey") { P(0.42, 0.46, 1.0, 0, 0.95, 0, C.grey); P(0.24, 0.28, 0.5, 0, 1.2, 0.62, C.grey); P(0.06, 0.26, 0.06, 0.07, 1.48, 0.5, C.grey); P(0.06, 0.26, 0.06, -0.07, 1.48, 0.5, C.grey); [[0.14, 0.36], [-0.14, 0.36], [0.14, -0.36], [-0.14, -0.36]].forEach(function (o) { P(0.1, 0.72, 0.1, o[0], 0.36, o[1], C.grey, 1); }); spd = 0.25; R = 2.5; }
+    else if (kind === "parrot") { const m = [C.red, C.green, C.blue][critters53.length % 3]; P(0.14, 0.22, 0.14, 0, 0, 0, m); P(0.11, 0.11, 0.11, 0, 0.15, 0.04, m); P(0.03, 0.04, 0.05, 0, 0.14, 0.11, C.yellow); P(0.3, 0.03, 0.12, 0.18, 0.04, 0, m, 1); P(0.3, 0.03, 0.12, -0.18, 0.04, 0, m, 1); fly = 1; spd = 3; R = 9; }
+    else if (kind === "iguana") { P(0.16, 0.1, 0.5, 0, 0.07, 0, C.green); P(0.11, 0.08, 0.16, 0, 0.09, 0.3, C.green); P(0.04, 0.04, 0.45, 0, 0.05, -0.45, C.green); spd = 0.3; R = 3; }
+    else if (kind === "crab") { P(0.26, 0.09, 0.2, 0, 0.08, 0, C.red); P(0.08, 0.05, 0.08, 0.17, 0.07, 0.12, C.red, 1); P(0.08, 0.05, 0.08, -0.17, 0.07, 0.12, C.red, 1); spd = 0.6; R = 2.5; }
+    else if (kind === "monkey") { P(0.22, 0.3, 0.18, 0, 0.42, 0, C.brown); P(0.18, 0.18, 0.16, 0, 0.66, 0.03, C.brown); P(0.12, 0.1, 0.04, 0, 0.64, 0.11, C.ginger); P(0.04, 0.04, 0.4, 0, 0.3, -0.25, C.brown); P(0.06, 0.28, 0.06, 0.08, 0.14, 0, C.brown, 1); P(0.06, 0.28, 0.06, -0.08, 0.14, 0, C.brown, 1); spd = 0.9; R = 4; }
+    g.traverse(function (o) { o.castShadow = false; o.receiveShadow = false; o.userData.noCam51 = true; });
+    g.userData.noCam51 = true; scene.add(g);
+    const c = { kind: kind, g: g, legs: legs, x: x, z: z, hx: x, hz: z, tx: x, tz: z, wait: Math.random() * 3, spd: spd, R: R, fly: fly, ph: Math.random() * 6, y0: fly ? 4 + Math.random() * 2 : 0 };
+    g.position.set(x, feetY(x, z) + c.y0, z); critters53.push(c); return c;
+  }
+  let critMat53 = null, qaEdgeI53 = 0, qaChestI53 = 0;
+  function critMats53() { if (critMat53) return critMat53; const M = function (c) { return new THREE.MeshLambertMaterial({ color: c }); }; critMat53 = { white: M(0xf2efe6), red: M(0xc8392b), yellow: M(0xe8b230), goat: M(0xd9cdb6), dark: M(0x3a332b), tan: M(0xa77b4f), ginger: M(0xd98a3a), grey: M(0x8d8a86), green: M(0x4f9a3a), blue: M(0x2f6fcc), brown: M(0x5a3c24) }; return critMat53; }
+  function townSpot53(w, tries) { const T = ISLANDS[w.town]; for (let i = 0; i < (tries || 80); i++) { const a = Math.random() * 6.283, r = 6 + Math.random() * (T.landR - 10), x = T.x + Math.sin(a) * r, z = T.z + Math.cos(a) * r; if (onLand(x, z) && !hitsBlock(x, z, 0.6) && (x - w.gate.x) * w.dx + (z - w.gate.z) * w.dz < -2) return [x, z]; } for (let i = 0; i < 40; i++) { const back = 4 + Math.random() * 14, lat = (Math.random() - 0.5) * 10, x = w.gate.x - w.dx * back - w.dz * lat, z = w.gate.z - w.dz * back + w.dx * lat; if (onLand(x, z) && !hitsBlock(x, z, 0.5)) return [x, z]; } return null; } // town side of the gate line
+  function seedCritters53() {
+    const low = !!LOWGFX47;
+    wilds51.forEach(function (w) { seedTownLife53(w, true); });
+  }
+  // Town critters and beach crabs need the island's ground, which is only ready once you are ashore there, so they are placed on the first visit.
+  function seedTownLife53(w, early) {
+    if (w.crit53) return; const low = !!LOWGFX47;
+    if (early) { if (!townSpot53(w, 5)) return; }
+    w.crit53 = true;
+    {
+      const town = low ? ["chicken", "goat"] : ["chicken", "chicken", "chicken", "goat", "goat", "dog", "cat", "donkey"];
+      town.forEach(function (k, i) { const p = townSpot53(w); if (p) { const c = makeCritter53(k, p[0], p[1]); c.keep = i === 0 || i === 3; } }); // a chicken and a goat stay in low graphics
+      if (low) return;
+      if (!w.jungle53) { w.jungle53 = true; ["parrot", "parrot", "iguana", "iguana", "monkey"].forEach(function (k, i) { const p = w.spots[(i * 13 + 7) % w.spots.length]; if (p) makeCritter53(k, p[0] + 0.8, p[1] - 0.8); }); }
+      const L = w.isl; for (let i = 0, n = 0; i < 120 && n < 3; i++) { const a = i * 0.37, r = L.landR - 0.5 - (i % 6) * 0.8, x = L.x + Math.sin(a) * r, z = L.z + Math.cos(a) * r; if (onLand(x, z) && outside51(w, x, z)) { makeCritter53("crab", x, z); n++; } }
+    }
+  }
+  // Batch 53 (Games 2): jungle trees between the camera and you (or right by the camera) are hidden, like rocks, so fights in the wilds stay in view.
+  const tm53 = new THREE.Matrix4(), zero53 = new THREE.Matrix4().makeScale(0, 0, 0);
+  function treesFade53() {
+    for (let i = 0; i < wilds51.length; i++) {
+      const w = wilds51[i]; if (!w.trunks53) continue;
+      const on = mode === "land" && Math.hypot(person.x - w.isl.x, person.z - w.isl.z) < w.isl.landR + 20;
+      let key = "";
+      if (on) { const cx = camera.position.x, cz = camera.position.z, vx = person.x - cx, vz = person.z - cz, L = vx * vx + vz * vz; for (let k = 0; k < w.spots.length; k++) { const sx = w.spots[k][0], sz = w.spots[k][1]; let hide = Math.hypot(sx - cx, sz - cz) < 2.6; if (!hide && L > 1) { const t = ((sx - cx) * vx + (sz - cz) * vz) / L; if (t > -0.05 && t < 0.92) hide = Math.hypot(cx + vx * t - sx, cz + vz * t - sz) < 2.0; } if (hide) key += k + ","; } }
+      if (key === w.hid53) continue; w.hid53 = key; const hs = key ? key.split(",") : [];
+      for (let k = 0; k < w.spots.length; k++) { const hide = hs.indexOf(String(k)) >= 0, p = w.spots[k], y = islandHeight(w.isl, p[0], p[1]);
+        if (hide) { w.trunks53.setMatrixAt(k, zero53); w.crowns53.setMatrixAt(k, zero53); }
+        else { tm53.makeTranslation(p[0], y + 1.6, p[1]); w.trunks53.setMatrixAt(k, tm53); const sc = 0.8 + ((k * 0.37) % 0.5); tm53.makeScale(sc, sc, sc); tm53.setPosition(p[0], y + 3.8 * sc, p[1]); w.crowns53.setMatrixAt(k, tm53); } }
+      w.trunks53.instanceMatrix.needsUpdate = true; w.crowns53.instanceMatrix.needsUpdate = true;
+    }
+  }
+  // Batch 53 (Games 2): land health bars keep a small, steady size on screen (they shrink when the camera is close) and draw over house corners.
+  function barsLand53() {
+    if (mode !== "land") return; const grp = activeFoes51(); if (!grp) return;
+    for (let i = 0; i < grp.foes.length; i++) { const f = grp.foes[i]; if (f.dead || !f.bar) continue; const b0 = f.bar.userData.b53 || (f.bar.userData.b53 = { x: f.bar.scale.x, y: f.bar.scale.y }); const d = camera.position.distanceTo(f.g.position); const k = Math.max(0.3, Math.min(1, d / 9)); f.bar.scale.set(b0.x * k, b0.y * k, 1); if (f.bar.renderOrder !== 40) f.bar.renderOrder = 40; }
+  }
+  function updateCritters53(dt) {
+    const land = mode === "land";
+    if (land && ashorePort) for (let i = 0; i < wilds51.length; i++) if (!wilds51[i].crit53 && wilds51[i].town === ashorePort.island) seedTownLife53(wilds51[i]);
+    for (let i = 0; i < critters53.length; i++) {
+      const c = critters53[i]; const near = land && (c.keep || !(x3 && x3.lowGfx)) && Math.abs(c.x - person.x) < 45 && Math.abs(c.z - person.z) < 45;
+      if (c.g.visible !== near) c.g.visible = near; if (!near) continue;
+      const dx = c.tx - c.x, dz = c.tz - c.z, d = Math.hypot(dx, dz);
+      // Shy: walkers step away when you come within 1.6 m; they never block or hurt you.
+      const px = c.x - person.x, pz = c.z - person.z, pd = Math.hypot(px, pz);
+      if (!c.fly && pd < 1.6 && pd > 0.01) { c.tx = c.x + px / pd * 2; c.tz = c.z + pz / pd * 2; c.wait = 0; }
+      if (c.wait > 0) { c.wait -= dt; if (c.fly) { c.ph += dt * 3; } }
+      else if (d < 0.2) { c.wait = 1.5 + Math.random() * 4; const a = Math.random() * 6.283, r = Math.random() * c.R; c.tx = c.hx + Math.sin(a) * r; c.tz = c.hz + Math.cos(a) * r; if (!c.fly && (!onLand(c.tx, c.tz) || hitsBlock(c.tx, c.tz, 0.4))) { c.tx = c.hx; c.tz = c.hz; } }
+      else { const st = Math.min(d, c.spd * dt); c.x += dx / d * st; c.z += dz / d * st; c.g.rotation.y = Math.atan2(dx, dz); c.ph += dt * (c.fly ? 18 : 10); }
+      const moving = c.wait <= 0 && d >= 0.2, sw = moving || c.fly ? Math.sin(c.ph) * 0.5 : 0;
+      for (let l = 0; l < c.legs.length; l++) { if (c.fly) c.legs[l].rotation.z = (l ? -1 : 1) * sw; else c.legs[l].rotation.x = (l % 2 ? sw : -sw); }
+      c.g.position.set(c.x, feetY(c.x, c.z) + (c.fly ? c.y0 + (moving ? Math.sin(c.ph * 0.2) * 0.4 : 0) : 0), c.z);
+    }
   }
   function seedLandFoes51() {
     wilds51.forEach(function (w) {
-      for (let k = 0; k < 3; k++) {
-        const p = w.spots[(k * 7 + 3) % w.spots.length];
+      // Batch 53: a dog pack and a boar in every wilds, on their own spots away from the bandits.
+      for (let k = 0; k < 5; k++) { // Batch 53: five bandits per wilds (was 3)
+        const p = w.spots[(k * 11 + 3) % w.spots.length];
         const x = p[0] + 1.6, z = p[1] + 1.1;
         w.foes.push(makeLandFoe51("bandit", x, z));
       }
+      for (let k = 0; k < 3; k++) { const p = w.spots[(41 + k * 2) % w.spots.length]; w.foes.push(makeAnimal53("dog", p[0] + 1.2 + k * 0.9, p[1] - 1)); }
+      { const p = w.spots[(23) % w.spots.length]; w.foes.push(makeAnimal53("boar", p[0] + 1.4, p[1] + 1.4)); }
     });
     const c = TREASURE51.chest;
     for (let k = 0; k < 2; k++) { const a = k * 3.1; TREASURE51.foes.push(makeLandFoe51("pirate", c.x + Math.sin(a) * 4, c.z + Math.cos(a) * 4)); }
@@ -16133,7 +16243,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function reviveGroup51(grp, force) {
     if (!force && Date.now() - grp.t < 150000) return;
     const fresh51 = Date.now() - grp.t >= 150000;
-    grp.foes.forEach(function (f) { if (fresh51) f.paid51 = false; f.dead = false; f.fall = 0; f.hp = f.hpMax; f.x = f.hx; f.z = f.hz; f.g.rotation.x = 0; paintHullSprite(f.bar, f.hp, f.hpMax); f.bar.visible = true; });
+    grp.foes.forEach(function (f) { if (fresh51) f.paid51 = false; f.dead = false; f.fall = 0; f.hp = f.hpMax; f.x = f.hx; f.z = f.hz; f.g.rotation.x = 0; f.g.rotation.z = 0; f.ch53 = 0; f.tired53 = 0; f.wind53 = -1; paintHullSprite(f.bar, f.hp, f.hpMax); f.bar.visible = true; });
   }
   // Batch 52: a rare ambush in a town alley. Two cutthroats step out under a washing line; drop them or walk away.
   const AMBUSH52 = { foes: [], t: 0, on: false, alley: null, amb: true };
@@ -16150,9 +16260,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (ends[0]) { person.x = ends[0].x; person.z = ends[0].z; fy = Math.atan2(al.x - person.x, al.z - person.z); } }
     AMBUSH52.foes.forEach(function (f, k) { const sg = k ? 1 : -1; let x = 0, z = 0, okp = false; for (let t = 0; t < 12 && !okp; t++) { const yy = fy + sg * (0.12 + t * 0.2), dd = 8 - (t % 3); x = person.x + Math.sin(yy) * dd; z = person.z + Math.cos(yy) * dd; okp = onLand(x, z) && !hitsBlock(x, z, 0.4); } if (!okp) { x = al.x + al.ax * sg * 1.2; z = al.z + al.az * sg * 1.2; } f.x = f.hx = x; f.z = f.hz = z; f.dead = false; f.fall = 0; f.hp = f.hpMax; f.paid51 = false; f.cd = 2.4 + k * 1.2; f.g.rotation.x = 0; paintHullSprite(f.bar, f.hp, f.hpMax); f.bar.visible = true; f.g.position.set(x, feetY(x, z), z); });
     person.yaw = fy; if (person.group) person.group.rotation.y = fy; snapCamFacing52(fy); updateCamera.ready = false;
-    say("Ambush! Two cutthroats step out of the alley. Tap Pistol, or walk away fast.", 3.5);
+    say("Ambush! Two cutthroats step out of the alley. Pistol them as they come, Sword up close, Dodge on the \u201C!\u201D.", 3.5);
     try { buzz([30, 40, 30]); } catch (e) { /* optional */ } // Batch 52: a double buzz when they jump you
-    if (!x3 || (x3.ambTold52 || 0) < 2) { if (x3) x3.ambTold52 = (x3.ambTold52 || 0) + 1; toast("Alley ambush: drop them with the Pistol, or walk away and they give up.", "Ambush"); } // Batch 52: the how-to toast only the first two times
+    if (!x3 || (x3.ambTold52 || 0) < 2) { if (x3) x3.ambTold52 = (x3.ambTold52 || 0) + 1; toast("Alley ambush: Pistol them as they come, Sword up close, Dodge on the \u201C!\u201D, or walk away and they give up.", "Ambush"); } // Batch 52: the how-to toast only the first two times
   }
   // Batch 52 (Games 2): the whole alley strip under a washing line counts, not just its midpoint.
   function checkAmbush52() {
@@ -16211,15 +16321,108 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     floatText(f.x, feetY(f.x, f.z) + 2.2, f.z, "-" + n, "#ffb08a");
     if (f.hp <= 0) {
       f.dead = true; f.bar.visible = false;
-      const g = f.paid51 ? 0 : (f.kind === "pirate" ? 25 : 12 + Math.floor(Math.random() * 7)); f.paid51 = true; // Batch 51 (Games 2): a guard pays his purse once until the group truly respawns
+      const g = f.paid51 ? 0 : (f.kind === "pirate" ? 25 : f.kind === "dog" ? 0 : f.kind === "boar" ? 6 : 12 + Math.floor(Math.random() * 7)); // Batch 53: dogs pay nothing, a boar hide fetches 6 f.paid51 = true; // Batch 51 (Games 2): a guard pays his purse once until the group truly respawns
       ledger.gold += g; if (x3) { x3.landKills51 = (x3.landKills51 || 0) + 1; x3.landGold51 = (x3.landGold51 || 0) + g; }
-      window.purse52 = Date.now(); floatText(f.x, feetY(f.x, f.z) + 3.0, f.z, "+" + g + " gold", "#ffe08a");
-      say((f.kind === "pirate" ? "A pirate" : "A bandit") + " goes down. " + (g ? g + " gold in his purse." : "You already took his purse."), 2.2);
+      window.purse52 = Date.now(); if (g) floatText(f.x, feetY(f.x, f.z) + 3.0, f.z, "+" + g + " gold", "#ffe08a");
+      if (f.animal53) say(f.kind === "dog" ? "The wild dog goes down." : "The boar goes down." + (g ? " Its hide is worth " + g + " gold." : ""), 2); else say((f.kind === "pirate" ? "A pirate" : "A bandit") + " goes down. " + (g ? g + " gold in his purse." : "You already took his purse."), 2.2);
       const grp = activeFoes51(); if (grp) grp.t = Date.now();
       writeSave();
     }
   }
+  // ===== Batch 53: sword fighting ashore, alongside the pistols. A Sword button swings a short arc (about 2.4 m, cutlass 2.9 m) on a cooldown; a Dodge button hops you back out of a blow. Every land foe now winds up with a "!" first, so a dodge or a well-timed swing (which staggers them) beats them. =====
+  let swordCd53 = 0, dodgeCd53 = 0, dodgeT53 = 0, swingT53 = 0, combo53 = 0, comboT53 = 0, swordBtn53 = null, dodgeBtn53 = null, blade53 = null, swings53 = 0, swordHits53 = 0, dodges53 = 0, dodged53 = 0, swordTold53 = false;
+  const CUTLASS_COST53 = 120;
+  function hasCutlass53() { return !!(x3 && x3.cutlass53); }
+  function swordReach53() { return hasCutlass53() ? 2.9 : 2.4; }
+  function swordDmg53() { return hasCutlass53() ? 28 : 20; }
+  function swordCdMax53() { return hasCutlass53() ? 0.75 : 0.9; }
+  function buyCutlass53() {
+    if (hasCutlass53()) return;
+    if (ledger.gold < CUTLASS_COST53) { say("A cutlass is " + CUTLASS_COST53 + " gold.", 2); return; }
+    ledger.gold -= CUTLASS_COST53; x3.cutlass53 = true;
+    say("A proper cutlass: longer reach, harder cuts, quicker recovery.", 3); try { chime([660, 880], 0.07, 0.04); } catch (e) { /* optional */ } writeSave(); renderMenu();
+  }
+  function makeBlade53() {
+    if (blade53 || !person.group) return;
+    const piv = new THREE.Group();
+    const steel = new THREE.MeshStandardMaterial({ color: 0xd8dde2, metalness: 0.7, roughness: 0.3 });
+    const brass = new THREE.MeshStandardMaterial({ color: 0xc89b3c, metalness: 0.6, roughness: 0.4 });
+    const bl = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.02, 0.78), steel); bl.position.z = 0.48; piv.add(bl);
+    const gd = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.04, 0.05), brass); gd.position.z = 0.08; piv.add(gd);
+    const hl = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.14, 6), brass); hl.rotation.x = Math.PI / 2; piv.add(hl);
+    piv.position.set(-0.32, 0.95, 0.1); piv.rotation.set(0.9, 0, 0); piv.visible = false; piv.userData.noCam51 = true;
+    person.group.add(piv); blade53 = { piv: piv, steel: steel, bl: bl };
+  }
+  function swordOn53() { return pistolShown51(); }
+  function swingSword53() {
+    if (mode !== "land" || fightOn || menuOpen) return false;
+    if (swordCd53 > 0) return false;
+    swordCd53 = swordCdMax53(); swingT53 = 0.28; swings53++;
+    try { noiseBurst(0.05, 0.12, 2600); } catch (e) { /* sound optional */ }
+    const grp = activeFoes51(); const R = swordReach53();
+    // Turn to the nearest foe inside reach + 1 m, then cut everything in a 140-degree arc.
+    const nf = nearLandFoe51(R + 1);
+    if (nf) { person.yaw = Math.atan2(nf.x - person.x, nf.z - person.z); if (person.group) person.group.rotation.y = person.yaw; }
+    let hits = 0;
+    if (grp) grp.foes.forEach(function (f) {
+      if (f.dead) return; const dx = f.x - person.x, dz = f.z - person.z, d = Math.hypot(dx, dz);
+      if (d > R) return; let a = Math.atan2(dx, dz) - person.yaw; a = Math.atan2(Math.sin(a), Math.cos(a)); if (Math.abs(a) > 1.22 && d > 0.9) return;
+      hits++;
+      let n = swordDmg53(); const sx = (comboT53 > 0 ? combo53 : 0) + 1;
+      if (sx >= 3) n = Math.round(n * 1.5);
+      const parried = (f.wind52 > 0 || f.wind53 > 0 || f.ch53 === 1);
+      const canStag = !(f.stagT53 > Date.now()); // poise: a foe can be staggered at most once every 2.6 s, so you can't cut him into a stun-lock
+      if (canStag) { if (f.ch53 === 1) { f.ch53 = 0; f.tired53 = 1.2; } f.stagT53 = Date.now() + 2600; f.wind52 = 0; f.wind53 = -1; f.g.rotation.x = 0; f.cd = Math.max(f.cd, parried ? 1.2 : 0.6); } // a cut into a wind-up breaks it
+      if (d > 0.01) { const kx = f.x + dx / d * 0.7, kz = f.z + dz / d * 0.7; if (onLand(kx, kz) && !hitsBlock(kx, kz, 0.3)) { f.x = kx; f.z = kz; } }
+      if (parried && canStag) floatText(f.x + 0.7, feetY(f.x, f.z) + 2.6, f.z, "Broken!", "#9fe0ff");
+      if (sx >= 3) floatText(f.x - 0.7, feetY(f.x, f.z) + 2.6, f.z, "Combo", "#ffd27a");
+      const wasUp = !f.dead; hurtLandFoe51(f, n); if (wasUp && f.dead && x3) x3.swordKills53 = (x3.swordKills53 || 0) + 1;
+    });
+    if (hits) { swordHits53 += hits; if (x3) x3.swordHits53 = (x3.swordHits53 || 0) + hits; combo53 = (comboT53 > 0 ? combo53 : 0) + 1; if (combo53 >= 3) combo53 = 0; comboT53 = 1.4; try { buzz(14); chime([330], 0.05, 0.03); } catch (e) { /* optional */ } }
+    else { combo53 = 0; comboT53 = 0; const nf2 = nearLandFoe51(14); if (nf2 && !swordTold53) { swordTold53 = true; say("Too far for the sword. Close in to about " + R.toFixed(1) + " m, or use the pistol.", 1.6); } }
+    if (x3) x3.swings53 = (x3.swings53 || 0) + 1;
+    return true;
+  }
+  function dodge53() {
+    if (mode !== "land" || fightOn || menuOpen || dodgeCd53 > 0) return false;
+    dodgeCd53 = 2.2; dodgeT53 = 0.45; dodges53++;
+    const nf = nearLandFoe51(6); let ax = -Math.sin(person.yaw), az = -Math.cos(person.yaw);
+    if (nf) { const dx = person.x - nf.x, dz = person.z - nf.z, d = Math.hypot(dx, dz) || 1; ax = dx / d; az = dz / d; }
+    for (let s = 2.2; s > 0.3; s -= 0.4) { const nx = person.x + ax * s, nz = person.z + az * s; if (onLand(nx, nz) && !hitsBlock(nx, nz, 0.35)) { person.x = nx; person.z = nz; break; } }
+    if (person.group) person.group.position.set(person.x, feetY(person.x, person.z), person.z);
+    try { noiseBurst(0.03, 0.08, 900); buzz(8); } catch (e) { /* optional */ }
+    return true;
+  }
+  // A blow that lands while you are mid-dodge misses. Returns true when it was dodged.
+  function dodgedBlow53(f) { if (dodgeT53 > 0) { dodged53++; if (x3) x3.dodged53 = (x3.dodged53 || 0) + 1; floatText(person.x + 0.8, feetY(person.x, person.z) + 2.2, person.z, "Dodged", "#bfe6ff"); return true; } return false; }
+  function swordUi53(dt) {
+    swordCd53 = Math.max(0, swordCd53 - dt); dodgeCd53 = Math.max(0, dodgeCd53 - dt); dodgeT53 = Math.max(0, dodgeT53 - dt); comboT53 = Math.max(0, comboT53 - dt); if (comboT53 === 0) combo53 = 0;
+    if (!swordBtn53 && fireBtn && fireBtn.parentNode) {
+      swordBtn53 = document.createElement("button"); swordBtn53.id = "sword53"; swordBtn53.className = "ghost"; swordBtn53.type = "button"; swordBtn53.textContent = "Sword"; swordBtn53.style.display = "none";
+      dodgeBtn53 = document.createElement("button"); dodgeBtn53.id = "dodge53"; dodgeBtn53.className = "ghost"; dodgeBtn53.type = "button"; dodgeBtn53.textContent = "Dodge"; dodgeBtn53.style.display = "none";
+      fireBtn.parentNode.insertBefore(dodgeBtn53, fireBtn); fireBtn.parentNode.insertBefore(swordBtn53, fireBtn);
+      swordBtn53.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); swingSword53(); tap46(swordBtn53); });
+      dodgeBtn53.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); dodge53(); tap46(dodgeBtn53); });
+    }
+    if (!swordBtn53) return;
+    const on = mode === "land" && swordOn53();
+    if ((swordBtn53.style.display === "none") === on) { swordBtn53.style.display = on ? "" : "none"; dodgeBtn53.style.display = on ? "" : "none"; }
+    if (on) {
+      const tx = hasCutlass53() ? "Cutlass" : "Sword"; if (swordBtn53.textContent !== tx) swordBtn53.textContent = tx;
+      const fr = 1 - swordCd53 / swordCdMax53(), bg = swordCd53 <= 0 ? "" : "linear-gradient(90deg, rgba(160,210,255,.55) " + Math.round(fr * 100) + "%, rgba(0,0,0,0) " + Math.round(fr * 100) + "%)"; if (swordBtn53.style.backgroundImage !== bg) swordBtn53.style.backgroundImage = bg;
+      const op = dodgeCd53 > 0 ? "0.5" : ""; if (dodgeBtn53.style.opacity !== op) dodgeBtn53.style.opacity = op;
+      const near = nearLandFoe51(swordReach53() + 0.3); const bs = near && swordCd53 <= 0 ? "0 0 0 2px #9fd2ff" : ""; if (swordBtn53.style.boxShadow !== bs) swordBtn53.style.boxShadow = bs; // ring: in reach
+    }
+    makeBlade53();
+    if (blade53) {
+      const vis = mode === "land" && (on || swingT53 > 0); if (blade53.piv.visible !== vis) blade53.piv.visible = vis;
+      if (swingT53 > 0) { swingT53 = Math.max(0, swingT53 - dt); const p = 1 - swingT53 / 0.28; blade53.piv.rotation.set(0.25, 1.3 - p * 2.6, 0); }
+      else blade53.piv.rotation.set(0.9, 0, 0);
+      if (person.group && dodgeT53 > 0) person.group.rotation.x = -0.18; else if (person.group && person.group.rotation.x) person.group.rotation.x = 0;
+    }
+  }
   function knockedDown51() {
+    if (x3) x3.knock53 = (x3.knock53 || 0) + 1;
     const lost = Math.min(15, Math.floor(ledger.gold * 0.1));
     ledger.gold -= lost;
     landHp51 = 60;
@@ -16228,12 +16431,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     else if (treasureOn51) { person.x = TREASURE51.stand.x; person.z = TREASURE51.stand.z; }
     if (!onLand(person.x, person.z) || hitsBlock(person.x, person.z, 0.35)) unstick45();
     if (person.group) person.group.position.set(person.x, feetY(person.x, person.z), person.z);
-    const grp = w || (treasureOn51 ? TREASURE51 : null); if (grp) reviveGroup51(grp, true); const amb52 = AMBUSH52.on; if (amb52) { endAmbush52(); if (x3) { x3.ambLost52 = (x3.ambLost52 || 0) + 1; x3.ambLast52 = "lost"; } say("Ambush lost! The cutthroats knock you down and rob you" + (lost ? " of " + lost + " gold." : "."), 4); toast("You lost the alley ambush" + (lost ? " and " + lost + " gold" : "") + ". Back off and shoot from range next time.", "Ambush"); writeSave(); return; } // Batch 52
+    const grp = w || (treasureOn51 ? TREASURE51 : null); if (grp) reviveGroup51(grp, true); const amb52 = AMBUSH52.on; if (amb52) { endAmbush52(); if (x3) { x3.ambLost52 = (x3.ambLost52 || 0) + 1; x3.ambLast52 = "lost"; } say("Ambush lost! The cutthroats knock you down and rob you" + (lost ? " of " + lost + " gold." : "."), 4); toast("You lost the alley ambush" + (lost ? " and " + lost + " gold" : "") + ". Shoot as they come, then cut, and Dodge when you see \u201C!\u201D.", "Ambush"); writeSave(); return; } // Batch 52
     say("Knocked down! You come to " + (w ? "inside the gate" : "by the boat") + (lost ? ", " + lost + " gold lighter." : "."), 3.5);
-    toast("You were knocked down" + (lost ? " and lost " + lost + " gold" : "") + ". Shoot from range, and step back through the gate to heal.", "Ashore");
+    toast("You were knocked down" + (lost ? " and lost " + lost + " gold" : "") + ". Shoot from range, Dodge on the \u201C!\u201D, and step back through the gate to heal.", "Ashore");
     writeSave();
   }
   function updateGround51(dt) {
+    swordUi53(dt); updateCritters53(dt); treesFade53(); barsLand53();
     for (let i = 0; i < 2; i++) if (pistolCd51[i] > 0) { pistolCd51[i] = Math.max(0, pistolCd51[i] - dt); if (pistolCd51[i] === 0 && mode === "land") { try { buzz(8); } catch (e) { /* optional */ } } } // Batch 52: a tiny tick when a pistol is loaded again
     if (mode === "land") checkAmbush52(); else if (AMBUSH52.on) endAmbush52();
     const grp = mode === "land" ? activeFoes51() : null;
@@ -16242,7 +16446,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (chestMesh51) chestMesh51.visible = treasureOn51 && !(x3 && x3.chestT51 && Date.now() - x3.chestT51 < 480000);
     const out = mode === "land" && inWilds51(person.x, person.z);
     if (out !== wasOut51 && mode === "land") {
-      if (out) { say("Leaving town. Bandits roam the jungle past the wall. Tap Pistol to shoot.", 3.5); if (!x3 || (x3.wildTold52 || 0) < 3) { if (x3) x3.wildTold52 = (x3.wildTold52 || 0) + 1; toast("Leaving town: bandits beyond the wall. The town itself stays safe.", "Leaving town"); } } // Batch 52: the toast stops after three times; the hint line stays
+      if (out) { say("Leaving town. Bandits, wild dogs and boar roam the jungle past the wall. Shoot with Pistol, close in with Sword, and Dodge when one shows \u201C!\u201D.", 3.5); if (!x3 || (x3.wildTold52 || 0) < 3) { if (x3) x3.wildTold52 = (x3.wildTold52 || 0) + 1; toast("Leaving town: bandits, wild dogs and boar beyond the wall. The town itself stays safe.", "Leaving town"); } } // Batch 52: the toast stops after three times; the hint line stays
       else say("Back inside the walls. The town is safe.", 2.2);
     }
     wasOut51 = out;
@@ -16253,11 +16457,19 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     for (let i = 0; i < grp.foes.length; i++) {
       const f = grp.foes[i];
       f.mixer.update(dt);
-      if (f.dead) { if (f.fall < 1) { f.fall = Math.min(1, f.fall + dt * 2.5); f.g.rotation.x = -f.fall * Math.PI / 2; } f.g.position.set(f.x, feetY(f.x, f.z), f.z); continue; }
+      if (f.dead) { if (f.fall < 1) { f.fall = Math.min(1, f.fall + dt * 2.5); if (f.animal53) f.g.rotation.z = f.fall * Math.PI / 2; else f.g.rotation.x = -f.fall * Math.PI / 2; } f.g.position.set(f.x, feetY(f.x, f.z), f.z); continue; }
       const dx = person.x - f.x, dz = person.z - f.z, d = Math.hypot(dx, dz);
       const playerOk = treasureOn51 || amb52 ? true : out;
       let tx = f.hx, tz = f.hz, sp = 1.2;
-      if (playerOk && d < (f.kind === "pirate" ? 11 : 13)) { tx = person.x; tz = person.z; sp = f.kind === "pirate" ? 2.0 : 2.7; } // Batch 51 (Games 2): Gull Rock guards notice later and walk slower than you
+      if (playerOk && d < (f.kind === "pirate" ? 11 : f.kind === "boar" ? 12 : 13)) { tx = person.x; tz = person.z; sp = f.kind === "pirate" ? 2.0 : f.kind === "dog" ? 3.3 : f.kind === "boar" ? 1.6 : 2.7; }
+      if (f.animal53) { f.ph53 += dt * (sp > 2 ? 14 : 7); const sw = Math.sin(f.ph53) * 0.5; for (let li = 0; li < 4; li++) f.legs53[li].rotation.x = (li === 0 || li === 3 ? sw : -sw); }
+      // Batch 53: the boar. Paws (0.7 s, "!") at 3.5-10 m, then charges straight at speed 8 for up to 1.1 s; a hit is 12. After a charge he stands winded for 1.6 s.
+      if (f.kind === "boar") {
+        if (f.tired53 > 0) { f.tired53 -= dt; tx = f.x; tz = f.z; }
+        else if (f.ch53 === 1) { f.chT53 -= dt; f.g.rotation.x = 0.15; tx = f.x; tz = f.z; if (f.chT53 <= 0) { f.ch53 = 2; f.chT53 = 1.1; f.g.rotation.x = 0; } }
+        else if (f.ch53 === 2) { f.chT53 -= dt; tx = f.x + f.cdx53 * 5; tz = f.z + f.cdz53 * 5; sp = 8; if (d < 1.3) { f.ch53 = 0; f.tired53 = 1.6; if (!dodgedBlow53(f)) { const dm = Math.round(12 * (diffK("repair") || 1)); landHp51 = Math.max(0, landHp51 - dm); hurtT51 = 0.4; floatText(person.x, feetY(person.x, person.z) + 2.2, person.z, "-" + dm, "#ff6a5a"); try { buzz([30, 20, 30]); } catch (e) { /* optional */ } if (landHp51 <= 0) { knockedDown51(); return; } } } else if (f.chT53 <= 0) { f.ch53 = 0; f.tired53 = 1.6; floatText(f.x, feetY(f.x, f.z) + 1.8, f.z, "Winded", "#dddddd"); } }
+        else if (playerOk && d > 3.5 && d < 10 && f.cd <= 0) { f.ch53 = 1; f.chT53 = 0.7; f.cd = 3; f.cdx53 = dx / d; f.cdz53 = dz / d; f.yaw = Math.atan2(dx, dz); floatText(f.x, feetY(f.x, f.z) + 1.9, f.z, "!", "#ffcf5a"); try { buzz(10); } catch (e) { /* optional */ } }
+      } // Batch 51 (Games 2): Gull Rock guards notice later and walk slower than you
       const mx = tx - f.x, mz = tz - f.z, md = Math.hypot(mx, mz);
       if (md > 1.3) {
         let nx = f.x + mx / md * sp * dt, nz = f.z + mz / md * sp * dt;
@@ -16271,11 +16483,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       f.g.position.set(f.x, feetY(f.x, f.z), f.z); f.g.rotation.y = f.yaw;
       f.cd -= dt;
       // Batch 52 (Games 2): alley cutthroats wind up for 0.6 s (they lean back, a "!" shows) before each blow, swing every 2.4 s and hit for 4, so a pistol-only captain usually wins.
-      if (amb52 && f.wind52 > 0) { f.wind52 -= dt; f.g.rotation.x = -0.25; if (f.wind52 <= 0) { f.g.rotation.x = 0; if (d < 2.6) { const dm = Math.round(4 * (diffK("repair") || 1)); landHp51 = Math.max(0, landHp51 - dm); hurtT51 = 0.4; floatText(person.x - 0.8, feetY(person.x, person.z) + 2.2, person.z, "-" + dm, "#ff6a5a"); try { buzz(20); } catch (e) { /* optional */ } if (landHp51 <= 0) { knockedDown51(); return; } } else floatText(f.x, feetY(f.x, f.z) + 2.2, f.z, "Miss", "#dddddd"); } continue; }
+      if (amb52 && f.wind52 > 0) { f.wind52 -= dt; f.g.rotation.x = -0.25; if (f.wind52 <= 0) { f.g.rotation.x = 0; if (d < 2.6 && !dodgedBlow53(f)) { const dm = Math.round(4 * (diffK("repair") || 1)); landHp51 = Math.max(0, landHp51 - dm); hurtT51 = 0.4; floatText(person.x - 0.8, feetY(person.x, person.z) + 2.2, person.z, "-" + dm, "#ff6a5a"); try { buzz(20); } catch (e) { /* optional */ } if (landHp51 <= 0) { knockedDown51(); return; } } else floatText(f.x, feetY(f.x, f.z) + 2.2, f.z, "Miss", "#dddddd"); } continue; }
       if (amb52 && playerOk && d < 2.2 && f.cd <= 0) { f.cd = 2.4; f.wind52 = 0.6; floatText(f.x, feetY(f.x, f.z) + 2.4, f.z, "!", "#ffcf5a"); continue; }
-      if (!amb52 && playerOk && d < 1.7 && f.cd <= 0) {
-        f.cd = f.kind === "pirate" ? 1.7 : 1.3;
-        const dmg = Math.round((f.kind === "pirate" ? 7 : 8) * (diffK("repair") || 1));
+      // Batch 53: bandits and Gull Rock guards wind up for 0.45 s with a "!" too, so a Dodge or a cut can answer the blow; the blow lands only if you are still within 2.1 m.
+      if (!amb52 && f.wind53 > 0) { f.wind53 -= dt; f.g.rotation.x = -0.2; if (f.wind53 > 0) continue; f.g.rotation.x = 0; f.wind53 = 0; if (d > 2.1 || dodgedBlow53(f)) { f.wind53 = -1; if (d > 2.1) floatText(f.x, feetY(f.x, f.z) + 2.2, f.z, "Miss", "#dddddd"); continue; } }
+      else if (!amb52 && f.kind !== "boar" && playerOk && d < (f.kind === "dog" ? 1.5 : 1.7) && f.cd <= 0) { f.cd = f.kind === "pirate" ? 1.7 : f.kind === "dog" ? 1.2 : 1.3; f.wind53 = f.kind === "dog" ? 0.3 : 0.45; floatText(f.x, feetY(f.x, f.z) + 2.4, f.z, "!", "#ffcf5a"); continue; }
+      if (!amb52 && f.wind53 === 0 && playerOk) {
+        f.wind53 = -1;
+        const dmg = Math.round((f.kind === "pirate" ? 7 : f.kind === "dog" ? 4 : 8) * (diffK("repair") || 1));
         landHp51 = Math.max(0, landHp51 - dmg); hurtT51 = 0.4;
         floatText(person.x, feetY(person.x, person.z) + 2.2, person.z, "-" + dmg, "#ff6a5a");
         try { buzz(20); } catch (e) { /* optional */ }
@@ -17117,7 +17332,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boot.appendChild(tag);
     boot.appendChild(note);
     if (savedRenown >= 0) {
-      const TIPS = ["Tip: every fifth shooting star is worth a little XP.", "Tip: win ten battles at night for the Nightwatch sails.", "Tip: the logbook shows how close each deed is.", "Tip: a rampage now pays gold as well as XP.", "Tip: tap a deed in the logbook to pin it.", "Tip: Settings can reef your sails for you in squalls.", "Tip: two hits in quick succession earn extra XP.", "Tip: tap a message to clear it. Tap a deed message to open the logbook.", "Tip: the first change of orders each day is free.", "Tip: a promotion comes with gold from the admiralty.", "Tip: the logbook's Deeds tab shows how close you are to each deed.", "Tip: new to the sea? Finish the captain's checklist in the logbook for 50 gold.", "Tip: captain's tips can be switched off, or shown again, in Settings.", "Tip: taste every port's tavern dish for XP and a new sail colour.", "Tip: half sail in a squall saves your canvas and earns XP.", "Tip: anchor right over a map's red X and the crew will dive for the chest.", "Tip: the harbour master pays double on every third order.", "Tip: fire from her bow or stern to rake for extra damage.", "Tip: at night, patrols only spot you up close.", "Tip: selling lots of one good in one port floods it. Spread your cargo.", "Tip: lie still in a safe harbour and the crew patch the hull.", "Tip: three hits in a row lift crew morale.", "Tip: if a ship tries to cross your bow, turn toward her.", "Tip: patrols can't see far in fog.", "Tip: market news in the Log tells you which port is short of what.", "Tip: taverns post bounties on named patrol ships.", "Tip: wreckage sometimes hides a crate worth more gold.", "Tip: drop anchor at sea and the crew will fish.", "Tip: taverns run harbour races to the next port.", "Tip: fish bite faster at night, and a grouper fetches the most.", "Tip: a fish stew lifts crew spirits more than gold can.", "Tip: diving birds mark a shoal. Anchor there and fish bite twice as fast.", "Tip: a golden shimmer on the water means sunken gold. Anchor on it to dive.", "Tip: take in sail when a rogue wave rolls in.", "Tip: sell often in one port and they will know you, and patch your hull for less.", "Tip: dolphins lead you on for a few seconds. Follow them.", "Tip: after a wind shift, check where the wind settles and trim to suit.", "Tip: when the crew is full, castaways pay for their passage.", "Tip: look up on clear nights. Shooting stars cheer the crew.", "Tip: sail out of a storm by day and you may see a rainbow.", "Tip: selling into a shortage earns double favour in that port.", "Tip: check the Log for today's orders. They pay gold and experience.", "Tip: land five hits in a row and your gun crews reload faster for a while.", "Tip: rise in rank and shipyards patch your hull for less.", "Tip: the tavern can give you different orders for 5 gold.", "Tip: every third order pays double.", "Tip: a sailing master halves the damage rogue waves do to your sails.", "Tip: reef your sails in a squall or the canvas tears.", "Tip: taverns sell treasure maps. Follow the red X.", "Tip: every port's tavern has its own dish for the crew."];
+      const TIPS = ["Tip: every fifth shooting star is worth a little XP.", "Tip: ashore, a foe shows \u201C!\u201D before he strikes. Tap Dodge, or cut into the wind-up to break it.", "Tip: three sword cuts in a row make a combo for half again the damage.", "Tip: the shipyard sells a cutlass: longer reach and harder cuts.", "Tip: win ten battles at night for the Nightwatch sails.", "Tip: the logbook shows how close each deed is.", "Tip: a rampage now pays gold as well as XP.", "Tip: tap a deed in the logbook to pin it.", "Tip: Settings can reef your sails for you in squalls.", "Tip: two hits in quick succession earn extra XP.", "Tip: tap a message to clear it. Tap a deed message to open the logbook.", "Tip: the first change of orders each day is free.", "Tip: a promotion comes with gold from the admiralty.", "Tip: the logbook's Deeds tab shows how close you are to each deed.", "Tip: new to the sea? Finish the captain's checklist in the logbook for 50 gold.", "Tip: captain's tips can be switched off, or shown again, in Settings.", "Tip: taste every port's tavern dish for XP and a new sail colour.", "Tip: half sail in a squall saves your canvas and earns XP.", "Tip: anchor right over a map's red X and the crew will dive for the chest.", "Tip: the harbour master pays double on every third order.", "Tip: fire from her bow or stern to rake for extra damage.", "Tip: at night, patrols only spot you up close.", "Tip: selling lots of one good in one port floods it. Spread your cargo.", "Tip: lie still in a safe harbour and the crew patch the hull.", "Tip: three hits in a row lift crew morale.", "Tip: if a ship tries to cross your bow, turn toward her.", "Tip: patrols can't see far in fog.", "Tip: market news in the Log tells you which port is short of what.", "Tip: taverns post bounties on named patrol ships.", "Tip: wreckage sometimes hides a crate worth more gold.", "Tip: drop anchor at sea and the crew will fish.", "Tip: taverns run harbour races to the next port.", "Tip: fish bite faster at night, and a grouper fetches the most.", "Tip: a fish stew lifts crew spirits more than gold can.", "Tip: diving birds mark a shoal. Anchor there and fish bite twice as fast.", "Tip: a golden shimmer on the water means sunken gold. Anchor on it to dive.", "Tip: take in sail when a rogue wave rolls in.", "Tip: sell often in one port and they will know you, and patch your hull for less.", "Tip: dolphins lead you on for a few seconds. Follow them.", "Tip: after a wind shift, check where the wind settles and trim to suit.", "Tip: when the crew is full, castaways pay for their passage.", "Tip: look up on clear nights. Shooting stars cheer the crew.", "Tip: sail out of a storm by day and you may see a rainbow.", "Tip: selling into a shortage earns double favour in that port.", "Tip: check the Log for today's orders. They pay gold and experience.", "Tip: land five hits in a row and your gun crews reload faster for a while.", "Tip: rise in rank and shipyards patch your hull for less.", "Tip: the tavern can give you different orders for 5 gold.", "Tip: every third order pays double.", "Tip: a sailing master halves the damage rogue waves do to your sails.", "Tip: reef your sails in a squall or the canvas tears.", "Tip: taverns sell treasure maps. Follow the red X.", "Tip: every port's tavern has its own dish for the crew."];
       tip.textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
     }
     boot.appendChild(tip);
@@ -17130,7 +17345,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         tapBoth47(rb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } const now = performance.now(); if (!armedR || now - armedR > 60000) { armedR = now; rb.textContent = "Swap back? Tap again"; return; } try { const cur = localStorage.getItem(SAVE_KEY); localStorage.setItem(SAVE_KEY, bk); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); else localStorage.removeItem(SAVE_KEY + "-before-new"); } catch (err) { return; } importReload47 = true; location.reload(); }); boot.appendChild(rb); } }
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 52";
+    tv.textContent = "Version: batch 53";
     // Batch 50: the version sits in the bottom-right corner of the screen, so a long tip or a short screen can never push it out of view.
     tv.style.cssText = "position:fixed;right:calc(8px + env(safe-area-inset-right));bottom:calc(6px + env(safe-area-inset-bottom));font-size:11px;opacity:.55;pointer-events:none;z-index:2";
     boot.appendChild(tv);
@@ -18027,6 +18242,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       fightSum51: function (left) { const keep = [ship.hull, x3.diff]; const out = {}; Object.keys(DIFF).forEach(function (d) { x3.diff = d; ship.hull = Math.round(ship.hullMax * left); out[d] = { repair: hullRepairCost(), salvage: SALVAGE_GOLD, salvageCrate: SALVAGE_GOLD + CRATE_GOLD, hullMax: ship.hullMax }; }); ship.hull = keep[0]; x3.diff = keep[1]; return out; },
       g2_51: function () { return { you: chartYou51, edge: mapEdge51, aimMs: x3 ? (x3.aimTipMs51 || 0) : 0, aimShown: aimTip.style.display, aimOp: aimTip.style.opacity }; }, spawnNear51: function () { return spawnNear51(); },
       pistol51: function () { return firePistol51(); },
+      critDbg53: function () { return wilds51.map(function (w) { return { town: w.town, p: townSpot53(w), n: critters53.filter(function (c) { return Math.hypot(c.hx - ISLANDS[w.town].x, c.hz - ISLANDS[w.town].z) < ISLANDS[w.town].landR; }).length }; }); },
+      trees53: function (sp) { if (sp) return wilds51[0].spots.slice(0, 12); return wilds51.map(function (w) { return w.hid53 ? w.hid53.split(",").length - 1 : 0; }); }, bars53: function () { const g = activeFoes51(); return g ? g.foes.filter(function (f) { return !f.dead; }).map(function (f) { return Math.round(f.bar.scale.x * 100) / 100; }) : []; },
+      critters53: function () { const n = {}; critters53.forEach(function (c) { n[c.kind] = (n[c.kind] || 0) + 1; }); return { n: n, total: critters53.length, vis: critters53.filter(function (c) { return c.g.visible; }).length }; },
+      wild53: function () { const w = wildHere51() || wilds51[0]; return { here: !!wildHere51(), kd: x3 ? (x3.knock53 || 0) : 0, foes: w.foes.map(function (f) { return { k: f.kind, hp: f.hp, dead: f.dead, d: Math.round(Math.hypot(f.x - person.x, f.z - person.z) * 10) / 10, x: f.x, z: f.z, px: person.x, pz: person.z, wind: f.wind53 > 0 || f.ch53 === 1, ch: f.ch53 || 0, inTown: !outside51(w, f.x, f.z), vis: f.g.visible }; }) }; },
+      sword53: function (act) { if (act === "swing") swingSword53(); else if (act === "dodge") dodge53(); else if (act === "cutlass") { x3.cutlass53 = true; } else if (act === "ready") { swordCd53 = 0; dodgeCd53 = 0; } const sb = document.getElementById("sword53"), db = document.getElementById("dodge53"); return { cd: swordCd53, dcd: dodgeCd53, dodgeT: dodgeT53, reach: swordReach53(), dmg: swordDmg53(), cutlass: hasCutlass53(), swings: swings53, hits: swordHits53, dodges: dodges53, dodged: dodged53, combo: combo53, shown: !!(sb && getComputedStyle(sb).display !== "none"), dshown: !!(db && getComputedStyle(db).display !== "none"), label: sb ? sb.textContent : "", blade: !!(blade53 && blade53.piv.visible), hp: landHp51, yaw: person.yaw, px: person.x, pz: person.z }; },
       hurt51: function (i, n) { const grp = activeFoes51(); if (grp && grp.foes[i]) hurtLandFoe51(grp.foes[i], n); return grp ? grp.foes[i].hp : null; },
       toTreasure51: function () { ship.x = TREASURE51.ship.x; ship.z = TREASURE51.ship.z; ship.speed = 0; mode = "sea"; return !!treasureBeach51(); },
       goAshore51: function () { goAshore(); return mode; },
