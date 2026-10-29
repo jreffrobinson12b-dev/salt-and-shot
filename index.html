@@ -5812,7 +5812,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         const blk = { x: x, z: z, r: 1.85 * s }; blocks.push(blk);
         const low = houses.length % 3 !== 0;
         const g1 = new THREE.Group(); const body = new THREE.Mesh(R.house, R.walls[houses.length % R.walls.length]); body.position.y = 1.25; body.receiveShadow = true; g1.add(body); const dr = new THREE.Mesh(R.door, R.dark); dr.position.set(0, 0.75, 1.36); g1.add(dr); [-0.75, 0.75].forEach(function (wx) { const wn = new THREE.Mesh(R.win, R.dark); wn.position.set(wx, 1.6, 1.36); g1.add(wn); }); g1.position.set(x, y, z); g1.rotation.y = rot; g1.scale.setScalar(s); scene.add(g1); addDeco52(g1, low, blk); g1.userData.house52 = blk; /* Batch 52: closed plaster or plank walls, a shut door and two dark windows */
-        const g2 = spawn("structure-roof.glb", x, y + 2.55 * s, z, rot, 1); g2.scale.set(1.65 * s, 1.05 * s, 1.65 * s); addDeco52(g2, low, null); g2.userData.house52 = blk;
+        const g2 = spawn("structure-roof.glb", x, y + 2.55 * s, z, rot, 1); g2.scale.set(1.65 * s, 1.05 * s, 1.65 * s); addDeco52(g2, low, null); g2.userData.house52 = blk; if (blk) blk.house52 = true;
         houses.push({ x: x, z: z, y: y, rot: rot, s: s });
       }
       houses.forEach(function (h, hi) {
@@ -5887,6 +5887,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
   }
   function applyDeco52(lo) { for (let i = 0; i < deco52.length; i++) { const d = deco52[i], show = !(lo && d.low); d.o.visible = show; d.o.userData.decoOn52 = show; if (d.blk) { if (d.blk.r52 === undefined) d.blk.r52 = d.blk.r; d.blk.r = show ? d.blk.r52 : 0; } } }
+  function camHits52(x, z, pad) { for (let i = 0; i < blocks.length; i++) { const b = blocks[i]; if (!b.house52 && Math.hypot(x - b.x, z - b.z) < b.r + pad) return true; } return false; } // Batch 52: the camera may sit inside a town house (it fades), so only real walls push it in
   function hitsBlock(x, z, pad) {
     for (let i = 0; i < blocks.length; i++) {
       const b = blocks[i];
@@ -6719,7 +6720,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const tex = new THREE.CanvasTexture(canvas);
     const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
     spr.position.set(x, y, z);
-    spr.scale.set(5.6, 1.4, 1); /* Batch 52 (Games 2): smaller, crisper float text */
+    if (mode === "land") spr.scale.set(3.2, 0.8, 1); else spr.scale.set(5.6, 1.4, 1); /* Batch 52 (Games 2): smaller, crisper float text */
     scene.add(spr);
     floaters.push({ mesh: spr, life: 1.15, max: 1.15 });
   }
@@ -9677,7 +9678,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const gain = ledger.gold - goldSeen;
       if (x3) x3.earned += gain;
       const at = mode === "land" ? person : ship;
-      floatText(at.x, mode === "land" ? 3 : 9, at.z, "+" + gain + " gold", "#ffd86a");
+      if (!(mode === "land" && Date.now() - (window.purse52 || 0) < 600)) floatText(at.x + (mode === "land" ? 0.9 : 0), mode === "land" ? feetY(at.x, at.z) + 3.1 : 9, at.z, "+" + gain + " gold", "#ffd86a"); // Batch 52 (Games 2): no second popup for a purse already shown, and clear of damage numbers
       try {
         if (audioCtx) {
           const t = audioCtx.currentTime;
@@ -9732,8 +9733,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     qa("Teleport: bandits (wilds)", "qabandit51", function (b) { b.ashoreAt("bramble"); setTimeout(function () { const g = b.g51(); if (g.gate) b.putPerson48(g.gate.x + g.dir[0] * 10, g.gate.z + g.dir[1] * 10); }, 300); });
     qa("Spawn squall here", "qasquall51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } qbCalm47 = 0; if (!storms.length) makeStorm(ship.x, ship.z + 200, 30, 0, 0); const s = storms[0]; s.x = ship.x + Math.sin(ship.heading) * (s.r * 0.6); s.z = ship.z + Math.cos(ship.heading) * (s.r * 0.6); /* Batch 51: right over you, and the quick-battle calm no longer pushes it away */ if (s.group) s.group.position.set(s.x, s.group.position.y, s.z); squallHold52 = 12; say("QA: you are in a squall. Full sail tears after 3 s.", 2); toast("QA squall spawned on you.", "QA"); setTimeout(function () { qbCalm47 = 0; const s2 = storms[0]; if (s2 && !inSquallAt(ship.x, ship.z)) { s2.x = ship.x; s2.z = ship.z; if (s2.group) s2.group.position.set(s2.x, s2.group.position.y, s2.z); } }, 400); /* Batch 51: re-check once, in case practice or a boarding move pushed it */ });
     qa("Teleport: Thornkey outpost", "qathorn52", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.outpost52(0); updateCamera.ready = false; });
-    qa("Teleport: Mosswood outpost", "qamoss52", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.outpost52(1); updateCamera.ready = false; });
-    qa("Force alley ambush (Bramble)", "qaamb52", function (b) { b.ashoreAt("bramble"); const al = alleys52.find(function (a) { return a.isl === ashorePort.island; }); if (!al) return; b.ambush52(true); b.putPerson48(al.x - al.ax * (al.half + 3), al.z - al.az * (al.half + 3)); snapCamFacing52(Math.atan2(al.ax, al.az)); updateCamera.ready = false; setTimeout(function () { b.putPerson48(al.x, al.z); }, 400); });
+    qa("Teleport: Mosswood outpost", "qamoss52", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.outpost52(1); /* Batch 52 (Games 2): QA lands you clear of warships */ foes.forEach(function (f) { if (!f || f.gone || f.sunk) return; const dx = f.x - ship.x, dz = f.z - ship.z, dd = Math.hypot(dx, dz); if (dd < 260) { const k = 300 / Math.max(1, dd); f.x = ship.x + dx * k; f.z = ship.z + dz * k; f.hunt = false; } }); updateCamera.ready = false; });
+    qa("Force alley ambush (Bramble)", "qaamb52", function (b) { b.ashoreAt("bramble"); const al = bestAlley52(ashorePort.island); if (!al) return; b.ambush52(true); b.putPerson48(al.x - al.ax * (al.half + 3), al.z - al.az * (al.half + 3)); snapCamFacing52(Math.atan2(al.ax, al.az)); updateCamera.ready = false; setTimeout(function () { b.putPerson48(al.x, al.z); }, 400); });
+    qa("Teleport: washing line (natural ambush)", "qaline52", function (b) { b.ashoreAt("bramble"); const ls = alleys52.filter(function (a) { return a.isl === ashorePort.island; }); if (!ls.length) return; const al = ls[(qaLineI52++) % ls.length]; ambushAlley52 = null; b.putPerson48(al.x - al.ax * (al.half + 5), al.z - al.az * (al.half + 5)); updateCamera.ready = false; setTimeout(function () { b.putPerson48(al.x, al.z); }, 450); });
     qa("Teleport: Gull Rock", "qagull51", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.toTreasure51(); ship.speed = 0; sail = 0; setTimeout(function () { if (mode === "sea") goAshore(); updateCamera.ready = false; }, 150); });
     document.body.appendChild(qp); const sk = document.getElementById("qasink48"); if (sk) sk.style.transform = "translateX(calc(-50% - 62px))"; }
   // Batch 48: phones often skip pagehide when you swipe away, so also save when the tab is hidden and every 20 s, so Continue picks up mid-battle hull and position.
@@ -11844,7 +11846,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function camBlock44(d, x, y, z) {
     const now = performance.now();
     hideNearProps51();
-    if (now - occlAt > 700) { occlAt = now; occl44 = scene.children.filter(function (o) { return o.visible && (o.isMesh || o.isGroup) && o !== water && o !== sky && o !== sunDisc && o !== moonDisc && o !== person.group && o !== ship.root && !o.userData.noCam51 && near44(o, x, z) && !(o.userData.bs51 && o.userData.bs51.r > 0 && o.userData.bs51.r < 1.6); }); }
+    if (now - occlAt > 700) { occlAt = now; occl44 = scene.children.filter(function (o) { return o.visible && (o.isMesh || o.isGroup) && o !== water && o !== sky && o !== sunDisc && o !== moonDisc && o !== person.group && o !== ship.root && !o.userData.noCam51 && !o.userData.house52 && near44(o, x, z) && !(o.userData.bs51 && o.userData.bs51.r > 0 && o.userData.bs51.r < 1.6); }); }
     if (!occl44.length) return;
     camFrom.set(x, y, z); camDir.copy(d).sub(camFrom); const len = camDir.length(); if (len < 0.5) return; camDir.divideScalar(len);
     camRay.set(camFrom, camDir); camRay.far = len; camRay.camera = camera; // Batch 51: sprites inside groups (bandit health bars) need the camera to raycast
@@ -11897,11 +11899,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       updateCamera.ready = true;
     } else {
       const k = 1 - Math.exp(-dt * (lookHeld ? 10 : (mode === "sea" ? 2.6 : 2.2)));
+      const cpx52 = camera.position.x, cpy52 = camera.position.y, cpz52 = camera.position.z;
       camera.position.lerp(desired, k);
       camLook.lerp(look, k);
-      if (mode === "land") { camBlock44(camera.position, person.x, person.group.position.y + 1.4, person.z); if (hitsBlock(camera.position.x, camera.position.z, 0.3)) { for (let i = 0; i < 8 && hitsBlock(camera.position.x, camera.position.z, 0.3); i++) camera.position.lerp(tmpCam47.set(person.x, camera.position.y, person.z), 0.25); } }
+      if (mode === "land") { camBlock44(camera.position, person.x, person.group.position.y + 1.4, person.z); if (camHits52(camera.position.x, camera.position.z, 0.3)) { for (let i = 0; i < 8 && camHits52(camera.position.x, camera.position.z, 0.3); i++) camera.position.lerp(tmpCam47.set(person.x, camera.position.y, person.z), 0.25); } }
       // Batch 47: never jam the camera into the head. When walls pull it in closer than 2.2 m, lift it to look down over the shoulder instead.
       if (mode === "land") { const hx = camera.position.x - person.x, hz = camera.position.z - person.z, hh = Math.hypot(hx, hz), py0 = person.group.position.y; if (hh < 2.2) { const minY = py0 + 1.6 + (2.2 - hh) * 1.4; if (camera.position.y < minY) camera.position.y = minY; } }
+      // Batch 52: ashore the camera never leaps (walls used to yank it 10 m in one frame, making labels and the view jump); it glides at most 24 m/s. Town houses fade instead of pushing it in.
+      if (mode === "land" && !lookHeld) { const mx = camera.position.x - cpx52, my = camera.position.y - cpy52, mz = camera.position.z - cpz52, mm = Math.hypot(mx, my, mz), lim = Math.max(0.25, 24 * dt); if (mm > lim) camera.position.set(cpx52 + mx / mm * lim, cpy52 + my / mm * lim, cpz52 + mz / mm * lim); }
     }
     { const nr = mode === "land" ? 0.08 : 0.3; if (camera.near !== nr) { camera.near = nr; camera.updateProjectionMatrix(); } }
     if (mode === "sea") {
@@ -12734,6 +12739,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     checklistLines().forEach(function (l) { out.push(l); });
     if (x3 && x3.pinned) { const pd = DEEDS.find(function (q) { return q.id === x3.pinned; }); if (pd) out.push("Pinned deed: " + pd.text + (deedProg(pd.id) ? " (" + deedProg(pd.id) + ")" : "")); }
     if (x3) out.push("Records: top speed " + x3.topSpeed + " kn \u00B7 best hit streak " + x3.bestStreak + " \u00B7 biggest chest " + x3.bestChest + " gold \u00B7 flawless run " + x3.flawlessRun + (x3.questsDone ? " \u00B7 errands " + x3.questsDone : "") + (x3.barrels ? " \u00B7 barrels salvaged " + x3.barrels : "") + (x3.diceWon ? " \u00B7 dice won " + x3.diceWon : "") + (x3.riddles ? " \u00B7 riddles solved " + x3.riddles : "") + (x3.customsPaid ? " \u00B7 duties paid " + x3.customsPaid : "") + (x3.contestWins ? " \u00B7 contests won " + x3.contestWins + (x3.contestBest ? " (best " + x3.contestBest + " s)" : "") : "") + (x3.traders ? " \u00B7 brigs met " + x3.traders : "") + (x3.overboardSaved ? " \u00B7 men saved " + x3.overboardSaved : "") + (x3.marketBuys ? " \u00B7 market-day buys " + x3.marketBuys : "") + (x3.rampages ? " \u00B7 rampages " + x3.rampages : "") + (x3.nightWins ? " \u00B7 night wins " + x3.nightWins : "") + (x3.laurels ? " \u00B7 laurels " + x3.laurels : ""));
+    if (x3) { const os52 = ISLANDS.filter(function (L) { return L.kind === "outpost" && (x3.outSeen52 || "").indexOf("|" + L.name + "|") >= 0; }).map(function (L) { return L.name; }); out.push("Outposts traded at: " + (os52.length ? os52.join(", ") : "none yet")); } // Batch 52
     if (x3) out.push("Alley ambushes: " + (x3.amb52 || 0) + " beaten, " + (x3.ambLost52 || 0) + " lost" + (x3.ambLast52 ? " (last one " + x3.ambLast52 + ")" : "")); // Batch 52 (Games 2)
     if (x3) out.push("Ship: hull " + Math.round(100 * Math.max(0, ship.hull) / (ship.hullMax || 1)) + "% \u00B7 sails " + Math.round(ship.sails) + "% \u00B7 crew " + x3.crew + " \u00B7 " + ledger.gold + " gold");
     if (x3 && sessionXp0 != null) { if (earned0 == null) earned0 = x3.earned; out.push("This session: +" + (x3.xp - sessionXp0) + " XP \u00B7 +" + Math.max(0, x3.earned - earned0) + " gold earned"); }
@@ -16063,11 +16069,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         wall.castShadow = true; scene.add(wall);
         for (let t = 1.9; t <= hc + 14; t += 1.0) blocks.push({ x: w.gate.x + px * s * t, z: w.gate.z + pz * s * t, r: 0.75 });
         const post = new THREE.Mesh(new THREE.BoxGeometry(1.1, 4.2, 1.1), wallMat51);
-        post.position.set(w.gate.x + px * s * 2.2, 1.4, w.gate.z + pz * s * 2.2); scene.add(post);
+        post.position.set(w.gate.x + px * s * 2.2, 1.4, w.gate.z + pz * s * 2.2); scene.add(post); post.userData.rock52 = 1; post.userData.noCam51 = true; doorProps51.push(post); // Batch 52 (Games 2): gate posts fade instead of hiding you
       }
       const lintel = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.6, 1.1), wallMat51);
-      lintel.position.set(w.gate.x, 3.6, w.gate.z); lintel.rotation.y = Math.atan2(px, pz) - Math.PI / 2; scene.add(lintel);
-      const sign = nameSprite("Gate", 4.6); sign.scale.set(sign.scale.x * 0.24, sign.scale.y * 0.24, 1); /* Batch 52 (Games 2): a door-sized tag, not a 22 m banner */ if (sign.material) { sign.material.depthTest = true; } sign.position.x += w.gate.x; sign.position.z += w.gate.z; scene.add(sign); w.sign = sign;
+      lintel.position.set(w.gate.x, 3.6, w.gate.z); lintel.rotation.y = Math.atan2(px, pz) - Math.PI / 2; scene.add(lintel); lintel.userData.rock52 = 1; lintel.userData.noCam51 = true; doorProps51.push(lintel);
+      const sign = nameSprite("Gate", 4.6); sign.scale.set(sign.scale.x * 0.13, sign.scale.y * 0.13, 1); /* Batch 52 (Games 2): a door-sized tag, not a 22 m banner */ if (sign.material) { sign.material.depthTest = true; } sign.position.x += w.gate.x; sign.position.z += w.gate.z; scene.add(sign); w.sign = sign;
       // Jungle: instanced trunks and crowns, kept off the dirt path from the gate.
       const spots = [];
       for (let k = 0; k < 320 && spots.length < 64; k++) { // Batch 52: denser jungle for the bigger wilds
@@ -16145,7 +16151,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     AMBUSH52.foes.forEach(function (f, k) { const sg = k ? 1 : -1; let x = 0, z = 0, okp = false; for (let t = 0; t < 12 && !okp; t++) { const yy = fy + sg * (0.12 + t * 0.2), dd = 8 - (t % 3); x = person.x + Math.sin(yy) * dd; z = person.z + Math.cos(yy) * dd; okp = onLand(x, z) && !hitsBlock(x, z, 0.4); } if (!okp) { x = al.x + al.ax * sg * 1.2; z = al.z + al.az * sg * 1.2; } f.x = f.hx = x; f.z = f.hz = z; f.dead = false; f.fall = 0; f.hp = f.hpMax; f.paid51 = false; f.cd = 2.4 + k * 1.2; f.g.rotation.x = 0; paintHullSprite(f.bar, f.hp, f.hpMax); f.bar.visible = true; f.g.position.set(x, feetY(x, z), z); });
     person.yaw = fy; if (person.group) person.group.rotation.y = fy; snapCamFacing52(fy); updateCamera.ready = false;
     say("Ambush! Two cutthroats step out of the alley. Tap Pistol, or walk away fast.", 3.5);
-    toast("Alley ambush: drop them with the Pistol, or walk away and they give up.", "Ambush");
+    try { buzz([30, 40, 30]); } catch (e) { /* optional */ } // Batch 52: a double buzz when they jump you
+    if (!x3 || (x3.ambTold52 || 0) < 2) { if (x3) x3.ambTold52 = (x3.ambTold52 || 0) + 1; toast("Alley ambush: drop them with the Pistol, or walk away and they give up.", "Ambush"); } // Batch 52: the how-to toast only the first two times
   }
   // Batch 52 (Games 2): the whole alley strip under a washing line counts, not just its midpoint.
   function checkAmbush52() {
@@ -16166,6 +16173,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function alleyHere52() { if (mode !== "land" || !ashorePort) return null; for (let i = 0; i < alleys52.length; i++) { const al = alleys52[i]; if (al.isl !== ashorePort.island) continue; const rx = person.x - al.x, rz = person.z - al.z, along = rx * al.ax + rz * al.az, across = Math.abs(rx * al.az - rz * al.ax); if (Math.abs(along) < (al.half || 3) + 1 && across < 3.2) return al; } return null; }
   // Batch 52 (Games 2): ?qa=1 shows whether you stand under a washing line and when the next natural ambush can come.
   if (/[?&]qa=1\b/.test(location.search)) setInterval(function () { let el = document.getElementById("qaalley52"); if (!el) { el = document.createElement("div"); el.id = "qaalley52"; el.style.cssText = "position:fixed;left:8px;bottom:calc(4px + env(safe-area-inset-bottom));z-index:60;pointer-events:none;font:700 11px system-ui,sans-serif;color:#ffe9a8;background:rgba(0,0,0,.55);padding:2px 6px;border-radius:6px"; document.body.appendChild(el); } if (mode !== "land" || titleOn) { el.style.display = "none"; return; } el.style.display = ""; const al = alleyHere52(), wait = Math.max(0, Math.ceil((ambushNext52 - Date.now()) / 1000)); const tx = "QA alley: " + (al ? "UNDER WASHING LINE" : "no") + " \u00B7 " + (AMBUSH52.on ? "ambush on" : wait ? "rest " + wait + " s" : "ready") + " \u00B7 quiet passes " + ambushPass52 + (x3 && x3.tut < 4 ? " \u00B7 tutorial blocks it" : ""); if (el.textContent !== tx) el.textContent = tx; }, 300);
+  let qaLineI52 = 0;
+  // Batch 52 (Games 2): the forced QA ambush uses the alley with the most open space at an end (not the one by the quay building).
+  function bestAlley52(isl) { let best = null, bs = -1; alleys52.forEach(function (al) { if (al.isl !== isl) return; [1, -1].forEach(function (sg) { const x = al.x + al.ax * sg * ((al.half || 3) + 5), z = al.z + al.az * sg * ((al.half || 3) + 5); if (!onLand(x, z)) return; let sc = 0; for (let r = 1; r <= 6; r++) { if (hitsBlock(x, z, r)) break; sc = r; } if (sc > bs) { bs = sc; best = al; } }); }); return best; }
   let forceAmbush52 = false;
   let landHp51 = 100, pistolCd51 = [0, 0], wasOut51 = false, hurtT51 = 0;
   function pistolReady51() { return x3 && x3.brace51 ? Math.min(pistolCd51[0], pistolCd51[1]) <= 0 : pistolCd51[0] <= 0; }
@@ -16203,7 +16213,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       f.dead = true; f.bar.visible = false;
       const g = f.paid51 ? 0 : (f.kind === "pirate" ? 25 : 12 + Math.floor(Math.random() * 7)); f.paid51 = true; // Batch 51 (Games 2): a guard pays his purse once until the group truly respawns
       ledger.gold += g; if (x3) { x3.landKills51 = (x3.landKills51 || 0) + 1; x3.landGold51 = (x3.landGold51 || 0) + g; }
-      floatText(f.x, feetY(f.x, f.z) + 2.6, f.z, "+" + g + " gold", "#ffe08a");
+      window.purse52 = Date.now(); floatText(f.x, feetY(f.x, f.z) + 3.0, f.z, "+" + g + " gold", "#ffe08a");
       say((f.kind === "pirate" ? "A pirate" : "A bandit") + " goes down. " + (g ? g + " gold in his purse." : "You already took his purse."), 2.2);
       const grp = activeFoes51(); if (grp) grp.t = Date.now();
       writeSave();
@@ -16224,7 +16234,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     writeSave();
   }
   function updateGround51(dt) {
-    for (let i = 0; i < 2; i++) if (pistolCd51[i] > 0) pistolCd51[i] = Math.max(0, pistolCd51[i] - dt);
+    for (let i = 0; i < 2; i++) if (pistolCd51[i] > 0) { pistolCd51[i] = Math.max(0, pistolCd51[i] - dt); if (pistolCd51[i] === 0 && mode === "land") { try { buzz(8); } catch (e) { /* optional */ } } } // Batch 52: a tiny tick when a pistol is loaded again
     if (mode === "land") checkAmbush52(); else if (AMBUSH52.on) endAmbush52();
     const grp = mode === "land" ? activeFoes51() : null;
     // Hide all land enemies except the group where you stand.
@@ -16232,7 +16242,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (chestMesh51) chestMesh51.visible = treasureOn51 && !(x3 && x3.chestT51 && Date.now() - x3.chestT51 < 480000);
     const out = mode === "land" && inWilds51(person.x, person.z);
     if (out !== wasOut51 && mode === "land") {
-      if (out) { say("Leaving town. Bandits roam the jungle past the wall. Tap Pistol to shoot.", 3.5); toast("Leaving town: bandits beyond the wall. The town itself stays safe.", "Leaving town"); }
+      if (out) { say("Leaving town. Bandits roam the jungle past the wall. Tap Pistol to shoot.", 3.5); if (!x3 || (x3.wildTold52 || 0) < 3) { if (x3) x3.wildTold52 = (x3.wildTold52 || 0) + 1; toast("Leaving town: bandits beyond the wall. The town itself stays safe.", "Leaving town"); } } // Batch 52: the toast stops after three times; the hint line stays
       else say("Back inside the walls. The town is safe.", 2.2);
     }
     wasOut51 = out;
@@ -16257,9 +16267,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         else if (amb52) { const okA = function (x, z) { return onLand(x, z) && !hitsBlock(x, z, 0.3); }; const ox52 = f.x, oz52 = f.z; if ((f.stk52 || 0) > 0.8) { f.x = nx; f.z = nz; } else if (okA(nx, f.z)) f.x = nx; else if (okA(f.x, nz)) f.z = nz; else if (onLand(nx, nz)) { f.x = nx; f.z = nz; } f.stk52 = Math.hypot(f.x - ox52, f.z - oz52) < sp * dt * 0.3 ? (f.stk52 || 0) + dt : Math.max(0, (f.stk52 || 0) - dt * 0.5); } // stuck for 0.8 s: squeeze straight through // Batch 52: alley cutthroats slide round crates and corners
         f.yaw = Math.atan2(mx, mz);
       }
+      if (amb52 && d < 3) f.yaw = Math.atan2(dx, dz); // Batch 52: cutthroats square up to you when close
       f.g.position.set(f.x, feetY(f.x, f.z), f.z); f.g.rotation.y = f.yaw;
       f.cd -= dt;
-      if (playerOk && d < (amb52 ? 2.2 : 1.7) && f.cd <= 0) {
+      // Batch 52 (Games 2): alley cutthroats wind up for 0.6 s (they lean back, a "!" shows) before each blow, swing every 2.4 s and hit for 4, so a pistol-only captain usually wins.
+      if (amb52 && f.wind52 > 0) { f.wind52 -= dt; f.g.rotation.x = -0.25; if (f.wind52 <= 0) { f.g.rotation.x = 0; if (d < 2.6) { const dm = Math.round(4 * (diffK("repair") || 1)); landHp51 = Math.max(0, landHp51 - dm); hurtT51 = 0.4; floatText(person.x - 0.8, feetY(person.x, person.z) + 2.2, person.z, "-" + dm, "#ff6a5a"); try { buzz(20); } catch (e) { /* optional */ } if (landHp51 <= 0) { knockedDown51(); return; } } else floatText(f.x, feetY(f.x, f.z) + 2.2, f.z, "Miss", "#dddddd"); } continue; }
+      if (amb52 && playerOk && d < 2.2 && f.cd <= 0) { f.cd = 2.4; f.wind52 = 0.6; floatText(f.x, feetY(f.x, f.z) + 2.4, f.z, "!", "#ffcf5a"); continue; }
+      if (!amb52 && playerOk && d < 1.7 && f.cd <= 0) {
         f.cd = f.kind === "pirate" ? 1.7 : 1.3;
         const dmg = Math.round((f.kind === "pirate" ? 7 : 8) * (diffK("repair") || 1));
         landHp51 = Math.max(0, landHp51 - dmg); hurtT51 = 0.4;
@@ -18037,6 +18051,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       walkTo47: function (tx, tz, secs) { let t = 0; const st = 1 / 30; while (t < secs && Math.hypot(person.x - tx, person.z - tz) > 1.5) { const vx = person.x - camera.position.x, vz = person.z - camera.position.z, vl = Math.hypot(vx, vz) || 1; const dx = (tx - person.x), dz = (tz - person.z), dl = Math.hypot(dx, dz) || 1; const fwd = (dx * vx + dz * vz) / (dl * vl), side = (dx * vz - dz * vx) / (dl * vl); updateLand(st, { forward: fwd, steer: -side }); updateCamera(st); t += st; } return { t: +t.toFixed(1), d: +Math.hypot(person.x - tx, person.z - tz).toFixed(1) }; },
       market47: function () { const d = doors.filter(function (q) { return q.kind === "merchant" && q.port === "bramble"; })[0]; return d ? { x: d.x, z: d.z } : null; },
       flags47: function () { return { nofx: NOFX47, lowflag: LOWGFX47, soft0: SOFT0_47, low: !!(x3 && x3.lowGfx), pr: renderer.getPixelRatio(), shadows: renderer.shadowMap.enabled, aa: !!(renderer.getContext().getContextAttributes() || {}).antialias, frames: renderer.info.render.frame, titleOn: titleOn, parts: gfxParts.length }; },
+      nearFoe52: function () { let best = null; foes.forEach(function (f) { if (!f || f.gone || f.sunk) return; const d = Math.hypot(f.x - ship.x, f.z - ship.z); if (!best || d < best.d) best = { d: Math.round(d), n: f.name }; }); return best; },
+      cam52: function () { return { x: +camera.position.x.toFixed(2), y: +camera.position.y.toFixed(2), z: +camera.position.z.toFixed(2), fov: +camera.fov.toFixed(2), px: +person.x.toFixed(2), pz: +person.z.toFixed(2), m: Array.from(camera.matrixWorld.elements.slice(12, 15)).map(function (q) { return +q.toFixed(2); }) }; },
       tagScreen47: function () { const w = renderer.domElement.clientWidth || innerWidth, h = renderer.domElement.clientHeight || innerHeight, v = new THREE.Vector3(); return placeTags.map(function (t, i) { return [t, i]; }).filter(function (q) { const t = q[0]; return t.visible && t.parent && t.material.opacity > 0.05; }).map(function (q) { const t = q[0]; v.set(t.userData.homeX, t.userData.homeY, t.userData.homeZ).project(camera); const ax = (v.x * 0.5 + 0.5) * w, ay = (-v.y * 0.5 + 0.5) * h; v.copy(t.position).project(camera); return { od: t.userData.od ? [Math.round(t.userData.od.dx), Math.round(t.userData.od.dy)] : null, si: t.userData.shiftI, ax: +ax.toFixed(2), ay: +ay.toFixed(2), l: t.userData.label + "#" + q[1], x: +((v.x * 0.5 + 0.5) * w).toFixed(2), y: +((-v.y * 0.5 + 0.5) * h).toFixed(2), o: +t.material.opacity.toFixed(2), s: +t.scale.y.toFixed(3) }; }); },
       save47: { code: function () { return saveCode47(); }, decode: function (t) { const r = decodeSave47(t); return r.err ? { err: r.err } : { ok: true, gold: r.data.gold }; }, imp: function (t) { return importSave47(t); }, exportPanel: function () { showExport47(); return !!document.getElementById("savecode47"); }, importPanel: function () { showImport47(); return !!document.getElementById("saveimport47"); } },
       music47: function () { return { mood: moodNow47(), level: musicLevel47(), setting: x3 ? x3.music : null, bus: !!mus47, gain: mus47 ? mus47.bus.gain.value : 0, step: mus47 ? mus47.step : 0, ctx: audioCtx ? audioCtx.state : null }; },
