@@ -16140,7 +16140,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     { const ends = [1, -1].map(function (sg) { return { x: al.x + al.ax * sg * ((al.half || 3) + 4), z: al.z + al.az * sg * ((al.half || 3) + 4), sg: sg }; }).filter(function (e) { return onLand(e.x, e.z) && !hitsBlock(e.x, e.z, 0.5); });
       ends.sort(function (a, b) { return Math.hypot(a.x - person.x, a.z - person.z) - Math.hypot(b.x - person.x, b.z - person.z); });
       if (ends[0]) { person.x = ends[0].x; person.z = ends[0].z; fy = Math.atan2(al.x - person.x, al.z - person.z); } }
-    AMBUSH52.foes.forEach(function (f, k) { const sg = k ? 1 : -1; let x = 0, z = 0, okp = false; for (let t = 0; t < 12 && !okp; t++) { const yy = fy + sg * (0.12 + t * 0.2), dd = 8 - (t % 3); x = person.x + Math.sin(yy) * dd; z = person.z + Math.cos(yy) * dd; okp = onLand(x, z) && !hitsBlock(x, z, 0.4); } if (!okp) { x = person.x + Math.sin(fy) * 6 + sg * 1.5; z = person.z + Math.cos(fy) * 6; } f.x = f.hx = x; f.z = f.hz = z; f.dead = false; f.fall = 0; f.hp = f.hpMax; f.paid51 = false; f.cd = 2.4 + k * 1.2; f.g.rotation.x = 0; paintHullSprite(f.bar, f.hp, f.hpMax); f.bar.visible = true; f.g.position.set(x, feetY(x, z), z); });
+    AMBUSH52.foes.forEach(function (f, k) { const sg = k ? 1 : -1; let x = 0, z = 0, okp = false; for (let t = 0; t < 12 && !okp; t++) { const yy = fy + sg * (0.12 + t * 0.2), dd = 8 - (t % 3); x = person.x + Math.sin(yy) * dd; z = person.z + Math.cos(yy) * dd; okp = onLand(x, z) && !hitsBlock(x, z, 0.4); } if (!okp) { x = al.x + al.ax * sg * 1.2; z = al.z + al.az * sg * 1.2; } f.x = f.hx = x; f.z = f.hz = z; f.dead = false; f.fall = 0; f.hp = f.hpMax; f.paid51 = false; f.cd = 2.4 + k * 1.2; f.g.rotation.x = 0; paintHullSprite(f.bar, f.hp, f.hpMax); f.bar.visible = true; f.g.position.set(x, feetY(x, z), z); });
     person.yaw = fy; if (person.group) person.group.rotation.y = fy; snapCamFacing52(fy); updateCamera.ready = false;
     say("Ambush! Two cutthroats step out of the alley. Tap Pistol, or walk away fast.", 3.5);
     toast("Alley ambush: drop them with the Pistol, or walk away and they give up.", "Ambush");
@@ -16149,7 +16149,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function checkAmbush52() {
     if (AMBUSH52.on) {
       const al = AMBUSH52.alley, d = Math.hypot(person.x - al.x, person.z - al.z);
-      if (AMBUSH52.foes.every(function (f) { return f.dead; }) && Date.now() - AMBUSH52.t > 2500) { if (!AMBUSH52.won) { AMBUSH52.won = true; if (x3) { x3.amb52 = (x3.amb52 || 0) + 1; x3.ambLast52 = "won"; writeSave(); } say("Ambush beaten! Both cutthroats are down and the alley is quiet again.", 3.5); toast("You beat the alley ambush.", "Ambush"); } if (d > 12) { AMBUSH52.won = false; endAmbush52(); } }
+      if (AMBUSH52.foes.every(function (f) { return f.dead; }) && Date.now() - AMBUSH52.t > 2500) { if (!AMBUSH52.won) { AMBUSH52.won = true; AMBUSH52.wonT = Date.now(); if (x3) { x3.amb52 = (x3.amb52 || 0) + 1; x3.ambLast52 = "won"; writeSave(); } say("Ambush beaten! Both cutthroats are down and the alley is quiet again.", 3.5); toast("You beat the alley ambush.", "Ambush"); } if (d > 12 || Date.now() - (AMBUSH52.wonT || 0) > 4000) { AMBUSH52.won = false; endAmbush52(); } }
       else if (d > 24) endAmbush52("They melt back into the alleys.");
       return;
     }
@@ -16245,13 +16245,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (md > 1.3) {
         let nx = f.x + mx / md * sp * dt, nz = f.z + mz / md * sp * dt;
         // Bandits never cross into town, and nobody walks into the sea.
-        const okSpot = amb52 ? onLand(nx, nz) && !hitsBlock(nx, nz, 0.3) : ((w ? outside51(w, nx, nz) && Math.hypot(nx - w.isl.x, nz - w.isl.z) < w.isl.landR - 3 : Math.hypot(nx - ISLANDS[TREASURE51.isl].x, nz - ISLANDS[TREASURE51.isl].z) < ISLANDS[TREASURE51.isl].landR - 3) && (!w || (nx - w.tx) * w.dx + (nz - w.tz) * w.dz > w.a + 1.5));
+        const okSpot = amb52 ? onLand(nx, nz) && (!hitsBlock(nx, nz, 0.3) || hitsBlock(f.x, f.z, 0.3)) : ((w ? outside51(w, nx, nz) && Math.hypot(nx - w.isl.x, nz - w.isl.z) < w.isl.landR - 3 : Math.hypot(nx - ISLANDS[TREASURE51.isl].x, nz - ISLANDS[TREASURE51.isl].z) < ISLANDS[TREASURE51.isl].landR - 3) && (!w || (nx - w.tx) * w.dx + (nz - w.tz) * w.dz > w.a + 1.5));
         if (okSpot) { f.x = nx; f.z = nz; }
+        else if (amb52) { const okA = function (x, z) { return onLand(x, z) && !hitsBlock(x, z, 0.3); }; if (okA(nx, f.z)) f.x = nx; else if (okA(f.x, nz)) f.z = nz; else if (onLand(nx, nz)) { f.x = nx; f.z = nz; } } // Batch 52: alley cutthroats slide round crates and corners
         f.yaw = Math.atan2(mx, mz);
       }
       f.g.position.set(f.x, feetY(f.x, f.z), f.z); f.g.rotation.y = f.yaw;
       f.cd -= dt;
-      if (playerOk && d < 1.7 && f.cd <= 0) {
+      if (playerOk && d < (amb52 ? 2.2 : 1.7) && f.cd <= 0) {
         f.cd = f.kind === "pirate" ? 1.7 : 1.3;
         const dmg = Math.round((f.kind === "pirate" ? 7 : 8) * (diffK("repair") || 1));
         landHp51 = Math.max(0, landHp51 - dmg); hurtT51 = 0.4;
@@ -18100,6 +18101,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       setSail: function (n) { sail = n; return sail; },
       squall52: function () { return { in: inSquallAt(ship.x, ship.z), n: storms.length, d: storms[0] ? Math.round(Math.hypot(storms[0].x - ship.x, storms[0].z - ship.z)) : null, r: storms[0] ? storms[0].r : null, calm: qbCalm47, mode: mode }; },
       outpost52: function (i) { const I = ISLANDS.filter(function (L) { return L.kind === "outpost"; })[i || 0]; if (I && I.dock52) { ship.x = I.dock52.x; ship.z = I.dock52.z; ship.speed = 0; sail = 0; if (typeof refreshCloth === "function") refreshCloth(); } return { n: ISLANDS.filter(function (L) { return L.kind === "outpost"; }).length, near: !!outpostNear52(), btn: outBtn52.style.display, gold: ledger.gold, hull: ship.hull, crew: x3.crew, menu: menuKind }; },
+      face52: function (x, z) { snapCamFacing52(Math.atan2(x - person.x, z - person.z)); updateCamera.ready = false; return true; },
+      blocksNear52: function (x, z) { return blocks.filter(function (b) { return b.r > 0 && Math.hypot(b.x - x, b.z - z) < 6; }).map(function (b) { return [+b.x.toFixed(1), +b.z.toFixed(1), +b.r.toFixed(2)]; }); },
       dbg52: function () { return { sq: inSquallAt(ship.x, ship.z), sqT: sqT50, sail: sail, safe: playerSafe(), sails: ship.sails, p: [person.x, person.z], mode: mode, port: ashorePort && ashorePort.id, fight: fightOn, menu: menuOpen, ag: !!agent.group, agD: Math.hypot(person.x - agent.x, person.z - agent.z), amb: AMBUSH52.on, force: forceAmbush52, next: ambushNext52 - Date.now(), tut: x3 && x3.tut }; },
       ambush52: function (force) { if (force) { forceAmbush52 = true; ambushAlley52 = null; } return { on: AMBUSH52.on, alleys: alleys52.length, here: ashorePort ? alleys52.filter(function (a) { return a.isl === ashorePort.island; }).map(function (a) { return [Math.round(a.x * 10) / 10, Math.round(a.z * 10) / 10]; }) : [], foes: AMBUSH52.foes.map(function (f) { return { hp: f.hp, dead: f.dead, x: Math.round(f.x), z: Math.round(f.z), vis: f.g.visible }; }), hp: landHp51 }; },
       deco52: function () { return { n: deco52.length, vis: deco52.filter(function (d) { return d.o.visible; }).length, houses: deco52.filter(function (d) { return d.blk && d.blk.r > 1.2; }).length, walls: scene.children.filter(function (o) { return o.userData.wall52; }).length }; },
