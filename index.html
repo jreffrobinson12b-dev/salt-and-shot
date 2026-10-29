@@ -3816,6 +3816,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const fireBtn = document.getElementById("fire");
   const actBtn = document.getElementById("act");
   const mapCanvas = document.getElementById("map");
+  // Batch 51: canvases that feed 3D textures use willReadFrequently so Chrome keeps them on the CPU and uploads them without a GPU ReadPixels stall.
   const mapCtx = mapCanvas.getContext("2d");
   const gfxCss = document.createElement("style");
   gfxCss.textContent =
@@ -4045,6 +4046,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     { name: "Deadman's Cove", x: 430, z: -20, landR: 14, h: 2.4, kind: "rock", secret: true },
     { name: "Belleisle", x: -420, z: -30, landR: 34, h: 2.9, kind: "town" }
   ];
+  // Batch 51: each town has jungle wilds joined on behind a wall (index 6+, so old island indices never change).
+  [[0, -0.243, -0.970, "Bramble Wilds"], [3, 1, 0, "Lorenzo Wilds"], [5, 0, -1, "Belleisle Wilds"]].forEach(function (w) {
+    const t = ISLANDS[w[0]], d = t.landR + 26 - 10, n = Math.hypot(w[1], w[2]);
+    ISLANDS.push({ name: w[3], x: t.x + w[1] / n * d, z: t.z + w[2] / n * d, landR: 26, h: 2.4, kind: "wild", wildOf: w[0] });
+  });
   const PORTS = [
     {
       id: "bramble", name: "Bramble Quay", island: 0,
@@ -4358,7 +4364,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   scene.add(sunDisc);
   moonDisc = new THREE.Mesh(new THREE.SphereGeometry(13, 18, 12), new THREE.MeshBasicMaterial({ color: 0xe6ecf7, fog: false, depthWrite: false, transparent: true }));
   moonDisc.frustumCulled = false; moonDisc.visible = false; moonDisc.name = "moon";
-  { const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d"); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, "rgba(255,255,255,0.55)"); gr.addColorStop(0.4, "rgba(255,255,255,0.18)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c);
+  { const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d", { willReadFrequently: true }); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, "rgba(255,255,255,0.55)"); gr.addColorStop(0.4, "rgba(255,255,255,0.18)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c);
     const sg = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, color: 0xffd9a0, transparent: true, depthWrite: false, fog: false, blending: THREE.AdditiveBlending })); sg.scale.setScalar(150); sunDisc.add(sg);
     const mg = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, color: 0xaabbe0, transparent: true, depthWrite: false, fog: false, blending: THREE.AdditiveBlending, opacity: 0.7 })); mg.scale.setScalar(80); moonDisc.add(mg); }
   scene.add(moonDisc);
@@ -4507,6 +4513,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       else if (isl.kind === "rock" && u < 0.45) {
         const top = 1 + (0.45 - u) * 0.35;
         r = (0.44 + tone * 0.08) * top; g = (0.46 + tone * 0.08) * top; b = (0.38 + tone * 0.07) * top;
+      } else if (isl.kind === "wild") {
+        const T = ISLANDS[isl.wildOf], ux = isl.x - T.x, uz = isl.z - T.z, un = Math.hypot(ux, uz);
+        const off = Math.abs((x * uz - z * ux) / un);
+        if (off < 1.7 && u < 0.9) { r = 0.46 + tone * 0.05; g = 0.34 + tone * 0.04; b = 0.20; }
+        else { r = 0.10 + tone * 0.06; g = 0.32 + tone * 0.10; b = 0.13 + tone * 0.05; }
       } else if (isl.kind === "cay" && u < 0.35) {
         r = 0.24 + tone * 0.08; g = 0.54 + tone * 0.10; b = 0.26 + tone * 0.07;
       } else {
@@ -5622,7 +5633,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function addDockDecks() {
     const cv = document.createElement("canvas");
     cv.width = 64; cv.height = 256;
-    const g = cv.getContext("2d");
+    const g = cv.getContext("2d", { willReadFrequently: true });
     for (let i = 0; i < 16; i++) {
       const t = 120 + ((i * 37) % 40);
       g.fillStyle = "rgb(" + t + "," + Math.round(t * 0.68) + "," + Math.round(t * 0.42) + ")";
@@ -5729,7 +5740,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function feetY(x, z) {
     const onDock = dockUnder(x, z);
+    if (treasureOn51) return islandHeight(ISLANDS[TREASURE51.isl], x, z);
     const isl = ashorePort ? ISLANDS[ashorePort.island] : ISLANDS[0];
+    { const w = ashorePort ? wildFor51(ashorePort.island) : null; if (w && !onDock && Math.hypot(x - w.isl.x, z - w.isl.z) < w.isl.landR) return Math.max(islandHeight(isl, x, z), islandHeight(w.isl, x, z)); }
     // Where a dock runs into rising ground (Belleisle), walk on whichever is higher so the feet never pop down.
     if (onDock) return Math.max(onDock.dock.deck, Math.hypot(x - isl.x, z - isl.z) < isl.landR ? islandHeight(isl, x, z) : -9);
     return islandHeight(isl, x, z);
@@ -5737,8 +5750,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function onLand(x, z) {
     const port = ashorePort || PORTS[0];
+    if (treasureOn51) { const T = ISLANDS[TREASURE51.isl]; return Math.hypot(x - T.x, z - T.z) <= T.landR - 3.0; }
     const isl = ISLANDS[port.island];
-    if (Math.hypot(x - isl.x, z - isl.z) <= isl.landR - 1.2) return true;
+    { const w = wildFor51(port.island); if (w && Math.hypot(x - w.isl.x, z - w.isl.z) <= w.isl.landR - 3.0) return true; }
+    // Batch 51: the last stretch of beach sits at wave height and looks like sea, so the walkable edge stops where the sand is clearly above the water (3 m in, was 1.2).
+    if (Math.hypot(x - isl.x, z - isl.z) <= isl.landR - 3.0) return true;
     return !!dockUnder(x, z);
   }
 
@@ -5847,7 +5863,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const signs47 = [];
   function signRes() {
     if (signRes47) return signRes47;
-    const c = document.createElement("canvas"); c.width = 512; c.height = 512; const g = c.getContext("2d");
+    const c = document.createElement("canvas"); c.width = 512; c.height = 512; const g = c.getContext("2d", { willReadFrequently: true });
     SIGN_KINDS47.forEach(function (k, i) {
       const ox = (i % 2) * 256, oy = Math.floor(i / 2) * 128;
       const gr = g.createLinearGradient(0, oy, 0, oy + 128); gr.addColorStop(0, "#7a5230"); gr.addColorStop(1, "#5a3a20"); g.fillStyle = gr; g.fillRect(ox + 4, oy + 4, 248, 120);
@@ -6317,6 +6333,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
 
     makeTownWalkers();
+    try { buildWalls51(); seedLandFoes51(); } catch (e) { logErr50("ground51: " + e); }
     const char = cache["character-a.glb"].scene;
     shade(char);
     char.rotation.y = 0;
@@ -6529,7 +6546,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function paintHullSprite(sprite, hull, maxHull, prevHull) {
     const canvas = sprite.userData.canvas;
-    const g = canvas.getContext("2d");
+    const g = canvas.getContext("2d", { willReadFrequently: true });
     g.clearRect(0, 0, 128, 32);
     g.fillStyle = "rgba(0,0,0,0.5)";
     g.fillRect(2, 8, 124, 16);
@@ -6558,7 +6575,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const canvas = document.createElement("canvas");
     canvas.width = 256;
     canvas.height = 64;
-    const g = canvas.getContext("2d");
+    const g = canvas.getContext("2d", { willReadFrequently: true });
     g.font = "bold 40px sans-serif";
     g.textAlign = "center";
     g.lineWidth = 6; g.strokeStyle = "rgba(20,14,6,.8)"; g.strokeText(text, 128, 46);
@@ -6580,7 +6597,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const width = Math.max(512, Math.ceil(textW + 48));
     canvas.width = width;
     canvas.height = 64;
-    const g = canvas.getContext("2d");
+    const g = canvas.getContext("2d", { willReadFrequently: true });
     g.font = "bold 32px sans-serif";
     g.textAlign = "center";
     g.lineWidth = 6;
@@ -6832,7 +6849,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       { name: "Resolute", hullId: "manowar", nation: "english", pennant: 0xc8102e, hull: 200, x: -160, z: -210, heading: -0.9,
         wps: [[-160, -210], [-90, -250], [-40, -190], [-110, -140]] },
       { name: "Marigold", hullId: "frigate", nation: "french", pennant: 0x1f4e89, hull: 140, x: 220, z: -60, heading: 2.2,
-        wps: [[220, -60], [280, -100], [240, -150], [180, -110]] }
+        wps: [[220, -60], [280, -100], [240, -150], [180, -110]] },
+      // Batch 51: three more ships so open water has more to fight.
+      { name: "Tern", hullId: "cutter", nation: "pirate", pennant: 0x3a2a1c, x: 40, z: -170, heading: 0.8,
+        wps: [[40, -170], [110, -150], [140, -200], [60, -230]] },
+      { name: "Saltjack", hullId: "brig", nation: "english", pennant: 0xc8102e, x: -330, z: -170, heading: 2.4,
+        wps: [[-330, -170], [-260, -130], [-230, -200], [-300, -240]] },
+      { name: "Blue Heron", hullId: "cutter", nation: "spanish", pennant: 0xf1c40f, x: 390, z: 170, heading: -1.2,
+        wps: [[390, 170], [440, 220], [360, 260], [320, 190]] }
     ];
     for (let i = 0; i < specs.length; i++) {
       const spec = specs[i];
@@ -6907,7 +6931,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return true;
   }
 
-  const SALVAGE_GOLD = 18, CRATE_GOLD = 45;
+  const SALVAGE_GOLD = 42, CRATE_GOLD = 70; /* Batch 51: a sunk ship pays more (was 18 / 45) */
   const SALVAGE_RANGE = 8;
   const SALVAGE_LIFE = 90;
   const salvage = [];
@@ -7019,12 +7043,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       hunterSunk(foe);
       claimPosting(foe);
       addMorale(15, "the victory");
-      if (x3 && rankOf() > 0) { ledger.gold += 5 * rankOf(); floatText(foe.x, 12, foe.z, "+" + (5 * rankOf()) + " rank bounty", "#ffe08a"); }
+      if (x3 && rankOf() > 0) { ledger.gold += 8 * rankOf(); floatText(foe.x, 12, foe.z, "+" + (8 * rankOf()) + " rank bounty", "#ffe08a"); }
       battleReport(foe.name);
       if (foe === qbFoe47 && !foe.qbWon48) { foe.qbWon48 = true; qbCalm47 = Math.min(qbCalm47, 20); setTimeout(function () { toast(practice47 ? "Quick battle won! This was practice and is not saved: reload and tap Continue for your voyage." : "Quick battle won. The sea is yours now: trade between ports, take on errands, or hunt the next prize.", "Victory"); }, 2500); }
       if (ship.hull > 0 && ship.hull < ship.hullMax * 0.3) { ship.hull = Math.min(ship.hullMax, ship.hull + 5); floatText(ship.x, 9, ship.z, "+5 hull", "#9dffb0"); }
       if (resolveGalleon(foe, "sink")) say("The hold is yours. +200 gold." + tail, 4.2);
-      else say("Their hull is gone. The ship is going under: sail through the wreckage for her salvage, about " + SALVAGE_GOLD + " gold" + (x3 && rankOf() > 0 ? ", on top of the " + (5 * rankOf()) + " gold rank bounty" : "") + "." + tail, 4); // Batch 49: name the payout
+      else say("Their hull is gone. The ship is going under: sail through the wreckage for her salvage, about " + SALVAGE_GOLD + " gold" + (x3 && rankOf() > 0 ? ", on top of the " + (8 * rankOf()) + " gold rank bounty" : "") + "." + tail, 4); // Batch 49: name the payout
     } else {
       say("Hit. Their hull is at " + foe.hull + ".", 1.8);
     }
@@ -8121,7 +8145,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function rainTex() {
     if (rainTexC) return rainTexC;
     const c = document.createElement("canvas"); c.width = 16; c.height = 64;
-    const g = c.getContext("2d"); const gr = g.createLinearGradient(0, 0, 0, 64);
+    const g = c.getContext("2d", { willReadFrequently: true }); const gr = g.createLinearGradient(0, 0, 0, 64);
     gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.6, "rgba(255,255,255,0.9)"); gr.addColorStop(1, "rgba(255,255,255,0)");
     g.fillStyle = gr; g.fillRect(7, 0, 2, 64);
     rainTexC = new THREE.CanvasTexture(c);
@@ -8131,7 +8155,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function softTex() {
     if (softTexC) return softTexC;
     const c = document.createElement("canvas"); c.width = 64; c.height = 64;
-    const g = c.getContext("2d"); const gr = g.createRadialGradient(32, 32, 2, 32, 32, 31);
+    const g = c.getContext("2d", { willReadFrequently: true }); const gr = g.createRadialGradient(32, 32, 2, 32, 32, 31);
     gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.5, "rgba(255,255,255,0.55)"); gr.addColorStop(1, "rgba(255,255,255,0)");
     g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
     softTexC = new THREE.CanvasTexture(c); softTexC.colorSpace = THREE.SRGBColorSpace;
@@ -10022,12 +10046,17 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
 
   function goAshore() {
-    const beach = beachHere();
+    let beach = beachHere();
+    const tb51 = !beach && !harbourHere() ? treasureBeach51() : null;
+    if (tb51) beach = { port: "bramble", stand: tb51.stand, treasure51: true };
+    treasureOn51 = !!tb51;
+    if (tb51) { reviveGroup51(TREASURE51, false); say("Gull Rock. Pirates guard a chest up the slope. Tap Pistol to shoot.", 4); }
+    { const w = !tb51 && !beach && harbourHere() ? wildFor51(harbourHere().island) : null; if (w) reviveGroup51(w, false); }
     const port = beach ? portById(beach.port) : harbourHere();
     if (!port) return;
     ashorePort = port;
     ashoreBeach = beach;
-    if (port.id !== lastPort) gainSkill("sail");
+    if (port.id !== lastPort && !tb51) gainSkill("sail");
     addMorale(5);
     mode = "land";
     ship.speed = 0;
@@ -10056,8 +10085,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function boardShip(force) {
     if (!force && !nearGangplank()) return;
-    if (ashorePort) lastPort = ashorePort.id;
+    if (ashorePort && !treasureOn51) lastPort = ashorePort.id;
     ashoreBeach = null;
+    treasureOn51 = false; landHp51 = Math.max(landHp51, 60);
     mode = "sea";
     person.group.visible = false;
     setMoving(false);
@@ -10408,7 +10438,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   const wakeGeo = new THREE.PlaneGeometry(2.8, 4.2);
   const wakeTex = (function () {
-    const c = document.createElement("canvas"); c.width = 64; c.height = 64; const g = c.getContext("2d");
+    const c = document.createElement("canvas"); c.width = 64; c.height = 64; const g = c.getContext("2d", { willReadFrequently: true });
     const gr = g.createRadialGradient(32, 32, 2, 32, 32, 31); gr.addColorStop(0, "rgba(255,255,255,0.9)"); gr.addColorStop(0.55, "rgba(255,255,255,0.45)"); gr.addColorStop(1, "rgba(255,255,255,0)");
     g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
     g.globalCompositeOperation = "destination-out"; for (let i = 0; i < 26; i++) { g.beginPath(); g.arc(8 + Math.random() * 48, 8 + Math.random() * 48, 2 + Math.random() * 4, 0, Math.PI * 2); g.fillStyle = "rgba(0,0,0," + (0.1 + Math.random() * 0.2) + ")"; g.fill(); }
@@ -10789,7 +10819,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           renderMenu();
         }), box.firstChild);
       }
-      box.appendChild(menuButton("Repair sails (" + sailCost() + " gold)", repairSails));
+      if (ship.sails < 99.5) box.appendChild(menuButton("Repair sails (" + sailCost() + " gold)", repairSails)); /* Batch 51: no repair offer when the sails are sound */
       if (ashorePort && ashorePort.id === "lorenzo" && letter.accepted && !letter.delivered) {
         box.appendChild(menuButton("Deliver the letter", deliverLetter));
       }
@@ -10940,7 +10970,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
 
   function hullRepairCost() {
-    return Math.ceil(Math.max(0, ship.hullMax - ship.hull) / 4 * diffK("repair") * (portKnown(ashorePort) ? 0.85 : 1) * (1 - 0.03 * rankOf()));
+    return Math.ceil(Math.max(0, ship.hullMax - ship.hull) / 5 * diffK("repair") * (portKnown(ashorePort) ? 0.85 : 1) * (1 - 0.03 * rankOf()));
   }
 
   // The yard is split into tabs so a sideways phone never has to scroll a wall of buttons.
@@ -10984,6 +11014,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     } else if (yardTab === "guns") {
       body.textContent = "Guns and fittings.";
       yardGunButtons(body, box);
+      yardArms51(body, box);
       if (!x3.copper) box.appendChild(menuButton("Copper-sheathe the bottom (180 gold): 8% faster", function () { buyUpgrade("copper", 180, "Copper sheathing on. She runs cleaner."); }));
       else body.textContent += " Copper sheathed.";
       if (!x3.reinforced) box.appendChild(menuButton("Reinforce the hull (200 gold): take 15% less shot damage", function () { buyUpgrade("reinforced", 200, "Oak knees and iron straps. She takes a hit better."); }));
@@ -11310,6 +11341,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           f.lastHitAt = performance.now();
           if (!f.blooded) { f.blooded = true; addXp(2); }
           if (shotD > 45 && !s.grape) { floatText(f.x, 16, f.z, "Long shot!", "#bfe9ff"); addXp(2); }
+          dmg = Math.round(dmg * cannonMul51());
           damageFoe(f, dmg);
           if (f.alive && !f.sinking && f.hull < f.hullMax * 0.25 && !f.listSaid) { f.listSaid = true; say(f.name + " is listing badly. One more good broadside.", 2.5); }
           const nowS = performance.now() / 1000;
@@ -11518,7 +11550,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (now - occlAt > 700) { occlAt = now; occl44 = scene.children.filter(function (o) { return o.visible && (o.isMesh || o.isGroup) && o !== water && o !== sky && o !== sunDisc && o !== moonDisc && o !== person.group && o !== ship.root && Math.hypot(o.position.x - x, o.position.z - z) < 22; }); }
     if (!occl44.length) return;
     camFrom.set(x, y, z); camDir.copy(d).sub(camFrom); const len = camDir.length(); if (len < 0.5) return; camDir.divideScalar(len);
-    camRay.set(camFrom, camDir); camRay.far = len;
+    camRay.set(camFrom, camDir); camRay.far = len; camRay.camera = camera; // Batch 51: sprites inside groups (bandit health bars) need the camera to raycast
     const hit = camRay.intersectObjects(occl44, true).find(function (h) { return !h.object.isSprite && h.distance > 0.6; });
     if (hit) d.copy(camFrom).addScaledVector(camDir, Math.max(1.2, hit.distance - 0.4));
   }
@@ -11629,10 +11661,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return t;
   }
   function updateHud() {
+    landHud51();
     const align = windAlign();
     let feel = "Abeam";
     if (align > 0.55) feel = "Tailwind";
-    else if (align < -0.15) feel = "Headwind";
+    else if (align < -0.5) feel = "Headwind"; // Batch 51: only a real beat reads as headwind (was -0.15, which called a fast beam reach a headwind)
     windlabel.textContent = feel;
     windlabel.style.color = mode !== "sea" ? "" : (feel === "Tailwind" ? "#9dffb0" : (feel === "Headwind" ? "#ffb4a8" : ""));
     const rel = Math.atan2(
@@ -11651,7 +11684,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const sailed = (playerHull.captured ? "captured " : "") + hullTitle(playerHull.name, playerHull.id);
     sub.textContent = mode === "land"
       ? "Ashore · " + sailed + " · " + place + " · " + ledger.gold + " gold"
-      : "At sea · " + sailed + " · " + place + " · " + ledger.gold + " gold";
+      : (safeHarbourAt(ship.x, ship.z) && Math.abs(ship.speed) < 0.6 ? "Docked" : safeHarbourAt(ship.x, ship.z) ? "In harbour" : "At sea") + " · " + sailed + " · " + place + " · " + ledger.gold + " gold";
     const hullPct = Math.round(100 * ship.hull / ship.hullMax);
     const hullLabel = document.getElementById("hulllabel");
     const hullFill = document.getElementById("hullfill");
@@ -11739,8 +11772,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       else if (mode === "sea" && patchCool > 3 && ship.hull < ship.hullMax * 0.6 && !(inHarbour() || beachHere()) && !fightOn) { actBtn.textContent = "Patch " + Math.ceil(patchCool) + "s"; actBtn.disabled = true; actBtn.style.animation = ""; }
       else {
         actBtn.textContent = "Ashore";
-        actBtn.disabled = (!(inHarbour() || beachHere()) || fightOn);
-        { const hide = actBtn.disabled && !fightOn && !!x3 && x3.tut >= 4 ? "hidden" : ""; if (actBtn.style.visibility !== hide) actBtn.style.visibility = hide; }
+        actBtn.disabled = (!(inHarbour() || beachHere() || treasureBeach51()) || fightOn);
+        { const hide = actBtn.disabled && !fightOn ? "hidden" : ""; /* Batch 51: never a greyed Ashore in open water, tutorial included */ if (actBtn.style.visibility !== hide) actBtn.style.visibility = hide; }
         actBtn.style.animation = (!actBtn.disabled && x3 && !x3.tipAshore) ? "actpulse 1.1s ease-in-out 6" : "";
       }
       if (fightOn && fight && fight.choosing) hint.textContent = "Take the ship, or take the prize.";
@@ -11792,7 +11825,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     } else {
       sailBtn.style.display = "none";
       if (anchorBtn) anchorBtn.style.display = "none";
-      fireBtn.style.display = "none";
+      { const pv = pistolShown51(); fireBtn.style.display = pv ? "" : "none"; if (pv) { const tx = pistolReady51() ? (x3 && x3.brace51 ? "Pistols" : "Pistol") : "Reload " + pistolWait51().toFixed(1); if (fireBtn.textContent !== tx) fireBtn.textContent = tx; fireBtn.style.boxShadow = ""; } }
       if (shotBtn) shotBtn.style.display = "none";
       glassBtn.style.display = "none";
       if (actBtn.style.visibility) actBtn.style.visibility = "";
@@ -12945,13 +12978,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     if (tutSaid !== x3.tut) { tutSaid = x3.tut; tutRepeat = 18; say(tutLine(), 6); }
     tutRepeat -= dt;
-    if (x3.tut === 1 && !tutWindSaid && noticeT <= 0 && mode === "sea" && sail > 0 && windAlign() < -0.15) { tutWindSaid = true; say("Headwind slows you. Steer the bow off the wind and she picks up speed.", 5); }
+    if (x3.tut === 1 && !tutWindSaid && noticeT <= 0 && mode === "sea" && sail > 0 && windAlign() < -0.5) { tutWindSaid = true; say("Headwind slows you. Steer the bow off the wind and she picks up speed.", 5); }
     if (tutRepeat <= 0 && noticeT <= 0) { tutRepeat = 18; /* Batch 49: lessons come back a little sooner (was 25 s) */ let extra = ""; if (x3.tut === 3 && mode === "sea") { let bd = 1e9, bn = ""; PORTS.forEach(function (p) { const d = Math.hypot(p.harbour.x - ship.x, p.harbour.z - ship.z); if (d < bd) { bd = d; bn = p.name; } }); extra = " " + bn + " is " + Math.round(bd) + " yards away."; } say(tutLine() + extra, 6); }
   }
   // Bow foam: a soft white V under the bow that grows with speed.
   const bowFoam = (function () {
     const c = document.createElement("canvas"); c.width = 64; c.height = 64;
-    const g = c.getContext("2d");
+    const g = c.getContext("2d", { willReadFrequently: true });
     const gr = g.createRadialGradient(32, 18, 2, 32, 30, 30);
     gr.addColorStop(0, "rgba(255,255,255,0.95)"); gr.addColorStop(0.5, "rgba(255,255,255,0.45)"); gr.addColorStop(1, "rgba(255,255,255,0)");
     g.fillStyle = gr; g.beginPath(); g.moveTo(32, 4); g.lineTo(62, 60); g.lineTo(2, 60); g.closePath(); g.fill();
@@ -14735,7 +14768,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   function vBird() {
     const c = document.createElement("canvas"); c.width = 32; c.height = 16;
-    const g = c.getContext("2d"); g.strokeStyle = "#ffffff"; g.lineWidth = 3; g.beginPath(); g.moveTo(2, 4); g.quadraticCurveTo(9, 2, 16, 10); g.quadraticCurveTo(23, 2, 30, 4); g.stroke();
+    const g = c.getContext("2d", { willReadFrequently: true }); g.strokeStyle = "#ffffff"; g.lineWidth = 3; g.beginPath(); g.moveTo(2, 4); g.quadraticCurveTo(9, 2, 16, 10); g.quadraticCurveTo(23, 2, 30, 4); g.stroke();
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
     sp.scale.set(2, 1, 1); return sp;
   }
@@ -15271,7 +15304,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // Port life: wood smoke drifts up from each port's chimneys, leaning with the wind.
   function puffSprite() {
     const c = document.createElement("canvas"); c.width = 32; c.height = 32;
-    const g = c.getContext("2d"); const gr = g.createRadialGradient(16, 16, 2, 16, 16, 15); gr.addColorStop(0, "rgba(220,220,220,0.8)"); gr.addColorStop(1, "rgba(220,220,220,0)"); g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
+    const g = c.getContext("2d", { willReadFrequently: true }); const gr = g.createRadialGradient(16, 16, 2, 16, 16, 15); gr.addColorStop(0, "rgba(220,220,220,0.8)"); gr.addColorStop(1, "rgba(220,220,220,0)"); g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
     return new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
   }
   let chimneys = null;
@@ -15558,6 +15591,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       }
       updateStorms(dt);
       updateFoes(dt);
+      fadeBars51();
       updateFort(dt);
       updateShots(dt);
       updateConsort(dt);
@@ -15567,6 +15601,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       updateDuelist(dt);
       updateCrew(dt);
       updateTownWalkers(dt);
+      updateGround51(dt);
       updateCleo(dt);
       updateWilla(dt);
       watchWilla();
@@ -15607,6 +15642,264 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // Batch 50: a cheap check every 64 frames: a ship or foe with a broken position or hull is put right instead of poisoning the scene.
   // Batch 50: the hull number on screen is always a whole number, and never 0 while she still floats.
   function hullShow50() { const h = ship.hull; return h > 0 ? Math.max(1, Math.round(h)) : 0; }
+  // ===== Batch 51: ground combat. Town walls with a gate, jungle wilds beyond them with bandits, a guarded treasure on Gull Rock, a land pistol (or a brace of two), and 3 cannon tiers at the shipyard. =====
+  const CANNON51 = [
+    { name: "Standard guns", mul: 1, cost: 0 },
+    { name: "Bored-out guns", mul: 1.15, cost: 160, note: "+15% shot damage" },
+    { name: "Long-forged guns", mul: 1.3, cost: 320, note: "+30% shot damage" },
+    { name: "Master-cast guns", mul: 1.5, cost: 600, note: "+50% shot damage" }
+  ];
+  function cannonTier51() { return Math.max(0, Math.min(3, (x3 && x3.cannon51) | 0)); }
+  function cannonMul51() { return CANNON51[cannonTier51()].mul; }
+  function buyCannon51() {
+    const t = cannonTier51() + 1; if (t > 3) return;
+    const c = CANNON51[t];
+    if (ledger.gold < c.cost) { say("The yard wants " + c.cost + " gold for " + c.name.toLowerCase() + ".", 2); return; }
+    ledger.gold -= c.cost; x3.cannon51 = t;
+    say(c.name + " fitted: " + c.note + ".", 3); writeSave(); renderMenu();
+  }
+  const BRACE_COST51 = 90;
+  function buyBrace51() {
+    if (x3.brace51) return;
+    if (ledger.gold < BRACE_COST51) { say("A brace of pistols is " + BRACE_COST51 + " gold.", 2); return; }
+    ledger.gold -= BRACE_COST51; x3.brace51 = true;
+    say("A brace of pistols: two barrels, a little more punch each.", 3); writeSave(); renderMenu();
+  }
+  function yardArms51(body, box) {
+    const t = cannonTier51();
+    body.textContent += " Cannon tier " + t + " of 3 (" + CANNON51[t].name + ").";
+    if (t < 3) { const n = CANNON51[t + 1]; box.appendChild(menuButton("Cannon tier " + (t + 1) + ": " + n.name + " (" + n.cost + " gold): " + n.note, buyCannon51)); }
+    if (!x3.brace51) box.appendChild(menuButton("Brace of pistols (" + BRACE_COST51 + " gold): two shots ashore, more damage", buyBrace51));
+    else body.textContent += " Brace of pistols.";
+  }
+
+  // The wilds: one jungle lobe joined to each town island, behind a wall with a gate.
+  const wilds51 = [];
+  function wildFor51(islIdx) { for (let i = 0; i < wilds51.length; i++) if (wilds51[i].town === islIdx) return wilds51[i]; return null; }
+  function wildHere51() { return mode === "land" && ashorePort && !treasureOn51 ? wildFor51(ashorePort.island) : null; }
+  function outside51(w, x, z) { return (x - w.tx) * w.dx + (z - w.tz) * w.dz > w.a + 0.4; }
+  function inWilds51(x, z) { const w = wildHere51(); return !!w && outside51(w, x, z) && Math.hypot(x - w.isl.x, z - w.isl.z) < w.isl.landR; }
+  const wallMat51 = new THREE.MeshLambertMaterial({ color: 0x8a7a62 });
+  function buildWalls51() {
+    for (let i = 0; i < ISLANDS.length; i++) {
+      const L = ISLANDS[i];
+      if (L.kind !== "wild") continue;
+      const T = ISLANDS[L.wildOf];
+      const dx = (L.x - T.x), dz = (L.z - T.z), d = Math.hypot(dx, dz);
+      const ux = dx / d, uz = dz / d, R = T.landR, r = L.landR;
+      const a = (d * d + R * R - r * r) / (2 * d), hc = Math.sqrt(Math.max(1, R * R - a * a));
+      const w = { town: L.wildOf, isl: L, tx: T.x, tz: T.z, dx: ux, dz: uz, a: a, hc: hc, gate: { x: T.x + ux * a, z: T.z + uz * a }, foes: [], t: 0 };
+      wilds51.push(w);
+      const px = -uz, pz = ux;
+      for (let s = -1; s <= 1; s += 2) {
+        const len = hc - 1.9, mid = s * (1.9 + len / 2);
+        const cx = w.gate.x + px * mid, cz = w.gate.z + pz * mid;
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(len, 3.2, 0.9), wallMat51);
+        wall.position.set(cx, 0.9, cz); wall.rotation.y = Math.atan2(px, pz) - Math.PI / 2;
+        wall.castShadow = true; scene.add(wall);
+        for (let t = 1.9; t <= hc; t += 1.0) blocks.push({ x: w.gate.x + px * s * t, z: w.gate.z + pz * s * t, r: 0.75 });
+        const post = new THREE.Mesh(new THREE.BoxGeometry(1.1, 4.2, 1.1), wallMat51);
+        post.position.set(w.gate.x + px * s * 2.2, 1.4, w.gate.z + pz * s * 2.2); scene.add(post);
+      }
+      const lintel = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.6, 1.1), wallMat51);
+      lintel.position.set(w.gate.x, 3.6, w.gate.z); lintel.rotation.y = Math.atan2(px, pz) - Math.PI / 2; scene.add(lintel);
+      const sign = nameSprite("Gate", 4.6); sign.position.x += w.gate.x; sign.position.z += w.gate.z; scene.add(sign); w.sign = sign;
+      // Jungle: instanced trunks and crowns, kept off the dirt path from the gate.
+      const spots = [];
+      for (let k = 0; k < 160 && spots.length < 34; k++) {
+        const ang = (k * 2.39996) % (Math.PI * 2), rr = 4 + ((k * 0.618) % 1) * (r - 7);
+        const x = L.x + Math.sin(ang) * rr, z = L.z + Math.cos(ang) * rr;
+        const along = (x - w.gate.x) * ux + (z - w.gate.z) * uz, off = Math.abs((x - w.gate.x) * px + (z - w.gate.z) * pz);
+        if (!outside51(w, x, z) || along < 4 || off < 3.2) continue;
+        if (Math.hypot(x - T.x, z - T.z) < R - 1) continue;
+        spots.push([x, z]); blocks.push({ x: x, z: z, r: 0.55 });
+      }
+      const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.22, 0.32, 3.4, 6), new THREE.MeshLambertMaterial({ color: 0x5a3f28 }), spots.length);
+      const crowns = new THREE.InstancedMesh(new THREE.ConeGeometry(1.9, 3.2, 7), new THREE.MeshLambertMaterial({ color: 0x1f5a2a }), spots.length);
+      const m = new THREE.Matrix4();
+      spots.forEach(function (p, k) {
+        const y = islandHeight(L, p[0], p[1]);
+        m.makeTranslation(p[0], y + 1.6, p[1]); trunks.setMatrixAt(k, m);
+        const sc = 0.8 + ((k * 0.37) % 0.5); m.makeScale(sc, sc, sc); m.setPosition(p[0], y + 3.8 * sc, p[1]); crowns.setMatrixAt(k, m);
+      });
+      scene.add(trunks); scene.add(crowns);
+      w.spots = spots;
+    }
+  }
+
+  // Land enemies: bandits in the wilds, pirates around the Gull Rock chest.
+  const TREASURE51 = { isl: 1, ship: { x: 282, z: 70, r: 12 }, stand: { x: 297, z: 70, yaw: Math.PI / 2 }, chest: { x: 318, z: 72 }, foes: [], t: 0 };
+  let treasureOn51 = false, chestMesh51 = null;
+  function treasureBeach51() { if (Math.abs(ship.speed) >= 3.2) return null; return Math.hypot(ship.x - TREASURE51.ship.x, ship.z - TREASURE51.ship.z) <= TREASURE51.ship.r ? TREASURE51 : null; }
+  const hatMat51 = new THREE.MeshLambertMaterial({ color: 0xb32222 });
+  const pirMat51 = new THREE.MeshLambertMaterial({ color: 0x151515 });
+  function makeLandFoe51(kind, x, z) {
+    const made = newSailor();
+    const g = new THREE.Group();
+    g.add(made.man); made.man.position.y = -made.foot;
+    const hat = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), kind === "pirate" ? pirMat51 : hatMat51); hat.position.y = 1.18; hat.scale.y = 0.6; g.add(hat);
+    const clips = cache["character-a.glb"].animations;
+    const walk = made.mixer.clipAction(THREE.AnimationClip.findByName(clips, "walk")); walk.play();
+    const bar = hullSprite(); bar.scale.set(1.8, 0.45, 1); bar.position.y = 1.75; g.add(bar);
+    const hpMax = kind === "pirate" ? 90 : 70;
+    paintHullSprite(bar, hpMax, hpMax);
+    g.visible = false; scene.add(g);
+    return { kind: kind, g: g, mixer: made.mixer, bar: bar, x: x, z: z, hx: x, hz: z, hp: hpMax, hpMax: hpMax, cd: 1 + Math.random(), dead: false, fall: 0, yaw: 0 };
+  }
+  function seedLandFoes51() {
+    wilds51.forEach(function (w) {
+      for (let k = 0; k < 3; k++) {
+        const p = w.spots[(k * 7 + 3) % w.spots.length];
+        const x = p[0] + 1.6, z = p[1] + 1.1;
+        w.foes.push(makeLandFoe51("bandit", x, z));
+      }
+    });
+    const c = TREASURE51.chest;
+    for (let k = 0; k < 3; k++) { const a = k * 2.1; TREASURE51.foes.push(makeLandFoe51("pirate", c.x + Math.sin(a) * 4, c.z + Math.cos(a) * 4)); }
+    const chest = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.8), new THREE.MeshLambertMaterial({ color: 0x8a5a2a }));
+    const T = ISLANDS[TREASURE51.isl];
+    chest.position.set(c.x, islandHeight(T, c.x, c.z) + 0.4, c.z); scene.add(chest); chestMesh51 = chest;
+  }
+  function reviveGroup51(grp, force) {
+    if (!force && Date.now() - grp.t < 150000) return;
+    grp.foes.forEach(function (f) { f.dead = false; f.fall = 0; f.hp = f.hpMax; f.x = f.hx; f.z = f.hz; f.g.rotation.x = 0; paintHullSprite(f.bar, f.hp, f.hpMax); f.bar.visible = true; });
+  }
+  function activeFoes51() { if (mode !== "land") return null; if (treasureOn51) return TREASURE51; return wildHere51(); }
+  let landHp51 = 100, pistolCd51 = [0, 0], wasOut51 = false, hurtT51 = 0;
+  function pistolReady51() { return x3 && x3.brace51 ? Math.min(pistolCd51[0], pistolCd51[1]) <= 0 : pistolCd51[0] <= 0; }
+  function pistolWait51() { return x3 && x3.brace51 ? Math.min(pistolCd51[0], pistolCd51[1]) : pistolCd51[0]; }
+  function nearLandFoe51(r) {
+    const grp = activeFoes51(); if (!grp) return null;
+    let best = null, bd = r;
+    for (let i = 0; i < grp.foes.length; i++) { const f = grp.foes[i]; if (f.dead) continue; const d = Math.hypot(f.x - person.x, f.z - person.z); if (d < bd) { bd = d; best = f; } }
+    return best;
+  }
+  function pistolShown51() { return mode === "land" && !fightOn && !menuOpen && (inWilds51(person.x, person.z) || treasureOn51 || !!nearLandFoe51(16)); }
+  function firePistol51() {
+    if (mode !== "land" || fightOn) return false;
+    if (!pistolReady51()) { say("Reloading the pistol" + (x3 && x3.brace51 ? "s" : "") + ".", 1); return false; }
+    const brace = !!(x3 && x3.brace51);
+    const slot = brace && pistolCd51[0] > 0 ? 1 : 0;
+    pistolCd51[slot] = brace ? 1.3 : 1.1;
+    const f = nearLandFoe51(14);
+    try { noiseBurst(0.06, 0.18, 1400); } catch (e) { /* sound optional */ }
+    puffAt(person.x + Math.sin(person.yaw) * 0.8, feetY(person.x, person.z) + 1.1, person.z + Math.cos(person.yaw) * 0.8);
+    if (!f) { say("Nothing in range. Pistols reach about 14 paces.", 1.4); return true; }
+    person.yaw = Math.atan2(f.x - person.x, f.z - person.z); if (person.group) person.group.rotation.y = person.yaw;
+    const d = Math.hypot(f.x - person.x, f.z - person.z);
+    const hit = (window.__salt && window.__salt.sure51) || Math.random() < (d < 8 ? 0.9 : 0.7);
+    if (!hit) { floatText(f.x, feetY(f.x, f.z) + 2, f.z, "Miss", "#dddddd"); return true; }
+    hurtLandFoe51(f, brace ? 36 : 30);
+    return true;
+  }
+  function hurtLandFoe51(f, n) {
+    if (!f || f.dead) return;
+    f.hp = Math.max(0, f.hp - n);
+    paintHullSprite(f.bar, f.hp, f.hpMax);
+    floatText(f.x, feetY(f.x, f.z) + 2.2, f.z, "-" + n, "#ffb08a");
+    if (f.hp <= 0) {
+      f.dead = true; f.bar.visible = false;
+      const g = f.kind === "pirate" ? 25 : 12 + Math.floor(Math.random() * 7);
+      ledger.gold += g; if (x3) { x3.landKills51 = (x3.landKills51 || 0) + 1; x3.landGold51 = (x3.landGold51 || 0) + g; }
+      floatText(f.x, feetY(f.x, f.z) + 2.6, f.z, "+" + g + " gold", "#ffe08a");
+      say((f.kind === "pirate" ? "A pirate" : "A bandit") + " goes down. " + g + " gold in his purse.", 2.2);
+      const grp = activeFoes51(); if (grp) grp.t = Date.now();
+      writeSave();
+    }
+  }
+  function knockedDown51() {
+    const lost = Math.min(15, Math.floor(ledger.gold * 0.1));
+    ledger.gold -= lost;
+    landHp51 = 60;
+    const w = wildHere51();
+    if (w) { person.x = w.gate.x - w.dx * 3; person.z = w.gate.z - w.dz * 3; }
+    else if (treasureOn51) { person.x = TREASURE51.stand.x; person.z = TREASURE51.stand.z; }
+    if (!onLand(person.x, person.z) || hitsBlock(person.x, person.z, 0.35)) unstick45();
+    if (person.group) person.group.position.set(person.x, feetY(person.x, person.z), person.z);
+    const grp = w || (treasureOn51 ? TREASURE51 : null); if (grp) reviveGroup51(grp, true);
+    say("Knocked down! You come to " + (w ? "inside the gate" : "by the boat") + (lost ? ", " + lost + " gold lighter." : "."), 3.5);
+    toast("You were knocked down" + (lost ? " and lost " + lost + " gold" : "") + ". Shoot from range, and step back through the gate to heal.", "Ashore");
+    writeSave();
+  }
+  function updateGround51(dt) {
+    for (let i = 0; i < 2; i++) if (pistolCd51[i] > 0) pistolCd51[i] = Math.max(0, pistolCd51[i] - dt);
+    const grp = mode === "land" ? activeFoes51() : null;
+    // Hide all land enemies except the group where you stand.
+    wilds51.concat([TREASURE51]).forEach(function (G) { const on = G === grp; G.foes.forEach(function (f) { if (f.g.visible !== on) f.g.visible = on; }); });
+    if (chestMesh51) chestMesh51.visible = treasureOn51 && !(x3 && x3.chestT51 && Date.now() - x3.chestT51 < 480000);
+    const out = mode === "land" && inWilds51(person.x, person.z);
+    if (out !== wasOut51 && mode === "land") {
+      if (out) { say("Leaving town. Bandits roam the jungle past the wall. Tap Pistol to shoot.", 3.5); toast("Leaving town: bandits beyond the wall. The town itself stays safe.", "Leaving town"); }
+      else say("Back inside the walls. The town is safe.", 2.2);
+    }
+    wasOut51 = out;
+    if (!grp || fightOn || menuOpen) { landHp51 = Math.min(100, landHp51 + 12 * dt); return; }
+    if (!out && !treasureOn51) landHp51 = Math.min(100, landHp51 + 12 * dt);
+    const w = treasureOn51 ? null : grp;
+    for (let i = 0; i < grp.foes.length; i++) {
+      const f = grp.foes[i];
+      f.mixer.update(dt);
+      if (f.dead) { if (f.fall < 1) { f.fall = Math.min(1, f.fall + dt * 2.5); f.g.rotation.x = -f.fall * Math.PI / 2; } f.g.position.set(f.x, feetY(f.x, f.z), f.z); continue; }
+      const dx = person.x - f.x, dz = person.z - f.z, d = Math.hypot(dx, dz);
+      const playerOk = treasureOn51 ? true : out;
+      let tx = f.hx, tz = f.hz, sp = 1.2;
+      if (playerOk && d < (f.kind === "pirate" ? 16 : 13)) { tx = person.x; tz = person.z; sp = 2.7; }
+      const mx = tx - f.x, mz = tz - f.z, md = Math.hypot(mx, mz);
+      if (md > 1.3) {
+        let nx = f.x + mx / md * sp * dt, nz = f.z + mz / md * sp * dt;
+        // Bandits never cross into town, and nobody walks into the sea.
+        const okSpot = (w ? outside51(w, nx, nz) && Math.hypot(nx - w.isl.x, nz - w.isl.z) < w.isl.landR - 3 : Math.hypot(nx - ISLANDS[TREASURE51.isl].x, nz - ISLANDS[TREASURE51.isl].z) < ISLANDS[TREASURE51.isl].landR - 3) && (!w || (nx - w.tx) * w.dx + (nz - w.tz) * w.dz > w.a + 1.5);
+        if (okSpot) { f.x = nx; f.z = nz; }
+        f.yaw = Math.atan2(mx, mz);
+      }
+      f.g.position.set(f.x, feetY(f.x, f.z), f.z); f.g.rotation.y = f.yaw;
+      f.cd -= dt;
+      if (playerOk && d < 1.7 && f.cd <= 0) {
+        f.cd = 1.3;
+        const dmg = Math.round((f.kind === "pirate" ? 10 : 8) * (diffK("repair") || 1));
+        landHp51 = Math.max(0, landHp51 - dmg); hurtT51 = 0.4;
+        floatText(person.x, feetY(person.x, person.z) + 2.2, person.z, "-" + dmg, "#ff6a5a");
+        try { buzz(20); } catch (e) { /* optional */ }
+        if (landHp51 <= 0) { knockedDown51(); return; }
+      }
+    }
+    if (treasureOn51 && chestMesh51 && chestMesh51.visible && Math.hypot(person.x - TREASURE51.chest.x, person.z - TREASURE51.chest.z) < 2.6) {
+      if (TREASURE51.foes.some(function (f) { return !f.dead; })) { if (noticeT <= 0) say("The guards still stand. Drop them before you open the chest.", 2); }
+      else { const g = 150; ledger.gold += g; x3.chestT51 = Date.now(); x3.chests51 = (x3.chests51 || 0) + 1; say("The pirates' chest: " + g + " gold!", 3); toast("Gull Rock treasure: +" + g + " gold. The pirates will be back in a while.", "Treasure"); chime([784, 988, 1175], 0.08, 0.04); writeSave(); }
+    }
+  }
+  function landHud51() {
+    let el = document.getElementById("landhp51");
+    if (!el) { el = document.createElement("div"); el.id = "landhp51"; el.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 48px);z-index:6;pointer-events:none;font:700 13px system-ui;color:#fff;background:rgba(10,20,30,.7);border-radius:8px;padding:3px 10px;display:none"; document.body.appendChild(el); }
+    const show = mode === "land" && (inWilds51(person.x, person.z) || treasureOn51 || landHp51 < 100);
+    const t = "Health " + Math.round(landHp51);
+    if (el.textContent !== t) el.textContent = t;
+    const disp = show ? "block" : "none"; if (el.style.display !== disp) el.style.display = disp;
+    el.style.color = landHp51 < 35 ? "#ff8a7a" : "#fff";
+  }
+
+  // Batch 51: enemy hull bars and nameplates fade where they would sit on top of HUD buttons (Skills, Glass, gear, map...), and are hidden ashore so they never show through buildings.
+  let hudR51 = [], hudAt51 = 0;
+  const v51 = new THREE.Vector3();
+  function fadeBars51() {
+    const now = performance.now();
+    if (now - hudAt51 > 500) {
+      hudAt51 = now; hudR51 = [];
+      ["skills", "glass", "settings", "pause", "log", "map", "chart", "hullhud", "windbox", "sub"].forEach(function (id) { const e = document.getElementById(id); if (!e || e.offsetParent === null) return; const r = e.getBoundingClientRect(); if (r.width > 0) hudR51.push(r); });
+    }
+    const land = mode === "land", w = window.innerWidth, h = window.innerHeight;
+    for (let i = 0; i < foes.length; i++) {
+      const f = foes[i];
+      if (f.gone || !f.root) continue;
+      if (!f.tags51) f.tags51 = f.root.children.filter(function (o) { return o.isSprite; });
+      for (let k = 0; k < f.tags51.length; k++) { const sp = f.tags51[k]; if (sp.visible === land) sp.visible = !land; }
+      if (land || f.sinking || !f.bar) continue;
+      f.bar.getWorldPosition(v51); v51.project(camera);
+      let over = false;
+      if (v51.z < 1) { const px = (v51.x * 0.5 + 0.5) * w, py = (-v51.y * 0.5 + 0.5) * h; for (let k = 0; k < hudR51.length; k++) { const r = hudR51[k]; if (px > r.left - 40 && px < r.right + 40 && py > r.top - 12 && py < r.bottom + 12) { over = true; break; } } }
+      const tgt = over ? 0.15 : 1; f.bar.material.opacity += (tgt - f.bar.material.opacity) * 0.25; f.bar51 = over;
+    }
+  }
   function sanity50() {
     if (!isFinite(ship.x) || !isFinite(ship.z) || !isFinite(ship.heading)) { ship.x = 18; ship.z = 60; ship.heading = 0; ship.speed = 0; logErr50("sanity: ship position"); }
     if (!isFinite(ship.speed)) ship.speed = 0;
@@ -15833,6 +16126,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
     fireBtn.addEventListener("pointerdown", function (e) {
       e.preventDefault();
+      if (mode === "land") { firePistol51(); tap46(fireBtn); return; }
       fire();
       fireHeld45 = true;
       tap46(fireBtn);
@@ -16286,6 +16580,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   function startContinue(data) {
     applySave(data);
+    // Batch 51: snap the camera to the loaded ship (no frame of it sweeping across the island) and cover the jump with a dark fade instead of a pale flash.
+    updateCamera.ready = false;
+    fadeEl.style.transition = "none"; fadeEl.style.opacity = "1"; void fadeEl.offsetWidth;
+    setTimeout(function () { fadeEl.style.transition = "opacity 0.5s ease-out"; fadeEl.style.opacity = "0"; }, 120);
     dismissTitle();
     try { if (data && data.engaged50) restoreEngaged50(data.engaged50); } catch (e) { logErr50("restore fight: " + e); }
     writeSave();
@@ -17264,6 +17562,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       unstick45: function () { return unstick45(); },
       kegs45: function (x, z) { if (x != null) kegDrop45(x, z); return kegs45.map(function (k) { return [k.x, k.z, k.t]; }); },
       counts46: function () { return { floaters: floaters.length, parts: gfxParts.length, smokes: smokes.length, splashes: splashes.length, rain: rain45.length, shots: shots.length, debris: debris44.length, kegs: kegs45.length, programs: (renderer.info.programs || []).length, geos: renderer.info.memory.geometries, tex: renderer.info.memory.textures, objs: scene.children.length, heap: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) : 0, squall: inSquallAt(ship.x, ship.z), fog: fogK, sails: ship.sails, speed: ship.speed }; },
+      g51: function () { const w = wildHere51(); const grp = activeFoes51(); return { wilds: wilds51.length, out: mode === "land" && inWilds51(person.x, person.z), hp: landHp51, cd: pistolCd51.slice(), treasure: treasureOn51, brace: !!x3.brace51, tier: cannonTier51(), mul: cannonMul51(), gold: ledger.gold, kills: x3.landKills51 || 0, chests: x3.chests51 || 0, fireShown: fireBtn.style.display !== "none", fireText: fireBtn.textContent, gate: w ? w.gate : null, dir: w ? [w.dx, w.dz] : null, foes: grp ? grp.foes.map(function (f) { return { x: f.x, z: f.z, hp: f.hp, dead: f.dead, kind: f.kind, vis: f.g.visible }; }) : [], px: person.x, pz: person.z, land: mode === "land", onLand: onLand(person.x, person.z), econ: { salvage: SALVAGE_GOLD, crate: CRATE_GOLD, repair: hullRepairCost() } }; },
+      bars51: function () { return foes.filter(function (f) { return !f.gone && f.tags51; }).map(function (f) { return { name: f.name, vis: f.tags51.every(function (o) { return o.visible; }), hid: f.tags51.every(function (o) { return !o.visible; }), over: !!f.bar51, op: f.bar ? f.bar.material.opacity : null }; }); },
+      hud51: function () { return hudR51.length; },
+      pistol51: function () { return firePistol51(); },
+      hurt51: function (i, n) { const grp = activeFoes51(); if (grp && grp.foes[i]) hurtLandFoe51(grp.foes[i], n); return grp ? grp.foes[i].hp : null; },
+      toTreasure51: function () { ship.x = TREASURE51.ship.x; ship.z = TREASURE51.ship.z; ship.speed = 0; mode = "sea"; return !!treasureBeach51(); },
+      goAshore51: function () { goAshore(); return mode; },
+      board51: function () { boardShip(true); return mode; },
+      setHp51: function (n) { landHp51 = n; },
+      clearCd51: function () { pistolCd51 = [0, 0]; },
       qb49: function (n) { const f = qbFoe47; if (f && n) damageFoe(f, n); return { hull: f ? f.hull : null, max: f ? f.hullMax : null, won: !!(f && f.qbWon48), sinking: !!(f && f.sinking), flee: !!(f && f.flee46), struck: !!(f && f.struck50), victory: !!document.getElementById("victory50"), standing: JSON.stringify(standing), gold: ledger.gold, sunk: x3 ? x3.sunk : null, practice: practice47, badge: (document.getElementById("practice49") || {}).style ? document.getElementById("practice49").style.display : null }; },
       b49: function () { return { trade: tradeLines().join("\n"), mode: mode, hull: ship.hull, x: ship.x, z: ship.z, tut: x3 ? x3.tut : null, hintCls: hint.className, hintBottom: parseFloat(hint.style.bottom) || 0, h: innerHeight, hintText: hint.textContent }; },
       qb47: function () { const f = qbFoe47; let sx = null; if (f) { const v = new THREE.Vector3(f.x, 2, f.z); camera.updateMatrixWorld(); v.project(camera); sx = (v.x + 1) / 2 * innerWidth; } return { calm: qbCalm47, sail: sail, speed: ship.speed, foeD: f ? Math.hypot(f.x - ship.x, f.z - ship.z) : null, foeWay: f ? f.way : null, foeHull: f ? f.hull : null, foeMax: f ? f.hullMax : null, hull: ship.hull, foeXZ: f ? [f.x, f.z, f.heading] : null, me: [ship.x, ship.z, ship.heading], shots: shots.filter(function (q) { return q.from === 'player'; }).map(function (q) { return [q.mesh.position.x, q.mesh.position.y, q.mesh.position.z]; }), foeX: sx, w: innerWidth, fireText: fireBtn.textContent, sails: ship.sails, squall: inSquallAt(ship.x, ship.z), reach: gunReach48(), label: sideLabel47(f ? (((f.x - ship.x) * Math.cos(ship.heading) - (f.z - ship.z) * Math.sin(ship.heading)) > 0 ? 1 : -1) : 0) }; },
