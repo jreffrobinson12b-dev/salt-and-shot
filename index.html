@@ -6719,7 +6719,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const tex = new THREE.CanvasTexture(canvas);
     const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
     spr.position.set(x, y, z);
-    spr.scale.set(10, 2.5, 1);
+    spr.scale.set(5.6, 1.4, 1); /* Batch 52 (Games 2): smaller, crisper float text */
     scene.add(spr);
     floaters.push({ mesh: spr, life: 1.15, max: 1.15 });
   }
@@ -6742,7 +6742,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     g.fillText(text, width / 2, 44);
     const tex = new THREE.CanvasTexture(canvas);
     const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
-    spr.scale.set(22 * (width / 512), 2.8, 1);
+    spr.scale.set(15 * (width / 512), 1.9, 1); /* Batch 52 (Games 2): name tags about two-thirds size */
     spr.position.y = y;
     spr.userData.label = text;
     spr.userData.textW = textW;
@@ -12030,6 +12030,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       // Batch 47: the main Fire shows the reload of the battery it would fire now; with no side chosen, the sooner of the two.
       let cAll47 = Math.min(coolS47[0], coolS47[1], Math.max(0, fireCool));
       { const vq = viewBearing(); const sq = vq.bear ? vq.sign : 0; if (sq) cAll47 = Math.min(coolS47[sq > 0 ? 0 : 1], Math.max(0, fireCool)); }
+      if (fireBtn.style.backgroundImage) fireBtn.style.backgroundImage = "";
       fireBtn.textContent = cAll47 > 0.05 ? ("Reload " + Math.ceil(cAll47)) : ("Fire: " + shotWord());
       // Reload progress: the button fills left to right as the crew load the guns.
       if (cAll47 > 0.05) { const full = Math.max(1, gunStats().reload || 6); const k = Math.round(100 * clamp(1 - cAll47 / full, 0, 1)); fireBtn.style.backgroundImage = "linear-gradient(90deg, rgba(255,255,255,.38) " + k + "%, rgba(0,0,0,0) " + k + "%)"; }
@@ -12130,7 +12131,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     } else {
       sailBtn.style.display = "none";
       if (anchorBtn) anchorBtn.style.display = "none";
-      { const pv = pistolShown51(); fireBtn.style.display = pv ? "" : "none"; if (pv) { const tx = pistolReady51() ? (x3 && x3.brace51 ? "Pistols" : "Pistol") : "Reload " + pistolWait51().toFixed(1); if (fireBtn.textContent !== tx) fireBtn.textContent = tx; fireBtn.style.boxShadow = ""; } }
+      { const pv = pistolShown51(); fireBtn.style.display = pv ? "" : "none"; if (!pv && fireBtn.style.backgroundImage) fireBtn.style.backgroundImage = ""; if (pv) { const br52 = !!(x3 && x3.brace51), nRdy52 = (pistolCd51[0] <= 0 ? 1 : 0) + (br52 && pistolCd51[1] <= 0 ? 1 : 0), maxCd52 = br52 ? 1.3 : 1.1; const tx = pistolReady51() ? (br52 ? "Pistols " + nRdy52 + "/2" : "Pistol") : "Reload " + pistolWait51().toFixed(1); if (fireBtn.textContent !== tx) fireBtn.textContent = tx; fireBtn.style.boxShadow = ""; /* Batch 52 (Games 2): a fill bar shows the reload */ { const fr = pistolReady51() && nRdy52 === (br52 ? 2 : 1) ? 1 : 1 - Math.min(1, Math.max(0, br52 ? (nRdy52 === 2 ? 0 : Math.max(pistolCd51[0], pistolCd51[1])) : pistolCd51[0]) / maxCd52); const bg = fr >= 1 ? "" : "linear-gradient(90deg, rgba(240,200,90,.55) " + Math.round(fr * 100) + "%, rgba(0,0,0,0) " + Math.round(fr * 100) + "%)"; if (fireBtn.style.backgroundImage !== bg) fireBtn.style.backgroundImage = bg; } } }
       if (shotBtn) shotBtn.style.display = "none";
       glassBtn.style.display = "none";
       if (actBtn.style.visibility) actBtn.style.visibility = "";
@@ -12533,7 +12534,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     chartYou51 = { x: hx, y: hy };
     // Batch 51 (Games 2): a page-text "YOU" tag over the chart canvas as well, so the marker shows (and reads) even if the canvas is scaled or covered.
     { let yt = document.getElementById("chartyou51"); if (!yt) { yt = document.createElement("div"); yt.id = "chartyou51"; yt.textContent = "\u25B2 YOU"; yt.style.cssText = "position:fixed;z-index:60;pointer-events:none;font:800 13px system-ui,sans-serif;color:#ffd75a;text-shadow:0 0 3px #000,0 0 3px #000;transform:translate(-50%,0);white-space:nowrap"; document.body.appendChild(yt); }
-      const rc = cvs.getBoundingClientRect(); yt.style.left = Math.max(rc.left + 46, Math.min(rc.right - 46, rc.left + hx * rc.width / w)) + "px"; yt.style.top = Math.max(rc.top + 8, Math.min(rc.bottom - 24, rc.top + (hy - 34) * rc.height / h)) + "px"; { const dirs = ["S", "SE", "E", "NE", "N", "NW", "W", "SW"]; const k = ((Math.round(Math.atan2(fx, fz) / (Math.PI / 4)) % 8) + 8) % 8; yt.textContent = "\u25B2 YOU \u00B7 " + dirs[k]; } yt.style.display = rc.width > 0 ? "block" : "none"; }
+      const rc = cvs.getBoundingClientRect(), pr52 = cvs.parentElement ? cvs.parentElement.getBoundingClientRect() : rc; /* Batch 52 (Games 2): clamp to what is actually visible: canvas, its frame and the screen */ const cL = Math.max(rc.left, pr52.left, 0), cR = Math.min(rc.right, pr52.right, innerWidth), cT = Math.max(rc.top, pr52.top, 0), cB = Math.min(rc.bottom, pr52.bottom, innerHeight), hw52 = Math.max(46, (yt.offsetWidth || 80) / 2 + 6); yt.style.left = Math.max(cL + hw52, Math.min(cR - hw52, rc.left + hx * rc.width / w)) + "px"; yt.style.top = Math.max(cT + 8, Math.min(cB - 26, rc.top + (hy - 34) * rc.height / h)) + "px"; { const dirs = ["S", "SE", "E", "NE", "N", "NW", "W", "SW"]; const k = ((Math.round(Math.atan2(fx, fz) / (Math.PI / 4)) % 8) + 8) % 8; yt.textContent = "\u25B2 YOU \u00B7 " + dirs[k]; } yt.style.display = rc.width > 0 ? "block" : "none"; }
     ctx.fillStyle = "#f2d48a";
     ctx.font = chartFont(12);
     ctx.textAlign = "center";
@@ -12733,6 +12734,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     checklistLines().forEach(function (l) { out.push(l); });
     if (x3 && x3.pinned) { const pd = DEEDS.find(function (q) { return q.id === x3.pinned; }); if (pd) out.push("Pinned deed: " + pd.text + (deedProg(pd.id) ? " (" + deedProg(pd.id) + ")" : "")); }
     if (x3) out.push("Records: top speed " + x3.topSpeed + " kn \u00B7 best hit streak " + x3.bestStreak + " \u00B7 biggest chest " + x3.bestChest + " gold \u00B7 flawless run " + x3.flawlessRun + (x3.questsDone ? " \u00B7 errands " + x3.questsDone : "") + (x3.barrels ? " \u00B7 barrels salvaged " + x3.barrels : "") + (x3.diceWon ? " \u00B7 dice won " + x3.diceWon : "") + (x3.riddles ? " \u00B7 riddles solved " + x3.riddles : "") + (x3.customsPaid ? " \u00B7 duties paid " + x3.customsPaid : "") + (x3.contestWins ? " \u00B7 contests won " + x3.contestWins + (x3.contestBest ? " (best " + x3.contestBest + " s)" : "") : "") + (x3.traders ? " \u00B7 brigs met " + x3.traders : "") + (x3.overboardSaved ? " \u00B7 men saved " + x3.overboardSaved : "") + (x3.marketBuys ? " \u00B7 market-day buys " + x3.marketBuys : "") + (x3.rampages ? " \u00B7 rampages " + x3.rampages : "") + (x3.nightWins ? " \u00B7 night wins " + x3.nightWins : "") + (x3.laurels ? " \u00B7 laurels " + x3.laurels : ""));
+    if (x3) out.push("Alley ambushes: " + (x3.amb52 || 0) + " beaten, " + (x3.ambLost52 || 0) + " lost" + (x3.ambLast52 ? " (last one " + x3.ambLast52 + ")" : "")); // Batch 52 (Games 2)
     if (x3) out.push("Ship: hull " + Math.round(100 * Math.max(0, ship.hull) / (ship.hullMax || 1)) + "% \u00B7 sails " + Math.round(ship.sails) + "% \u00B7 crew " + x3.crew + " \u00B7 " + ledger.gold + " gold");
     if (x3 && sessionXp0 != null) { if (earned0 == null) earned0 = x3.earned; out.push("This session: +" + (x3.xp - sessionXp0) + " XP \u00B7 +" + Math.max(0, x3.earned - earned0) + " gold earned"); }
     let skip = false;
@@ -14710,7 +14712,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (mode === "sea" && !titleOn) ISLANDS.forEach(function (L) { if (L.kind !== "outpost") return; const d = Math.hypot(ship.x - L.x, ship.z - L.z); if (d < L.landR + 4) { const a = Math.atan2(ship.x - L.x, ship.z - L.z) || 0; ship.x = L.x + Math.sin(a) * (L.landR + 10); ship.z = L.z + Math.cos(a) * (L.landR + 10); ship.speed = 0; } });
   }, 300);
   // Batch 51 (Games 2): the title screen hides the ship stats, which would show defaults until Continue loads your save.
-  setInterval(function () { const bt52 = document.getElementById("boot"), v = titleOn || (bt52 && !bt52.classList.contains("hide")) ? "hidden" : ""; /* Batch 52: QA buttons hide on the title and loading screens too */ ["qaspawn51", "qapanel51", "qasink48"].forEach(function (id) { const el = document.getElementById(id); const vv = id === "qasink48" && (menuOpen || (typeof chartPanel !== "undefined" && chartPanel.style.display === "block")) ? "hidden" : v; if (el && el.style.visibility !== vv) el.style.visibility = vv; }); ["top", "sub", "hudrow", "windbox"].forEach(function (id) { const el = document.getElementById(id); if (el && el.style.visibility !== v) el.style.visibility = v; }); }, 250);
+  setInterval(function () { const bt52 = document.getElementById("boot"), v = titleOn || (bt52 && !bt52.classList.contains("hide")) ? "hidden" : ""; /* Batch 52: QA buttons hide on the title and loading screens too */ ["qaspawn51", "qapanel51", "qasink48"].forEach(function (id) { const el = document.getElementById(id); const vv = id === "qasink48" && (menuOpen || mode !== "sea" || (typeof chartPanel !== "undefined" && chartPanel.style.display === "block")) ? "hidden" : v; if (el && el.style.visibility !== vv) el.style.visibility = vv; }); ["top", "sub", "hudrow", "windbox"].forEach(function (id) { const el = document.getElementById(id); if (el && el.style.visibility !== v) el.style.visibility = v; }); }, 250);
   function update47(dt) {
     updateSides47();
     lanes47(dt);
@@ -16102,7 +16104,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const hat = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), kind === "pirate" ? pirMat51 : hatMat51); hat.position.y = 1.18; hat.scale.y = 0.6; g.add(hat);
     const clips = cache["character-a.glb"].animations;
     const walk = made.mixer.clipAction(THREE.AnimationClip.findByName(clips, "walk")); walk.play();
-    const bar = hullSprite(); bar.scale.set(1.8, 0.45, 1); bar.position.y = 1.75; g.add(bar);
+    const bar = hullSprite(); bar.scale.set(1.3, 0.32, 1); bar.position.y = 1.75; g.add(bar); /* Batch 52 (Games 2): smaller land health bars, readable at a few metres without filling the screen */
     const hpMax = kind === "pirate" ? 60 : 70;
     paintHullSprite(bar, hpMax, hpMax);
     g.visible = false; scene.add(g);
@@ -16129,7 +16131,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   // Batch 52: a rare ambush in a town alley. Two cutthroats step out under a washing line; drop them or walk away.
   const AMBUSH52 = { foes: [], t: 0, on: false, alley: null, amb: true };
-  let ambushNext52 = 0, ambushAlley52 = null;
+  let ambushNext52 = 0, ambushAlley52 = null, ambushPass52 = 0;
   function activeFoes51() { if (mode !== "land") return null; if (treasureOn51) return TREASURE51; if (AMBUSH52.on) return AMBUSH52; return wildHere51(); }
   function endAmbush52(why) { if (!AMBUSH52.on) return; AMBUSH52.on = false; AMBUSH52.foes.forEach(function (f) { f.g.visible = false; }); if (why) say(why, 2.5); }
   function startAmbush52(al) {
@@ -16137,8 +16139,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     AMBUSH52.alley = al; AMBUSH52.on = true; AMBUSH52.t = Date.now();
     // Batch 52 (Games 2): you are put at the open end of the alley facing in, and both cutthroats step out of it 7-9 m ahead, so the camera sits on open ground and frames them.
     let fy = person.yaw || 0;
-    { const ends = [1, -1].map(function (sg) { return { x: al.x + al.ax * sg * ((al.half || 3) + 4), z: al.z + al.az * sg * ((al.half || 3) + 4), sg: sg }; }).filter(function (e) { return onLand(e.x, e.z) && !hitsBlock(e.x, e.z, 0.5); });
-      ends.sort(function (a, b) { return Math.hypot(a.x - person.x, a.z - person.z) - Math.hypot(b.x - person.x, b.z - person.z); });
+    { const ends = []; [1, -1].forEach(function (sg) { [4, 6, 8, 3].forEach(function (ex) { const x = al.x + al.ax * sg * ((al.half || 3) + ex), z = al.z + al.az * sg * ((al.half || 3) + ex); /* Batch 52 (Games 2): the camera sits 6 m behind you, so that spot and the line to it must be open too */ const cx = x + al.ax * sg * 6, cz = z + al.az * sg * 6; let clear = onLand(x, z) && !hitsBlock(x, z, 1.4); for (let q = 1; q <= 4 && clear; q++) clear = !hitsBlock(x + al.ax * sg * q * 1.5, z + al.az * sg * q * 1.5, 0.9); ends.push({ x: x, z: z, sg: sg, ok: clear ? 0 : (onLand(x, z) && !hitsBlock(x, z, 0.5) ? 1 : 2), cx: cx, cz: cz }); }); }); for (let i = ends.length - 1; i >= 0; i--) if (ends[i].ok === 2) ends.splice(i, 1);
+      ends.sort(function (a, b) { return (a.ok - b.ok) * 1000 + Math.hypot(a.x - person.x, a.z - person.z) - Math.hypot(b.x - person.x, b.z - person.z); });
       if (ends[0]) { person.x = ends[0].x; person.z = ends[0].z; fy = Math.atan2(al.x - person.x, al.z - person.z); } }
     AMBUSH52.foes.forEach(function (f, k) { const sg = k ? 1 : -1; let x = 0, z = 0, okp = false; for (let t = 0; t < 12 && !okp; t++) { const yy = fy + sg * (0.12 + t * 0.2), dd = 8 - (t % 3); x = person.x + Math.sin(yy) * dd; z = person.z + Math.cos(yy) * dd; okp = onLand(x, z) && !hitsBlock(x, z, 0.4); } if (!okp) { x = al.x + al.ax * sg * 1.2; z = al.z + al.az * sg * 1.2; } f.x = f.hx = x; f.z = f.hz = z; f.dead = false; f.fall = 0; f.hp = f.hpMax; f.paid51 = false; f.cd = 2.4 + k * 1.2; f.g.rotation.x = 0; paintHullSprite(f.bar, f.hp, f.hpMax); f.bar.visible = true; f.g.position.set(x, feetY(x, z), z); });
     person.yaw = fy; if (person.group) person.group.rotation.y = fy; snapCamFacing52(fy); updateCamera.ready = false;
@@ -16154,11 +16156,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       return;
     }
     if (!x3 || x3.tut < 4 || !ashorePort || fightOn || menuOpen || inWilds51(person.x, person.z)) return;
-    let hit = null; for (let i = 0; i < alleys52.length; i++) { const al = alleys52[i]; if (al.isl !== ashorePort.island) continue; const rx = person.x - al.x, rz = person.z - al.z, along = rx * al.ax + rz * al.az, across = Math.abs(rx * al.az - rz * al.ax); if (Math.abs(along) < (al.half || 3) + 1 && across < 3.2) { hit = al; break; } }
+    const hit = alleyHere52();
     if (hit === ambushAlley52) return; ambushAlley52 = hit; if (!hit) return;
     if (Date.now() < ambushNext52 && !forceAmbush52) return;
-    if (forceAmbush52 || Math.random() < 0.25) { forceAmbush52 = false; ambushNext52 = Date.now() + 900000; startAmbush52(hit); }
+    // Batch 52 (Games 2): 35% a pass, and never more than 4 quiet passes in a row; 4 min rest after a natural ambush; QA-forced ones leave the timer alone.
+    if (forceAmbush52) { forceAmbush52 = false; startAmbush52(hit); return; }
+    ambushPass52++; if (Math.random() < 0.35 || ambushPass52 >= 5) { ambushPass52 = 0; ambushNext52 = Date.now() + 240000; startAmbush52(hit); }
   }
+  function alleyHere52() { if (mode !== "land" || !ashorePort) return null; for (let i = 0; i < alleys52.length; i++) { const al = alleys52[i]; if (al.isl !== ashorePort.island) continue; const rx = person.x - al.x, rz = person.z - al.z, along = rx * al.ax + rz * al.az, across = Math.abs(rx * al.az - rz * al.ax); if (Math.abs(along) < (al.half || 3) + 1 && across < 3.2) return al; } return null; }
+  // Batch 52 (Games 2): ?qa=1 shows whether you stand under a washing line and when the next natural ambush can come.
+  if (/[?&]qa=1\b/.test(location.search)) setInterval(function () { let el = document.getElementById("qaalley52"); if (!el) { el = document.createElement("div"); el.id = "qaalley52"; el.style.cssText = "position:fixed;left:8px;bottom:calc(4px + env(safe-area-inset-bottom));z-index:60;pointer-events:none;font:700 11px system-ui,sans-serif;color:#ffe9a8;background:rgba(0,0,0,.55);padding:2px 6px;border-radius:6px"; document.body.appendChild(el); } if (mode !== "land" || titleOn) { el.style.display = "none"; return; } el.style.display = ""; const al = alleyHere52(), wait = Math.max(0, Math.ceil((ambushNext52 - Date.now()) / 1000)); const tx = "QA alley: " + (al ? "UNDER WASHING LINE" : "no") + " \u00B7 " + (AMBUSH52.on ? "ambush on" : wait ? "rest " + wait + " s" : "ready") + " \u00B7 quiet passes " + ambushPass52 + (x3 && x3.tut < 4 ? " \u00B7 tutorial blocks it" : ""); if (el.textContent !== tx) el.textContent = tx; }, 300);
   let forceAmbush52 = false;
   let landHp51 = 100, pistolCd51 = [0, 0], wasOut51 = false, hurtT51 = 0;
   function pistolReady51() { return x3 && x3.brace51 ? Math.min(pistolCd51[0], pistolCd51[1]) <= 0 : pistolCd51[0] <= 0; }
@@ -16247,7 +16254,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         // Bandits never cross into town, and nobody walks into the sea.
         const okSpot = amb52 ? onLand(nx, nz) && (!hitsBlock(nx, nz, 0.3) || hitsBlock(f.x, f.z, 0.3)) : ((w ? outside51(w, nx, nz) && Math.hypot(nx - w.isl.x, nz - w.isl.z) < w.isl.landR - 3 : Math.hypot(nx - ISLANDS[TREASURE51.isl].x, nz - ISLANDS[TREASURE51.isl].z) < ISLANDS[TREASURE51.isl].landR - 3) && (!w || (nx - w.tx) * w.dx + (nz - w.tz) * w.dz > w.a + 1.5));
         if (okSpot) { f.x = nx; f.z = nz; }
-        else if (amb52) { const okA = function (x, z) { return onLand(x, z) && !hitsBlock(x, z, 0.3); }; if (okA(nx, f.z)) f.x = nx; else if (okA(f.x, nz)) f.z = nz; else if (onLand(nx, nz)) { f.x = nx; f.z = nz; } } // Batch 52: alley cutthroats slide round crates and corners
+        else if (amb52) { const okA = function (x, z) { return onLand(x, z) && !hitsBlock(x, z, 0.3); }; const ox52 = f.x, oz52 = f.z; if ((f.stk52 || 0) > 0.8) { f.x = nx; f.z = nz; } else if (okA(nx, f.z)) f.x = nx; else if (okA(f.x, nz)) f.z = nz; else if (onLand(nx, nz)) { f.x = nx; f.z = nz; } f.stk52 = Math.hypot(f.x - ox52, f.z - oz52) < sp * dt * 0.3 ? (f.stk52 || 0) + dt : Math.max(0, (f.stk52 || 0) - dt * 0.5); } // stuck for 0.8 s: squeeze straight through // Batch 52: alley cutthroats slide round crates and corners
         f.yaw = Math.atan2(mx, mz);
       }
       f.g.position.set(f.x, feetY(f.x, f.z), f.z); f.g.rotation.y = f.yaw;
@@ -16467,7 +16474,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     document.getElementById("bookx").addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); logPanel.style.display = "none"; });
     // Batch 47: under load a tap can arrive as a click without a usable pointerdown; close on either, from anywhere inside the X.
-    logPanel.addEventListener("click", function (e) { if (e.target && e.target.closest && e.target.closest("#bookx,#logclose")) { e.preventDefault(); e.stopPropagation(); logPanel.style.display = "none"; } });
+    logPanel.addEventListener("click", function (e) { if (e.target && e.target.closest && e.target.closest("#bookx,#logclose")) { e.preventDefault(); e.stopPropagation(); logPanel.style.display = "none"; window.logShut52 = Date.now(); } });
     window.addEventListener("keydown", function (e) {
       if (e.key !== "Escape") return;
       const tag = e.target && e.target.tagName; if (tag === "TEXTAREA" || tag === "INPUT") return;
@@ -16581,6 +16588,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
     boardBtn.addEventListener("pointerdown", function (e) {
       e.preventDefault();
+      // Batch 52 (Games 2): a tap meant for the Log's Close never boards or lands you.
+      if (getComputedStyle(logPanel).display !== "none" || Date.now() < (window.logShut52 || 0) + 450) return;
       tryBoard();
     });
 
@@ -18104,7 +18113,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       face52: function (x, z) { snapCamFacing52(Math.atan2(x - person.x, z - person.z)); updateCamera.ready = false; return true; },
       blocksNear52: function (x, z) { return blocks.filter(function (b) { return b.r > 0 && Math.hypot(b.x - x, b.z - z) < 6; }).map(function (b) { return [+b.x.toFixed(1), +b.z.toFixed(1), +b.r.toFixed(2)]; }); },
       dbg52: function () { return { sq: inSquallAt(ship.x, ship.z), sqT: sqT50, sail: sail, safe: playerSafe(), sails: ship.sails, p: [person.x, person.z], mode: mode, port: ashorePort && ashorePort.id, fight: fightOn, menu: menuOpen, ag: !!agent.group, agD: Math.hypot(person.x - agent.x, person.z - agent.z), amb: AMBUSH52.on, force: forceAmbush52, next: ambushNext52 - Date.now(), tut: x3 && x3.tut }; },
-      ambush52: function (force) { if (force) { forceAmbush52 = true; ambushAlley52 = null; } return { on: AMBUSH52.on, alleys: alleys52.length, here: ashorePort ? alleys52.filter(function (a) { return a.isl === ashorePort.island; }).map(function (a) { return [Math.round(a.x * 10) / 10, Math.round(a.z * 10) / 10]; }) : [], foes: AMBUSH52.foes.map(function (f) { return { hp: f.hp, dead: f.dead, x: Math.round(f.x), z: Math.round(f.z), vis: f.g.visible }; }), hp: landHp51 }; },
+      ambush52: function (force) { if (force) { forceAmbush52 = true; ambushAlley52 = null; } return { on: AMBUSH52.on, under: !!alleyHere52(), passes: ambushPass52, next: ambushNext52 - Date.now(), won: !!AMBUSH52.won, age: Date.now() - AMBUSH52.t, wonAge: AMBUSH52.wonT ? Date.now() - AMBUSH52.wonT : -1, alleys: alleys52.length, here: ashorePort ? alleys52.filter(function (a) { return a.isl === ashorePort.island; }).map(function (a) { return [Math.round(a.x * 10) / 10, Math.round(a.z * 10) / 10]; }) : [], foes: AMBUSH52.foes.map(function (f) { return { hp: f.hp, dead: f.dead, x: Math.round(f.x), z: Math.round(f.z), vis: f.g.visible }; }), hp: landHp51 }; },
       deco52: function () { return { n: deco52.length, vis: deco52.filter(function (d) { return d.o.visible; }).length, houses: deco52.filter(function (d) { return d.blk && d.blk.r > 1.2; }).length, walls: scene.children.filter(function (o) { return o.userData.wall52; }).length }; },
       gfx: function () { return { low: !!x3.lowGfx, shadows: renderer.shadowMap.enabled, pr: renderer.getPixelRatio(), moon: !!(moonDisc && moonDisc.visible), sunCol: sun.color.getHexString(), fog: scene.fog.color.getHexString(), lightning: lightningSeen, parts: gfxParts.length, smokes: smokes.length, streaks: windStreaks ? windStreaks.filter(function (w) { return w.m.visible; }).length : 0, halo: !!(lampHalo && lampHalo.visible), quay: !!(quayGlows && quayGlows[0].visible), shallows: shallows ? shallows.length : 0, vignette: !vignette.classList.contains("low"), cloud: cloudMat ? cloudMat.color.getHexString() : "" }; },
       fps48: function () { return { interval: fps48.iv, work: fps48.work, fps: 1000 / fps48.iv, n: fps48.n, held: fps48.held, told: fps48.told, pr: renderer.getPixelRatio(), dpr: window.devicePixelRatio, low: !!(x3 && x3.lowGfx), steps: perfState.steps }; },
