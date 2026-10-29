@@ -4049,8 +4049,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   ];
   // Batch 51: each town has jungle wilds joined on behind a wall (index 6+, so old island indices never change).
   [[0, -0.243, -0.970, "Bramble Wilds"], [3, 1, 0, "Lorenzo Wilds"], [5, 0, -1, "Belleisle Wilds"]].forEach(function (w) {
-    const t = ISLANDS[w[0]], d = t.landR + 26 - 10, n = Math.hypot(w[1], w[2]);
-    ISLANDS.push({ name: w[3], x: t.x + w[1] / n * d, z: t.z + w[2] / n * d, landR: 26, h: 2.4, kind: "wild", wildOf: w[0] });
+    const t = ISLANDS[w[0]], d = t.landR + 38 - 10, n = Math.hypot(w[1], w[2]); // Batch 52: wilds grown 26 -> 38 for real room inland
+    ISLANDS.push({ name: w[3], x: t.x + w[1] / n * d, z: t.z + w[2] / n * d, landR: 38, h: 2.4, kind: "wild", wildOf: w[0] });
   });
   // Batch 52: two small overgrown outposts (index 9+, so old island indices never change). Sea-side trader only: repairs and a few hands.
   ISLANDS.push({ name: "Thornkey", x: 200, z: 300, landR: 20, h: 2.3, kind: "outpost", jetty: Math.PI }, { name: "Mosswood", x: -170, z: -230, landR: 20, h: 2.1, kind: "outpost", jetty: 0.4 });
@@ -9780,7 +9780,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 51";
+    ver.textContent = "Version: batch 52";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -16051,7 +16051,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const sign = nameSprite("Gate", 4.6); if (sign.material) { sign.material.depthTest = true; } sign.position.x += w.gate.x; sign.position.z += w.gate.z; scene.add(sign); w.sign = sign;
       // Jungle: instanced trunks and crowns, kept off the dirt path from the gate.
       const spots = [];
-      for (let k = 0; k < 160 && spots.length < 34; k++) {
+      for (let k = 0; k < 320 && spots.length < 64; k++) { // Batch 52: denser jungle for the bigger wilds
         const ang = (k * 2.39996) % (Math.PI * 2), rr = 4 + ((k * 0.618) % 1) * (r - 7);
         const x = L.x + Math.sin(ang) * rr, z = L.z + Math.cos(ang) * rr;
         const along = (x - w.gate.x) * ux + (z - w.gate.z) * uz, off = Math.abs((x - w.gate.x) * px + (z - w.gate.z) * pz);
@@ -17082,7 +17082,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         tapBoth47(rb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } const now = performance.now(); if (!armedR || now - armedR > 60000) { armedR = now; rb.textContent = "Swap back? Tap again"; return; } try { const cur = localStorage.getItem(SAVE_KEY); localStorage.setItem(SAVE_KEY, bk); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); else localStorage.removeItem(SAVE_KEY + "-before-new"); } catch (err) { return; } importReload47 = true; location.reload(); }); boot.appendChild(rb); } }
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 51";
+    tv.textContent = "Version: batch 52";
     // Batch 50: the version sits in the bottom-right corner of the screen, so a long tip or a short screen can never push it out of view.
     tv.style.cssText = "position:fixed;right:calc(8px + env(safe-area-inset-right));bottom:calc(6px + env(safe-area-inset-bottom));font-size:11px;opacity:.55;pointer-events:none;z-index:2";
     boot.appendChild(tv);
