@@ -8947,6 +8947,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const d = x3Defaults();
     if (raw && typeof raw === "object") {
       for (const k in d) if (typeof raw[k] === typeof d[k]) d[k] = raw[k];
+      // Batch 51 (Games 2): batch 51 fields (brace of pistols, cannon tier, land kills, chest timer...) have no default, so keep them too.
+      for (const k in raw) if (!(k in d) && /51$/.test(k) && ["number", "boolean", "string"].indexOf(typeof raw[k]) >= 0) d[k] = raw[k];
     }
     if (LOWGFX47) { d.lowGfx0 = d.lowGfx; d.lowGfx = true; }
     d.crew = Math.max(2, Math.min(crewMaxFor(playerHull.id), Math.round(d.crew)));
@@ -14477,7 +14479,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
     // Batch 48: a side whose guns would lay on a ship right now gets a green edge, so you know which button to press.
     side48T -= 1 / 60;
-    if (side48T <= 0) { side48T = 0.2; const gt = gunType(); [1, -1].forEach(function (sg, i) { const sx = ship.x + Math.cos(ship.heading) * sg * 3.2, sz = ship.z - Math.sin(ship.heading) * sg * 3.2; const on48 = !!broadsideAssist(sg, sx, sz, gt); const b = sideBtn47[i]; if ((b.dataset.tgt === "1") !== on48) { b.dataset.tgt = on48 ? "1" : ""; b.style.boxShadow = on48 ? "0 0 0 2px #7be08a, 0 0 10px rgba(123,224,138,0.6)" : ""; } }); }
+    if (side48T <= 0) { side48T = 0.2; const gt = gunType(); [1, -1].forEach(function (sg, i) { const sx = ship.x + Math.cos(ship.heading) * sg * 3.2, sz = ship.z - Math.sin(ship.heading) * sg * 3.2; const at51 = aimTarget47(); const on48 = !!broadsideAssist(sg, sx, sz, gt) && !!at51 && at51.sign === sg && at51.d <= gunReach48(gt) * 1.05; /* Batch 51 (Games 2): green only when she is in this side's arc and reach */ const b = sideBtn47[i]; if ((b.dataset.tgt === "1") !== on48) { b.dataset.tgt = on48 ? "1" : ""; b.style.boxShadow = on48 ? "0 0 0 2px #7be08a, 0 0 10px rgba(123,224,138,0.6)" : ""; } }); }
   }
   function toShip47(e) { if (e) { e.preventDefault(); e.stopPropagation(); } if (mode !== "land" || menuOpen || (fightOn && fight && fight.land)) return; if (typeof uiTick47 === "function") uiTick47(); boardShip(true); }
   shipBtn47.addEventListener("pointerdown", toShip47);
@@ -15871,7 +15873,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const clips = cache["character-a.glb"].animations;
     const walk = made.mixer.clipAction(THREE.AnimationClip.findByName(clips, "walk")); walk.play();
     const bar = hullSprite(); bar.scale.set(1.8, 0.45, 1); bar.position.y = 1.75; g.add(bar);
-    const hpMax = kind === "pirate" ? 75 : 70;
+    const hpMax = kind === "pirate" ? 60 : 70;
     paintHullSprite(bar, hpMax, hpMax);
     g.visible = false; scene.add(g);
     return { kind: kind, g: g, mixer: made.mixer, bar: bar, x: x, z: z, hx: x, hz: z, hp: hpMax, hpMax: hpMax, cd: 1 + Math.random(), dead: false, fall: 0, yaw: 0 };
@@ -16517,6 +16519,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const port = portById(data.port);
     ashorePort = port;
     if (typeof data.sail === "number") sail = clamp(data.sail | 0, 0, 2);
+    // Batch 51 (Games 2): a save made ashore away from a town (Gull Rock) reloads aboard at that beach instead of stranding you ashore with no Board.
+    if (data.mode === "land" && typeof data.px === "number" && Math.hypot(data.px - port.spawn.x, data.pz - port.spawn.z) > 260) { data = Object.assign({}, data, { mode: "sea", x: TREASURE51.ship.x, z: TREASURE51.ship.z }); toast("Back aboard off Gull Rock. Tap Ashore to land again.", "Voyage"); }
     if (data.mode === "land") {
       mode = "land";
       ship.x = data.x;
@@ -16626,7 +16630,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       for (let k = 0; k < 12 && !spotAfloat(fx, fz); k++) { fz += 10; }
       f.x = fx; f.z = fz; f.heading = Math.PI + 0.6; f.hunt = true; f.ignore = 0; f.hull = f.hullMax;
       f.cool = 6;
-      { let bx = ship.x + Math.min(21, gunReach48() * 0.75), bz = ship.z + 3; for (let k = 0; k < 10 && !spotAfloat(bx, bz); k++) { bz += 8; } f.x = bx; f.z = bz; f.heading = 0; f.way = 3.2; qbFoe47 = f; qbCalm47 = 600; for (let j = 0; j < foes.length; j++) foes[j].qb50 = false; f.qb50 = true; f.qbWon48 = false; f.struck50 = false; f.flee46 = false; f.alive = true; f.gone = false; f.sinking = false; if (f.root) { f.root.visible = true; f.root.position.set(f.x, f.root.position.y, f.z); } }
+      { let bx = ship.x + Math.min(21, gunReach48() * 0.75), bz = ship.z + 3; for (let k = 0; k < 10 && !spotAfloat(bx, bz); k++) { bz += 8; } f.x = bx; f.z = bz; f.heading = 0; f.way = 3.2; qbFoe47 = f; qbCalm47 = 600; for (let j = 0; j < foes.length; j++) foes[j].qb50 = false; f.qb50 = true; f.cool = Math.max(f.cool || 0, 5); /* Batch 51 (Games 2): you get the first broadside in a quick battle */ f.qbWon48 = false; f.struck50 = false; f.flee46 = false; f.alive = true; f.gone = false; f.sinking = false; if (f.root) { f.root.visible = true; f.root.position.set(f.x, f.root.position.y, f.z); } }
     }
     for (let i = 0; i < storms.length; i++) { const st = storms[i]; const d = Math.hypot(st.x - ship.x, st.z - ship.z); if (d < st.r + 260) { const a = Math.atan2(st.x - ship.x, st.z - ship.z) || 1; st.x = ship.x + Math.sin(a) * (st.r + 320); st.z = ship.z + Math.cos(a) * (st.r + 320); } }
     fogT = 0; fogK = 0; gustT = 0; ship.sails = 100; refreshCloth();
