@@ -5937,7 +5937,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       { const sp = local(1.05, 1.62); makeSign47(SIGN_KINDS47.indexOf(doorKind) >= 0 ? doorKind : "merchant", sp.x, y + 2.15, sp.z, rot, false); }
       const mark = local(0, 1.7);
       const prop = doorKind === "tavern" ? "barrel.glb" : doorKind === "shipyard" ? "cannon.glb" : doorKind === "church" ? "chest.glb" : "crate.glb";
-      spawn(prop, mark.x, y, mark.z, rot, doorKind === "shipyard" ? 0.7 : 0.9);
+      spawn(prop, mark.x, y, mark.z, rot, doorKind === "shipyard" ? 0.7 : 0.9).userData.noCam51 = true; // Batch 51: small door props never pull the camera in
       if (doorKind === "shipyard" || doorKind === "church") {
         const sign = nameSprite(doorKind === "church" ? "Church" : "Shipyard", 0);
         sign.position.set(x, y + 4.6, z);
@@ -6049,7 +6049,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     spawn("barrel.glb", 5.2, islandHeight(q, 5.2, 27), 27, 0.4, 1);
     spawn("barrel.glb", 6.4, islandHeight(q, 6.4, 26.2), 26.2, 1.2, 1);
     spawn("crate.glb", 3.2, islandHeight(q, 3.2, 26.5), 26.5, 0.2, 1.1);
-    spawn("chest.glb", 2.35, DOCK.deck, 50.4, 0.6, 1);
+    spawn("chest.glb", 2.35, DOCK.deck, 50.4, 0.6, 1).userData.noCam51 = true;
     spawn("patch-grass.glb", 0, islandHeight(q, 0, 16) + 0.02, 16, 0.5, 1.2);
     spawn("patch-sand.glb", 2, islandHeight(q, 2, 36) + 0.02, 36, 0, 1.3);
 
@@ -10151,7 +10151,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     ashorePort = port;
     ashoreBeach = beach;
     if (port.id !== lastPort && !tb51) gainSkill("sail");
-    if (!tb51 && x3 && x3.crew < crewMaxFor(playerHull.id)) toast("Crew " + x3.crew + " of " + crewMaxFor(playerHull.id) + (crewShort() ? ": short-handed, so slow guns and a lazy helm." : ".") + " Hire hands at the tavern (" + handCost() + " gold each).", "Crew"); // Batch 51 (Games 2)
+    if (!tb51 && x3 && x3.crew < crewMaxFor(playerHull.id)) toast("Crew " + x3.crew + " of " + crewMaxFor(playerHull.id) + (crewShort() ? ": short-handed, so slow guns and a lazy helm." : ".") + " Hire hands at the tavern or the shipyard's Crew tab (" + handCost() + " gold each).", "Crew"); // Batch 51 (Games 2)
     addMorale(5);
     mode = "land";
     ship.speed = 0;
@@ -11658,7 +11658,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   function camBlock44(d, x, y, z) {
     const now = performance.now();
-    if (now - occlAt > 700) { occlAt = now; occl44 = scene.children.filter(function (o) { return o.visible && (o.isMesh || o.isGroup) && o !== water && o !== sky && o !== sunDisc && o !== moonDisc && o !== person.group && o !== ship.root && !o.userData.noCam51 && near44(o, x, z); }); }
+    if (now - occlAt > 700) { occlAt = now; occl44 = scene.children.filter(function (o) { return o.visible && (o.isMesh || o.isGroup) && o !== water && o !== sky && o !== sunDisc && o !== moonDisc && o !== person.group && o !== ship.root && !o.userData.noCam51 && near44(o, x, z) && !(o.userData.bs51 && o.userData.bs51.r > 0 && o.userData.bs51.r < 1.6); }); }
     if (!occl44.length) return;
     camFrom.set(x, y, z); camDir.copy(d).sub(camFrom); const len = camDir.length(); if (len < 0.5) return; camDir.divideScalar(len);
     camRay.set(camFrom, camDir); camRay.far = len; camRay.camera = camera; // Batch 51: sprites inside groups (bandit health bars) need the camera to raycast
@@ -15850,18 +15850,18 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       wilds51.push(w);
       const px = -uz, pz = ux;
       for (let s = -1; s <= 1; s += 2) {
-        const len = hc - 1.9, mid = s * (1.9 + len / 2);
+        const len = hc + 6 - 1.9, mid = s * (1.9 + len / 2); // Batch 51 (Games 2): the wall runs 6 m out into the shallows so nobody wades round its end
         const cx = w.gate.x + px * mid, cz = w.gate.z + pz * mid;
         const wall = new THREE.Mesh(new THREE.BoxGeometry(len, 3.2, 0.9), wallMat51);
         wall.position.set(cx, 0.9, cz); wall.rotation.y = Math.atan2(px, pz) - Math.PI / 2;
         wall.castShadow = true; scene.add(wall);
-        for (let t = 1.9; t <= hc; t += 1.0) blocks.push({ x: w.gate.x + px * s * t, z: w.gate.z + pz * s * t, r: 0.75 });
+        for (let t = 1.9; t <= hc + 6; t += 1.0) blocks.push({ x: w.gate.x + px * s * t, z: w.gate.z + pz * s * t, r: 0.75 });
         const post = new THREE.Mesh(new THREE.BoxGeometry(1.1, 4.2, 1.1), wallMat51);
         post.position.set(w.gate.x + px * s * 2.2, 1.4, w.gate.z + pz * s * 2.2); scene.add(post);
       }
       const lintel = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.6, 1.1), wallMat51);
       lintel.position.set(w.gate.x, 3.6, w.gate.z); lintel.rotation.y = Math.atan2(px, pz) - Math.PI / 2; scene.add(lintel);
-      const sign = nameSprite("Gate", 4.6); sign.position.x += w.gate.x; sign.position.z += w.gate.z; scene.add(sign); w.sign = sign;
+      const sign = nameSprite("Gate", 4.6); if (sign.material) { sign.material.depthTest = true; } sign.position.x += w.gate.x; sign.position.z += w.gate.z; scene.add(sign); w.sign = sign;
       // Jungle: instanced trunks and crowns, kept off the dirt path from the gate.
       const spots = [];
       for (let k = 0; k < 160 && spots.length < 34; k++) {
