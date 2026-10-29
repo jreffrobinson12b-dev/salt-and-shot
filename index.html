@@ -3856,6 +3856,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     "#mbtns button,#fight button,#skillpanel button,#logclose,#chartclose{min-height:46px;font-size:16px}" +
     "@media (max-height:520px){#btns{display:grid!important;grid-template-columns:auto auto;gap:6px!important;align-items:end;justify-items:end}#btns button{height:44px;min-width:96px;font-size:14px}#stick{width:112px;height:112px}#knob{width:48px;height:48px;margin:-24px 0 0 -24px}#hint{font-size:13px!important}#aimtip{width:max(160px,calc(100vw - 530px))!important;left:50%!important;margin-left:calc(max(160px,calc(100vw - 530px)) / -2);top:calc(8px + env(safe-area-inset-top))!important;font-size:13px!important}#chartcvs{width:auto!important;max-width:100%;height:calc(100vh - 118px)!important;margin:0 auto}#chartpanel{width:auto!important;max-width:94vw;top:50%!important}#chartpanel>div:last-child{display:none}#chart{top:calc(64px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}#log{top:calc(108px + env(safe-area-inset-top))!important;right:calc(134px + env(safe-area-inset-right))!important}#logpanel{top:calc(64px + env(safe-area-inset-top))!important;right:calc(220px + env(safe-area-inset-right))!important;max-height:calc(100vh - 90px)!important}}";
   document.head.appendChild(polishCss);
+  var doorProps51 = []; // Batch 51: door props the camera hides when it is inside them
   let hintLayoutAt = 0;
   function layoutHint(nowMs) {
     if (nowMs - hintLayoutAt < 400) return;
@@ -5937,7 +5938,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       { const sp = local(1.05, 1.62); makeSign47(SIGN_KINDS47.indexOf(doorKind) >= 0 ? doorKind : "merchant", sp.x, y + 2.15, sp.z, rot, false); }
       const mark = local(0, 1.7);
       const prop = doorKind === "tavern" ? "barrel.glb" : doorKind === "shipyard" ? "cannon.glb" : doorKind === "church" ? "chest.glb" : "crate.glb";
-      spawn(prop, mark.x, y, mark.z, rot, doorKind === "shipyard" ? 0.7 : 0.9).userData.noCam51 = true; // Batch 51: small door props never pull the camera in
+      { const dp51 = spawn(prop, mark.x, y, mark.z, rot, doorKind === "shipyard" ? 0.7 : 0.9); dp51.userData.noCam51 = true; doorProps51.push(dp51); } // Batch 51: small door props never pull the camera in
       if (doorKind === "shipyard" || doorKind === "church") {
         const sign = nameSprite(doorKind === "church" ? "Church" : "Shipyard", 0);
         sign.position.set(x, y + 4.6, z);
@@ -8339,6 +8340,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (dayU.value < 0.35) r *= 2 / 3;
     if (typeof fogK === "number") r *= 1 - 0.35 * fogK;
     if (inSquallAt(ship.x, ship.z)) r *= 0.75;
+    if (!f.qb50 && Math.hypot(ship.x - 22, ship.z - 34) < 170) r *= 0.45; // Batch 51 (Games 2): fewer patrols jump you right outside Bramble Quay
     return r;
   }
   function foeSteer(f) {
@@ -9590,7 +9592,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     qa("Teleport: Bramble shipyard", "qayard51", function (b) { b.ashoreAt("bramble"); const d = doors.find(function (o) { return o.kind === "shipyard" && (!o.port || o.port === "bramble"); }); if (d) b.putPerson48(d.x + 2, d.z + 2); });
     qa("Teleport: town gate", "qagate51", function (b) { b.ashoreAt("bramble"); setTimeout(function () { const g = b.g51(); if (g.gate) b.putPerson48(g.gate.x - g.dir[0] * 3, g.gate.z - g.dir[1] * 3); }, 300); });
     qa("Teleport: bandits (wilds)", "qabandit51", function (b) { b.ashoreAt("bramble"); setTimeout(function () { const g = b.g51(); if (g.gate) b.putPerson48(g.gate.x + g.dir[0] * 10, g.gate.z + g.dir[1] * 10); }, 300); });
-    qa("Spawn squall here", "qasquall51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } qbCalm47 = 0; if (!storms.length) makeStorm(ship.x, ship.z + 200, 30, 0, 0); const s = storms[0]; s.x = ship.x + Math.sin(ship.heading) * (s.r * 0.6); s.z = ship.z + Math.cos(ship.heading) * (s.r * 0.6); /* Batch 51: right over you, and the quick-battle calm no longer pushes it away */ if (s.group) s.group.position.set(s.x, s.group.position.y, s.z); say("QA: you are in a squall. Full sail tears after 3 s.", 2); });
+    qa("Spawn squall here", "qasquall51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } qbCalm47 = 0; if (!storms.length) makeStorm(ship.x, ship.z + 200, 30, 0, 0); const s = storms[0]; s.x = ship.x + Math.sin(ship.heading) * (s.r * 0.6); s.z = ship.z + Math.cos(ship.heading) * (s.r * 0.6); /* Batch 51: right over you, and the quick-battle calm no longer pushes it away */ if (s.group) s.group.position.set(s.x, s.group.position.y, s.z); say("QA: you are in a squall. Full sail tears after 3 s.", 2); setTimeout(function () { qbCalm47 = 0; const s2 = storms[0]; if (s2 && !inSquallAt(ship.x, ship.z)) { s2.x = ship.x; s2.z = ship.z; if (s2.group) s2.group.position.set(s2.x, s2.group.position.y, s2.z); } }, 400); /* Batch 51: re-check once, in case practice or a boarding move pushed it */ });
     qa("Teleport: Gull Rock", "qagull51", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.toTreasure51(); });
     document.body.appendChild(qp); const sk = document.getElementById("qasink48"); if (sk) sk.style.transform = "translateX(calc(-50% - 62px))"; }
   // Batch 48: phones often skip pagehide when you swipe away, so also save when the tab is hidden and every 20 s, so Continue picks up mid-battle hull and position.
@@ -11664,8 +11666,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!o.userData.bs51 || o.userData.bs51t !== (o.matrixWorldNeedsUpdate ? -1 : 1)) { bs51.setFromObject(o); if (bs51.isEmpty()) { o.userData.bs51 = { x: o.position.x, z: o.position.z, r: 0 }; } else { bs51.getBoundingSphere(sp51); o.userData.bs51 = { x: sp51.center.x, z: sp51.center.z, r: Math.min(sp51.radius, 400) }; } o.userData.bs51t = 1; }
     const b = o.userData.bs51; return Math.hypot(b.x - x, b.z - z) < 22 + b.r;
   }
+  // Batch 51 (Games 2): small door props (shipyard post and sign) hide while the camera is inside or right next to them, so it never clips through.
+  function hideNearProps51() {
+    for (let i = 0; i < doorProps51.length; i++) { const o = doorProps51[i]; if (!o || !o.parent) continue; const near = Math.hypot(camera.position.x - o.position.x, camera.position.z - o.position.z) < 2.6 && camera.position.y < o.position.y + 5; o.visible = !near; }
+  }
   function camBlock44(d, x, y, z) {
     const now = performance.now();
+    hideNearProps51();
     if (now - occlAt > 700) { occlAt = now; occl44 = scene.children.filter(function (o) { return o.visible && (o.isMesh || o.isGroup) && o !== water && o !== sky && o !== sunDisc && o !== moonDisc && o !== person.group && o !== ship.root && !o.userData.noCam51 && near44(o, x, z) && !(o.userData.bs51 && o.userData.bs51.r > 0 && o.userData.bs51.r < 1.6); }); }
     if (!occl44.length) return;
     camFrom.set(x, y, z); camDir.copy(d).sub(camFrom); const len = camDir.length(); if (len < 0.5) return; camDir.divideScalar(len);
