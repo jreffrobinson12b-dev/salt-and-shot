@@ -11712,7 +11712,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const fz = Math.cos(yaw);
       const py = person.group.position.y;
       const hDist = Math.max(4, LAND_LOOK_DIST * Math.cos(lookPitch)); // Batch 48: no idle dolly-in, the camera holds still between walks
-      const camY = py + Math.max(1.2, LAND_LOOK_DIST * Math.sin(lookPitch));
+      const camY = py + Math.max(1.2, LAND_LOOK_DIST * Math.sin(lookPitch)) + (ISLANDS[1] && Math.hypot(person.x - ISLANDS[1].x, person.z - ISLANDS[1].z) < (ISLANDS[1].r || 40) + 20 ? 1.6 : 0); // Batch 51 (Games 2): a higher camera on Gull Rock
       desired.set(person.x - fx * hDist, camY, person.z - fz * hDist);
       const gy = feetY(desired.x, desired.z);
       if (desired.y < gy + 1.2) desired.y = gy + 1.2;
@@ -14522,8 +14522,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     side48T -= 1 / 60;
     if (side48T <= 0) { side48T = 0.2; const gt = gunType(); [1, -1].forEach(function (sg, i) { const sx = ship.x + Math.cos(ship.heading) * sg * 3.2, sz = ship.z - Math.sin(ship.heading) * sg * 3.2; const on48 = arc51(sg); /* Batch 51 (Games 2): the glow uses the same arc test as firing */ const b = sideBtn47[i]; if ((b.dataset.tgt === "1") !== on48) { b.dataset.tgt = on48 ? "1" : ""; b.style.boxShadow = on48 ? "0 0 0 2px #7be08a, 0 0 10px rgba(123,224,138,0.6)" : ""; } }); }
   }
-  function toShip47(e) { if (e) { e.preventDefault(); e.stopPropagation(); } if (mode !== "land" || menuOpen || (fightOn && fight && fight.land)) return; if (typeof uiTick47 === "function") uiTick47(); boardShip(true); }
+  function toShip47(e) { if (e) { e.preventDefault(); e.stopPropagation(); } if (mode !== "land" || (fightOn && fight && fight.land)) return; if (menuOpen) closeMenu(); /* Batch 51 (Games 2): one tap boards even straight out of the shipyard */ if (typeof uiTick47 === "function") uiTick47(); boardShip(true); }
   shipBtn47.addEventListener("pointerdown", toShip47);
+  // Batch 51 (Games 2): the title screen hides the ship stats, which would show defaults until Continue loads your save.
+  setInterval(function () { const v = titleOn ? "hidden" : ""; ["top", "sub", "hudrow", "windbox"].forEach(function (id) { const el = document.getElementById(id); if (el && el.style.visibility !== v) el.style.visibility = v; }); }, 250);
   function update47(dt) {
     updateSides47();
     lanes47(dt);
