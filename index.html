@@ -8371,6 +8371,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (f.qb50 && !f.qbWon48 && f.hull <= f.hullMax * 0.25) { strikeQb50(f); return { want: f.heading, dist: Infinity, hunting: false }; }
       if (f.qb50) f.flee46 = false;
       // Batch 51 (Games 2): the quick-battle cutter never hangs astern: if she drops behind your beam she sails for a spot 20 yd off your nearer beam.
+      if (f.qb50 && pd > 30 && !f.hint51) { f.hint51 = true; say("Ease sail to stay alongside her.", 3); }
       if (f.qb50 && pd > 14) { const fx51 = Math.sin(ship.heading), fz51 = Math.cos(ship.heading), along51 = (f.x - ship.x) * fx51 + (f.z - ship.z) * fz51; if (along51 < -6 || pd > 32) { const sg51 = ((f.x - ship.x) * Math.cos(ship.heading) - (f.z - ship.z) * Math.sin(ship.heading)) >= 0 ? 1 : -1; const tx51 = ship.x + Math.cos(ship.heading) * sg51 * 20 + fx51 * 6, tz51 = ship.z - Math.sin(ship.heading) * sg51 * 20 + fz51 * 6; return { want: Math.atan2(tx51 - f.x, tz51 - f.z), dist: pd, hunting: true }; } }
       if (f.hull < runAt && pd > 36 && !f.qb50) { if (!f.flee46) { f.flee46 = true; floatText(f.x, 10, f.z, "fleeing!", "#9dffb0"); } return { want: avoid46(f, windAngle), dist: Infinity, hunting: true }; }
       f.flee46 = false;
@@ -8498,7 +8499,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       while (dh < -Math.PI) dh += Math.PI * 2;
       f.turnRate = dt > 0 ? dh / dt : 0;
       const cloth = f.sails <= 0 ? 0.12 : f.sails / 100;
-      const cruise = f.speed * cloth * shallowFactor(f.x, f.z) * (f.flee46 ? 1.15 : 1) * (f.hold46 ? 0.85 : 1) * (inSquallAt(f.x, f.z) ? 0.8 : 1);
+      const cruise = (f.qb50 && !f.qbWon48 && Math.hypot(f.x - ship.x, f.z - ship.z) > 22 ? Math.max(f.speed, Math.abs(ship.speed) * 1.25 + 1) : f.speed) * cloth * shallowFactor(f.x, f.z) * (f.flee46 ? 1.15 : 1) * (f.hold46 ? 0.85 : 1) * (inSquallAt(f.x, f.z) ? 0.8 : 1);
       if (heavyFoe) {
         if (typeof f.way !== "number") f.way = cruise;
         f.way = damp(f.way, cruise, dt, 0.55 * move.accel);
