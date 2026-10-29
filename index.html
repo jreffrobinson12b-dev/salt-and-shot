@@ -7087,7 +7087,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       wreckPlayer();
       const o = document.createElement("div"); o.id = "sunk51";
       o.style.cssText = "position:fixed;inset:0;z-index:80;background:rgba(6,10,16,.88);color:#f4efe2;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font:600 15px system-ui,sans-serif;padding:20px";
-      o.innerHTML = "<div style='font:800 34px system-ui;color:#ff7a6a;letter-spacing:2px'>SUNK</div><div style='margin:10px 0 18px;max-width:420px'>" + (by ? by.replace(/[<>&]/g, "") + " sent your ship to the bottom." : "Your ship went to the bottom.") + " The crew were fished out and towed back to Bramble Quay. Your hull is patched to " + hullShow50() + ".</div><button type='button' style='font:700 16px system-ui;padding:10px 26px;border-radius:10px;border:0;background:#ffd75a;color:#1a1a1a'>Carry on</button>";
+      o.innerHTML = "<div style='font:800 34px system-ui;color:#ff7a6a;letter-spacing:2px'>SUNK</div><div style='margin:10px 0 18px;max-width:420px'>" + (by ? by.replace(/[<>&]/g, "") + " sent your ship to the bottom." : "Your ship went to the bottom.") + " The crew were fished out and towed back to Bramble Quay. Your hull is patched to " + hullShow50() + (x3 ? " and you have " + x3.crew + " hands: hire more at the tavern or the shipyard's Crew tab" : "") + ".</div><button type='button' style='font:700 16px system-ui;padding:10px 26px;border-radius:10px;border:0;background:#ffd75a;color:#1a1a1a'>Carry on</button>";
       const shut = function (e) { if (e) e.preventDefault(); o.remove(); };
       setTimeout(shut, 12000); // Batch 51: never leaves the screen stuck
       o.querySelector("button").addEventListener("pointerdown", shut); o.querySelector("button").addEventListener("click", shut);
@@ -7826,7 +7826,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3 && (x3.commissions || x3.commission)) lines.push("Admiralty commissions completed: " + x3.commissions + (x3.commission ? " \u00B7 one in hand" : ""));
     if (x3) lines.push("Galley: " + (x3.ate ? x3.ate.split("||").length : 0) + " of 4 port dishes tasted \u00B7 " + x3.meals + " meals bought");
     if (x3) lines.push("Treasure: " + (x3.hasMap ? "a map, " + Math.round(Math.hypot(x3.mapX - ship.x, x3.mapZ - ship.z)) + " yards away to the " + ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"][((Math.round(Math.atan2(x3.mapX - ship.x, -(x3.mapZ - ship.z)) / (Math.PI / 4)) % 8) + 8) % 8] : "no map") + " \u00B7 found " + x3.maps + " \u00B7 flawless battles " + x3.flawless + " \u00B7 squalls ridden reefed " + x3.reefed + (glint && !glint.treasure ? " \u00B7 a golden shimmer " + Math.round(Math.hypot(glint.x - ship.x, glint.z - ship.z)) + " yards off" : ""));
-    if (x3) lines.push("Shots fired: " + x3.shots + " \u00B7 accuracy " + (x3.shots ? Math.round(100 * Math.min(x3.hits, x3.shots) / x3.shots) : 0) + "% \u00B7 critical hits: " + x3.crits + " \u00B7 top speed: " + x3.topSpeed + " knots" + (hotT > 0 ? " \u00B7 gun crews on fire" : ""));
+    if (x3) lines.push("Career shots fired: " + x3.shots + " \u00B7 accuracy " + (x3.shots ? Math.round(100 * Math.min(x3.hits, x3.shots) / x3.shots) : 0) + "% \u00B7 critical hits: " + x3.crits + " \u00B7 top speed: " + x3.topSpeed + " knots" + (hotT > 0 ? " \u00B7 gun crews on fire" : ""));
     if (x3) lines.push("Gunnery: " + x3.hits + " hits \u00B7 " + x3.rakes + " raking \u00B7 best streak " + x3.bestStreak + " \u00B7 slipped past " + x3.shadow + " patrols at night");
     if (x3) {
       lines.push("");
@@ -8349,11 +8349,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     else if (playerSafe()) { if (f.hunt) { f.hunt = false; f.wp = nearestFoeWp(f); if (!f.boss && safeWarnT <= 0) { say(f.name + " will not follow you into harbour.", 2.5); safeWarnT = 3; } } }
     else if (f.ignore <= 0) {
       if (f.hunt) {
-        if (pd > (f.hunter ? 420 : (dayU.value < 0.35 ? 100 : 130)) || (!f.hunter && !f.boss && pd > 70 && inSquallAt(ship.x, ship.z) && !inSquallAt(f.x, f.z))) {
+        if (!f.qb50 && pd > (f.hunter ? 420 : (dayU.value < 0.35 ? 100 : 130)) || (!f.qb50 && !f.hunter && !f.boss && pd > 70 && inSquallAt(ship.x, ship.z) && !inSquallAt(f.x, f.z))) {
           f.hunt = false;
           if (!f.boss) f.search46 = { x: ship.x, z: ship.z, t: 20 };
           f.wp = nearestFoeWp(f);
-          if (f.alive && !f.sinking) floatText(f.x, 10, f.z, "lost you", "#cfe6ff");
+          if (f.alive && !f.sinking) { floatText(f.x, 10, f.z, "lost you", "#cfe6ff"); say(f.name + " has lost you and breaks off.", 2.2); } // Batch 51: say it, not just float it
         }
       } else if (pd < spotRange(f)) { f.hunt = true; f.search46 = null; f.slipNear = false; if (f.alive && !f.sinking) floatText(f.x, 10, f.z, "spotted you!", "#ffb4a8"); }
       else if (dayU.value < 0.35 && !f.hunter && !f.boss && f.alive && !f.sinking && x3) {
@@ -8370,6 +8370,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       // Batch 49: the quick-battle foe never runs; at a quarter hull she strikes her colours and it counts as your win.
       if (f.qb50 && !f.qbWon48 && f.hull <= f.hullMax * 0.25) { strikeQb50(f); return { want: f.heading, dist: Infinity, hunting: false }; }
       if (f.qb50) f.flee46 = false;
+      // Batch 51 (Games 2): the quick-battle cutter never hangs astern: if she drops behind your beam she sails for a spot 20 yd off your nearer beam.
+      if (f.qb50 && pd > 14) { const fx51 = Math.sin(ship.heading), fz51 = Math.cos(ship.heading), along51 = (f.x - ship.x) * fx51 + (f.z - ship.z) * fz51; if (along51 < -6 || pd > 32) { const sg51 = ((f.x - ship.x) * Math.cos(ship.heading) - (f.z - ship.z) * Math.sin(ship.heading)) >= 0 ? 1 : -1; const tx51 = ship.x + Math.cos(ship.heading) * sg51 * 20 + fx51 * 6, tz51 = ship.z - Math.sin(ship.heading) * sg51 * 20 + fz51 * 6; return { want: Math.atan2(tx51 - f.x, tz51 - f.z), dist: pd, hunting: true }; } }
       if (f.hull < runAt && pd > 36 && !f.qb50) { if (!f.flee46) { f.flee46 = true; floatText(f.x, 10, f.z, "fleeing!", "#9dffb0"); } return { want: avoid46(f, windAngle), dist: Infinity, hunting: true }; }
       f.flee46 = false;
       const bear = Math.atan2(pdx, pdz);
@@ -8623,7 +8625,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const d = Math.hypot(dx, dz);
       if (d < 6 || d > reach) return;
       const cos = (dx * rx + dz * rz) / d;
-      if (cos < (rankOf() === 0 ? 0.6 : 0.64)) return; // Batch 51: about 50 degrees off the beam at most, so a ship on the quarter or astern is out of arc // Batch 50: the guns can be laid on a ship up to about 55-58 degrees off the beam (was 43-47), so a close ship on the quarter or bow is hit too
+      if (cos < 0.62) return; // Batch 51: about 50 degrees off the beam at most, so a ship on the quarter or astern is out of arc // Batch 50: the guns can be laid on a ship up to about 55-58 degrees off the beam (was 43-47), so a close ship on the quarter or bow is hit too
       if (d < bd) { bd = d; best = { x: o.x + (vx || 0) * flight, z: o.z + (vz || 0) * flight, name: o.name }; }
     };
     for (let i = 0; i < foes.length; i++) {
@@ -8647,7 +8649,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   // Batch 47: Fire with no side chosen lays the guns on a ship that is in reach on either beam.
   // Batch 51 (Games 2): one arc test for both firing and the green glow: the guns can be laid on a ship in reach on that side.
-  function arc51(sg) { const sx = ship.x + Math.cos(ship.heading) * sg * 3.2, sz = ship.z - Math.sin(ship.heading) * sg * 3.2; return !!broadsideAssist(sg, sx, sz, gunType()); }
+  function arc51(sg) {
+    const rx = Math.cos(ship.heading) * sg, rz = -Math.sin(ship.heading) * sg, reach = gunReach48(gunType());
+    for (let i = 0; i < foes.length; i++) { const f = foes[i]; if (f.gone || !f.alive || f.sinking) continue; const dx = f.x - ship.x, dz = f.z - ship.z, d = Math.hypot(dx, dz); if (d > reach + 3) continue; if (d < 9 || (dx * rx + dz * rz) / d >= 0.62) return true; }
+    if (skirmish) for (let i = 0; i < skirmish.ships.length; i++) { const o = skirmish.ships[i]; if (o.sinking || o.gone) continue; const dx = o.x - ship.x, dz = o.z - ship.z, d = Math.hypot(dx, dz); if (d <= reach + 3 && (d < 9 || (dx * rx + dz * rz) / d >= 0.62)) return true; }
+    return false;
+  }
   function aimTarget47() {
     const n = nearFoe47(Math.max(60, (gunStats().range || 90) * 1.1));
     return n && n.fromLine >= BEAR_MIN ? n : null;
@@ -8698,7 +8705,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         return fire(dv > 0.35 ? 1 : dv < -0.35 ? -1 : (coolS47[0] <= coolS47[1] ? 1 : -1)); }
     }
     // Batch 51 (Games 2): with a ship within 160 yd but none in this battery's arc, the tap neither fires nor starts a reload (same test as the green glow).
-    if (nearFoe47(160) && !arc51(aim.sign)) { const nf = nearFoe47(160); if (nf.d > gunReach48() * 1.08) say("Out of range: " + nf.f.name + " is " + Math.round(nf.d) + " yd off, your guns reach about " + Math.round(gunReach48()) + ". Close in.", 1.8); else say("No target in the " + (aim.sign > 0 ? "port" : "starboard") + " arc. " + nf.f.name + " is off your " + (nf.fromLine < BEAR_MIN ? (nf.ahead ? "bow" : "stern") : (nf.sign > 0 ? "port beam" : "starboard beam")) + (nf.d > gunReach48() * 1.05 ? ", " + Math.round(nf.d) + " yd off" : "") + ".", 1.8); { const btn = typeof sideBtn47 !== "undefined" ? sideBtn47[aim.sign > 0 ? 0 : 1] : null; if (btn) { btn.classList.remove("rel50"); void btn.offsetWidth; btn.classList.add("rel50"); } } return; }
+    if (nearFoe47(160) && (nearFoe47(160).f.hunt || nearFoe47(160).f.qb50 || nearFoe47(160).f.hunter) && !arc51(aim.sign)) { const nf = nearFoe47(160); /* only an enemy that is after you blocks the tap; passing traders do not */ if (nf.d > gunReach48()) say("Out of range: " + nf.f.name + " is " + Math.round(nf.d) + " yd off, your guns reach about " + Math.round(gunReach48()) + ". Close in.", 1.8); else say("No target in the " + (aim.sign > 0 ? "port" : "starboard") + " arc. " + nf.f.name + " is off your " + (nf.fromLine < BEAR_MIN ? (nf.ahead ? "bow" : "stern") : (nf.sign > 0 ? "port beam" : "starboard beam")) + (nf.d > gunReach48() * 1.05 ? ", " + Math.round(nf.d) + " yd off" : "") + ". Turn to bring her abeam.", 1.8); { const btn = typeof sideBtn47 !== "undefined" ? sideBtn47[aim.sign > 0 ? 0 : 1] : null; if (btn) { btn.classList.remove("rel50"); void btn.offsetWidth; btn.classList.add("rel50"); } } return; }
     const stats = gunStats();
     // Batch 51 (Games 2): with a ship near but beyond the guns' reach, the tap does not fire or start a reload; it says how far she is.
     { const n51 = nearFoe47(160), reach51 = gunReach48(); if (n51 && n51.d > reach51 * 1.08 && !nearFoe47(reach51 * 1.08)) { say("Out of range: " + n51.f.name + " is " + Math.round(n51.d) + " yd off, your guns reach about " + Math.round(reach51) + ". Close in.", 1.8); { const btn = typeof sideBtn47 !== "undefined" ? sideBtn47[aim.sign > 0 ? 0 : 1] : null; if (btn) { btn.classList.remove("rel50"); void btn.offsetWidth; btn.classList.add("rel50"); } } return; } }
@@ -9582,7 +9589,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     qa("Teleport: Bramble shipyard", "qayard51", function (b) { b.ashoreAt("bramble"); const d = doors.find(function (o) { return o.kind === "shipyard" && (!o.port || o.port === "bramble"); }); if (d) b.putPerson48(d.x + 2, d.z + 2); });
     qa("Teleport: town gate", "qagate51", function (b) { b.ashoreAt("bramble"); setTimeout(function () { const g = b.g51(); if (g.gate) b.putPerson48(g.gate.x - g.dir[0] * 3, g.gate.z - g.dir[1] * 3); }, 300); });
     qa("Teleport: bandits (wilds)", "qabandit51", function (b) { b.ashoreAt("bramble"); setTimeout(function () { const g = b.g51(); if (g.gate) b.putPerson48(g.gate.x + g.dir[0] * 10, g.gate.z + g.dir[1] * 10); }, 300); });
-    qa("Spawn squall ahead", "qasquall51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } if (!storms.length) makeStorm(ship.x, ship.z + 200, 30, 0, 0); const s = storms[0]; s.x = ship.x + Math.sin(ship.heading) * (s.r + 25); s.z = ship.z + Math.cos(ship.heading) * (s.r + 25); if (s.group) s.group.position.set(s.x, s.group.position.y, s.z); say("QA: a squall sits " + Math.round(s.r + 25) + " yd ahead.", 2); });
+    qa("Spawn squall here", "qasquall51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } qbCalm47 = 0; if (!storms.length) makeStorm(ship.x, ship.z + 200, 30, 0, 0); const s = storms[0]; s.x = ship.x + Math.sin(ship.heading) * (s.r * 0.6); s.z = ship.z + Math.cos(ship.heading) * (s.r * 0.6); /* Batch 51: right over you, and the quick-battle calm no longer pushes it away */ if (s.group) s.group.position.set(s.x, s.group.position.y, s.z); say("QA: you are in a squall. Full sail tears after 3 s.", 2); });
     qa("Teleport: Gull Rock", "qagull51", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.toTreasure51(); });
     document.body.appendChild(qp); const sk = document.getElementById("qasink48"); if (sk) sk.style.transform = "translateX(calc(-50% - 62px))"; }
   // Batch 48: phones often skip pagehide when you swipe away, so also save when the tab is hidden and every 20 s, so Continue picks up mid-battle hull and position.
@@ -11445,7 +11452,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           if (shotD > 45 && !s.grape) { floatText(f.x, 16, f.z, "Long shot!", "#bfe9ff"); addXp(2); }
           dmg = Math.round(dmg * cannonMul51());
           damageFoe(f, dmg);
-          if (noticeT < 0.6) say("Hit! " + f.name + " -" + dmg + (f.alive && !f.sinking ? " (" + Math.max(0, Math.round(f.hull)) + " left)." : "."), 1.4); // Batch 51 (Games 2): every hit says what it did
+          say("Hit! " + f.name + " -" + dmg + (f.alive && !f.sinking ? " (" + Math.max(0, Math.round(f.hull)) + " left)." : "."), 1.4); // Batch 51 (Games 2): every hit says what it did
           if (f.alive && !f.sinking && f.hull < f.hullMax * 0.25 && !f.listSaid) { f.listSaid = true; say(f.name + " is listing badly. One more good broadside.", 2.5); }
           const nowS = performance.now() / 1000;
           hitStreak = (nowS - lastHitAt < 9) ? hitStreak + 1 : 1;
@@ -11548,7 +11555,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           if (nf) {
             const short = Math.hypot(s.mesh.position.x - ship.x, s.mesh.position.z - ship.z) < Math.hypot(nf.x - ship.x, nf.z - ship.z);
             floatText(s.mesh.position.x, 4, s.mesh.position.z, short ? "short" : "long", "#cfe6ff");
-            if (noticeT < 0.6 && x3 && x3.tipAim) say("Miss: the ball fell " + (short ? "short of " : "past ") + nf.name + ".", 1.2); // Batch 51 (Games 2): misses get a line too
+            if (x3 && x3.tipAim) say("Miss: the ball fell " + (short ? "short of " : "past ") + nf.name + ".", 1.2); // Batch 51 (Games 2): misses get a line too
             if (x3 && !x3.tipAim) { x3.tipAim = true; say(short ? "Your shot fell short. Close in: long guns reach about 30 yards." : "Your shot flew long. Turn so she sits square on your beam.", 4); writeSave(); }
             hitStreak = 0;
           }
@@ -13754,7 +13761,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (sh > 0 && sh < 200 && dm === 0) { x3.flawless += 1; addXp(10); if (ship.root) floatText(ship.x, 10, ship.z, "Flawless!", "#bfffd0"); }
     const sharp = sh >= 4 && sh < 200 && Math.min(sh, hi) / sh >= 0.75;
     if (sharp) addXp(5);
-    if (sh > 0 && sh < 200) toast(lastReport = "Battle report" + (foeName ? " (" + foeName + ")" : "") + ": " + sh + " shots fired, " + Math.min(sh, hi) + " hits (" + Math.round(100 * Math.min(sh, hi) / sh) + "%)" + (cr ? ", " + cr + " critical" : "") + ", " + (dm ? dm + " damage taken." : "not a scratch on her! +10 XP") + (sharp ? " Sharp gunnery: +5 XP." : "") + (dm === 0 && x3.flawlessRun >= 2 ? " " + x3.flawlessRun + " flawless in a row!" : "") + (dayU.value < 0.1 ? " Night action: +5 XP." : ""), "After the battle");
+    if (sh > 0 && sh < 200) toast(lastReport = "Battle report" + (foeName ? " (" + foeName + ")" : "") + ", this fight: " + sh + " shots fired, " + Math.min(sh, hi) + " hits (" + Math.round(100 * Math.min(sh, hi) / sh) + "%)" + (cr ? ", " + cr + " critical" : "") + ", " + (dm ? dm + " damage taken." : "not a scratch on her! +10 XP") + (sharp ? " Sharp gunnery: +5 XP." : "") + (dm === 0 && x3.flawlessRun >= 2 ? " " + x3.flawlessRun + " flawless in a row!" : "") + (dayU.value < 0.1 ? " Night action: +5 XP." : ""), "After the battle");
   }
   // ---- Batch 29: shooting stars, rainbows, sea turtles, flying fish, albatross ----
   let glowT = 240, glow = null;
@@ -15850,12 +15857,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       wilds51.push(w);
       const px = -uz, pz = ux;
       for (let s = -1; s <= 1; s += 2) {
-        const len = hc + 6 - 1.9, mid = s * (1.9 + len / 2); // Batch 51 (Games 2): the wall runs 6 m out into the shallows so nobody wades round its end
+        const len = hc + 14 - 1.9, mid = s * (1.9 + len / 2); // Batch 51 (Games 2): the wall runs 6 m out into the shallows so nobody wades round its end
         const cx = w.gate.x + px * mid, cz = w.gate.z + pz * mid;
         const wall = new THREE.Mesh(new THREE.BoxGeometry(len, 3.2, 0.9), wallMat51);
         wall.position.set(cx, 0.9, cz); wall.rotation.y = Math.atan2(px, pz) - Math.PI / 2;
         wall.castShadow = true; scene.add(wall);
-        for (let t = 1.9; t <= hc + 6; t += 1.0) blocks.push({ x: w.gate.x + px * s * t, z: w.gate.z + pz * s * t, r: 0.75 });
+        for (let t = 1.9; t <= hc + 14; t += 1.0) blocks.push({ x: w.gate.x + px * s * t, z: w.gate.z + pz * s * t, r: 0.75 });
         const post = new THREE.Mesh(new THREE.BoxGeometry(1.1, 4.2, 1.1), wallMat51);
         post.position.set(w.gate.x + px * s * 2.2, 1.4, w.gate.z + pz * s * 2.2); scene.add(post);
       }
@@ -15920,7 +15927,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   function reviveGroup51(grp, force) {
     if (!force && Date.now() - grp.t < 150000) return;
-    grp.foes.forEach(function (f) { f.dead = false; f.fall = 0; f.hp = f.hpMax; f.x = f.hx; f.z = f.hz; f.g.rotation.x = 0; paintHullSprite(f.bar, f.hp, f.hpMax); f.bar.visible = true; });
+    const fresh51 = Date.now() - grp.t >= 150000;
+    grp.foes.forEach(function (f) { if (fresh51) f.paid51 = false; f.dead = false; f.fall = 0; f.hp = f.hpMax; f.x = f.hx; f.z = f.hz; f.g.rotation.x = 0; paintHullSprite(f.bar, f.hp, f.hpMax); f.bar.visible = true; });
   }
   function activeFoes51() { if (mode !== "land") return null; if (treasureOn51) return TREASURE51; return wildHere51(); }
   let landHp51 = 100, pistolCd51 = [0, 0], wasOut51 = false, hurtT51 = 0;
@@ -15957,10 +15965,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     floatText(f.x, feetY(f.x, f.z) + 2.2, f.z, "-" + n, "#ffb08a");
     if (f.hp <= 0) {
       f.dead = true; f.bar.visible = false;
-      const g = f.kind === "pirate" ? 25 : 12 + Math.floor(Math.random() * 7);
+      const g = f.paid51 ? 0 : (f.kind === "pirate" ? 25 : 12 + Math.floor(Math.random() * 7)); f.paid51 = true; // Batch 51 (Games 2): a guard pays his purse once until the group truly respawns
       ledger.gold += g; if (x3) { x3.landKills51 = (x3.landKills51 || 0) + 1; x3.landGold51 = (x3.landGold51 || 0) + g; }
       floatText(f.x, feetY(f.x, f.z) + 2.6, f.z, "+" + g + " gold", "#ffe08a");
-      say((f.kind === "pirate" ? "A pirate" : "A bandit") + " goes down. " + g + " gold in his purse.", 2.2);
+      say((f.kind === "pirate" ? "A pirate" : "A bandit") + " goes down. " + (g ? g + " gold in his purse." : "You already took his purse."), 2.2);
       const grp = activeFoes51(); if (grp) grp.t = Date.now();
       writeSave();
     }
@@ -16648,6 +16656,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!x3) x3Load(null);
     // Batch 50: every quick battle is practice. Whatever voyage is live is saved first, then nothing during the fight (autosave, hiding the page, the fight itself) is written.
     if (!practice47) { lastSaveTxt50 = ""; writeSave(); practice47 = true; }
+    windAngle = 0.7; // Batch 51 (Games 2): quick battles get a fair wind on the quarter
+    x3.crew = crewMaxFor(playerHull.id); // Batch 51 (Games 2): practice fights sail with a full crew (nothing is saved)
     // Always start at sea and aboard, with full hull, even if the voyage was ashore (at the shipyard, in a menu).
     closeMenu();
     if (mode === "land") { mode = "sea"; if (person.group) person.group.visible = false; setMoving(false); ashoreBeach = null; if (typeof chartBtn !== "undefined") chartBtn.style.display = ""; }
@@ -16665,7 +16675,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       for (let k = 0; k < 12 && !spotAfloat(fx, fz); k++) { fz += 10; }
       f.x = fx; f.z = fz; f.heading = Math.PI + 0.6; f.hunt = true; f.ignore = 0; f.hull = f.hullMax;
       f.cool = 6;
-      { let bx = ship.x + Math.min(21, gunReach48() * 0.75), bz = ship.z + 3; for (let k = 0; k < 10 && !spotAfloat(bx, bz); k++) { bz += 8; } { const rx51 = Math.cos(ship.heading), rz51 = -Math.sin(ship.heading), dd51 = Math.min(21, gunReach48() * 0.75); let ax = ship.x + rx51 * dd51, az = ship.z + rz51 * dd51; if (!spotAfloat(ax, az)) { ax = ship.x - rx51 * dd51; az = ship.z - rz51 * dd51; } if (spotAfloat(ax, az)) { bx = ax; bz = az; } } f.x = bx; f.z = bz; f.heading = ship.heading; f.way = Math.max(3.2, Math.abs(ship.speed || 0)); qbFoe47 = f; /* Batch 51 (Games 2): she starts square on your beam, sailing your course */ qbCalm47 = 600; for (let j = 0; j < foes.length; j++) foes[j].qb50 = false; f.qb50 = true; f.cool = Math.max(f.cool || 0, 5); /* Batch 51 (Games 2): you get the first broadside in a quick battle */ f.qbWon48 = false; f.struck50 = false; f.flee46 = false; f.alive = true; f.gone = false; f.sinking = false; if (f.root) { f.root.visible = true; f.root.position.set(f.x, f.root.position.y, f.z); } }
+      { let bx = ship.x + Math.min(21, gunReach48() * 0.75), bz = ship.z + 3; for (let k = 0; k < 10 && !spotAfloat(bx, bz); k++) { bz += 8; } { const rx51 = Math.cos(ship.heading), rz51 = -Math.sin(ship.heading), dd51 = Math.min(21, gunReach48() * 0.75); let ax = ship.x + rx51 * dd51, az = ship.z + rz51 * dd51; if (!spotAfloat(ax, az)) { ax = ship.x - rx51 * dd51; az = ship.z - rz51 * dd51; } if (spotAfloat(ax, az)) { bx = ax; bz = az; } } f.x = bx; f.z = bz; f.heading = ship.heading; f.way = Math.max(3.2, Math.abs(ship.speed || 0)); qbFoe47 = f; /* Batch 51 (Games 2): she starts square on your beam, sailing your course */ qbCalm47 = 600; for (let j = 0; j < foes.length; j++) foes[j].qb50 = false; f.qb50 = true; f.cool = Math.max(f.cool || 0, 7); /* Batch 51 (Games 2): you get the first broadside in a quick battle */ f.qbWon48 = false; f.struck50 = false; f.flee46 = false; f.alive = true; f.gone = false; f.sinking = false; if (f.root) { f.root.visible = true; f.root.position.set(f.x, f.root.position.y, f.z); } }
     }
     for (let i = 0; i < storms.length; i++) { const st = storms[i]; const d = Math.hypot(st.x - ship.x, st.z - ship.z); if (d < st.r + 260) { const a = Math.atan2(st.x - ship.x, st.z - ship.z) || 1; st.x = ship.x + Math.sin(a) * (st.r + 320); st.z = ship.z + Math.cos(a) * (st.r + 320); } }
     fogT = 0; fogK = 0; gustT = 0; ship.sails = 100; refreshCloth();
