@@ -5762,6 +5762,98 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return x >= d.x0 + m && x <= d.x1 - m && z >= d.z0 + m && z <= d.z1 - m;
   }
 
+  // Batch 52: town dressing (cosmetic only). deco52 holds { o, low, blk } so applyGfx can thin it out.
+  const deco52 = [];
+  let decoRes52 = null;
+  function decoRes() {
+    if (decoRes52) return decoRes52;
+    decoRes52 = {
+      post: new THREE.BoxGeometry(0.12, 0.9, 0.12), rail: new THREE.BoxGeometry(1, 0.08, 0.05),
+      wood: new THREE.MeshLambertMaterial({ color: 0x7a5434 }), dark: new THREE.MeshLambertMaterial({ color: 0x4e3622, side: THREE.DoubleSide }),
+      cloth: [0xf2ead8, 0xc0504a, 0x5b7fa8, 0xe0c060].map(function (c) { return new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide }); }),
+      sheet: new THREE.PlaneGeometry(0.55, 0.7), house: new THREE.BoxGeometry(2.7, 2.5, 2.7), door: new THREE.PlaneGeometry(0.7, 1.4), win: new THREE.PlaneGeometry(0.45, 0.4),
+      walls: [0xe8dcc0, 0xd8c4a0, 0xb89068, 0xe2d2b8].map(function (c) { return new THREE.MeshLambertMaterial({ color: c }); }), awning: new THREE.PlaneGeometry(2.2, 1.4),
+      lineMat: new THREE.LineBasicMaterial({ color: 0x3a2a1a })
+    };
+    return decoRes52;
+  }
+  function addDeco52(o, low, blk) { o.userData.noCam51 = !blk; o.traverse(function (m) { m.castShadow = false; }); deco52.push({ o: o, low: low, blk: blk || null }); return o; }
+  function townDress52() {
+    let seed = 52;
+    const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const R = decoRes();
+    [0, 3, 5].forEach(function (ii) {
+      const isl = ISLANDS[ii]; if (!isl || isl.kind !== "town") return;
+      const port = PORTS.find(function (p) { return p.island === ii; }); if (!port) return;
+      const myDoors = doors.filter(function (d) { return Math.hypot(d.x - isl.x, d.z - isl.z) < isl.landR + 4; });
+      const wild = ISLANDS.find(function (w) { return w.wildOf === ii; });
+      const wdx = wild ? (wild.x - isl.x) / Math.hypot(wild.x - isl.x, wild.z - isl.z) : 0, wdz = wild ? (wild.z - isl.z) / Math.hypot(wild.x - isl.x, wild.z - isl.z) : 0;
+      const sx = port.spawn.x, sz = port.spawn.z;
+      const segD = function (px, pz, ax, az, bx, bz) { const vx = bx - ax, vz = bz - az, L = vx * vx + vz * vz || 1; let t = ((px - ax) * vx + (pz - az) * vz) / L; t = Math.max(0, Math.min(1, t)); return Math.hypot(px - ax - vx * t, pz - az - vz * t); };
+      const clear = function (x, z, r) {
+        const d = Math.hypot(x - isl.x, z - isl.z); if (d > isl.landR * 0.82 || d < 6) return false;
+        if (wild && ((x - isl.x) * wdx + (z - isl.z) * wdz) / d > 0.55) return false;
+        const dk = port.dock; if (x > dk.x0 - 4 - r && x < dk.x1 + 4 + r && z > dk.z0 - 6 - r && z < dk.z1 + 2) return false;
+        if (Math.hypot(x - port.harbour.x, z - port.harbour.z) < port.harbour.r + r) return false;
+        for (let i = 0; i < blocks.length; i++) if (Math.hypot(x - blocks[i].x, z - blocks[i].z) < blocks[i].r + r + 1.6) return false;
+        for (let i = 0; i < myDoors.length; i++) { const dd = myDoors[i]; if (Math.hypot(x - dd.x, z - dd.z) < r + 4.5) return false; if (segD(x, z, sx, sz, dd.x, dd.z) < r + 2.6) return false; }
+        if (Math.hypot(x - sx, z - sz) < r + 6) return false;
+        return true;
+      };
+      const houses = [];
+      for (let k = 0; k < 140 && houses.length < 11; k++) {
+        const a = rnd() * Math.PI * 2, d = isl.landR * (0.3 + rnd() * 0.5), x = isl.x + Math.sin(a) * d, z = isl.z + Math.cos(a) * d;
+        if (!clear(x, z, 1.9)) continue;
+        const y = islandHeight(isl, x, z), rot = Math.atan2(isl.x - x, isl.z - z) + (rnd() - 0.5) * 0.5, s = 0.85 + rnd() * 0.3;
+        const blk = { x: x, z: z, r: 1.85 * s }; blocks.push(blk);
+        const low = houses.length % 3 !== 0;
+        const g1 = new THREE.Group(); const body = new THREE.Mesh(R.house, R.walls[houses.length % R.walls.length]); body.position.y = 1.25; body.receiveShadow = true; g1.add(body); const dr = new THREE.Mesh(R.door, R.dark); dr.position.set(0, 0.75, 1.36); g1.add(dr); [-0.75, 0.75].forEach(function (wx) { const wn = new THREE.Mesh(R.win, R.dark); wn.position.set(wx, 1.6, 1.36); g1.add(wn); }); g1.position.set(x, y, z); g1.rotation.y = rot; g1.scale.setScalar(s); scene.add(g1); addDeco52(g1, low, blk); /* Batch 52: closed plaster or plank walls, a shut door and two dark windows */
+        const g2 = spawn("structure-roof.glb", x, y + 2.55 * s, z, rot, 1); g2.scale.set(1.65 * s, 1.05 * s, 1.65 * s); addDeco52(g2, low, null);
+        houses.push({ x: x, z: z, y: y, rot: rot, s: s });
+      }
+      houses.forEach(function (h, hi) {
+        const c = Math.cos(h.rot), sn = Math.sin(h.rot);
+        // crates and barrels by the wall
+        const pl = function (lx, lz) { return { x: h.x + lx * c + lz * sn, z: h.z - lx * sn + lz * c }; };
+        const p1 = pl(1.9 * h.s, 0.6), p2 = pl(-1.9 * h.s, -0.4);
+        if (clear(p1.x, p1.z, -1.2)) { addDeco52(spawn(hi % 2 ? "crate.glb" : "barrel.glb", p1.x, islandHeight(isl, p1.x, p1.z), p1.z, h.rot + hi, 0.7), true); }
+        if (hi % 2 === 0 && clear(p2.x, p2.z, -1.2)) addDeco52(spawn("crate.glb", p2.x, islandHeight(isl, p2.x, p2.z), p2.z, h.rot + 0.4, 0.6), true);
+        // a short fence behind the house
+        if (hi % 3 !== 2) {
+          const f = new THREE.Group(), back = pl(0, -2.6 * h.s);
+          for (let k = -1; k <= 1; k++) { const p = new THREE.Mesh(R.post, R.wood); p.position.set(k * 1.0, 0.45, 0); f.add(p); }
+          [0.35, 0.7].forEach(function (yy) { const r = new THREE.Mesh(R.rail, R.dark); r.scale.x = 2.1; r.position.y = yy; f.add(r); });
+          f.position.set(back.x, islandHeight(isl, back.x, back.z), back.z); f.rotation.y = h.rot; scene.add(f); addDeco52(f, true);
+        }
+      });
+      // washing lines between near neighbours
+      let lines = 0;
+      for (let i = 0; i < houses.length && lines < 3; i++) for (let j = i + 1; j < houses.length && lines < 3; j++) {
+        const a = houses[i], b = houses[j], d = Math.hypot(a.x - b.x, a.z - b.z); if (d < 5 || d > 11) continue;
+        const ya = a.y + 2.2 * a.s, yb = b.y + 2.2 * b.s;
+        const g = new THREE.Group();
+        g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(a.x, ya, a.z), new THREE.Vector3((a.x + b.x) / 2, (ya + yb) / 2 - 0.35, (a.z + b.z) / 2), new THREE.Vector3(b.x, yb, b.z)]), R.lineMat));
+        const yaw = Math.atan2(b.x - a.x, b.z - a.z) + Math.PI / 2;
+        for (let k = 1; k <= 4; k++) { const t = k / 5, sag = -0.35 * (1 - Math.abs(2 * t - 1)); const m = new THREE.Mesh(R.sheet, R.cloth[(i + j + k) % 4]); m.position.set(a.x + (b.x - a.x) * t, ya + (yb - ya) * t + sag - 0.38, a.z + (b.z - a.z) * t); m.rotation.y = yaw; m.userData.flap52 = k; g.add(m); }
+        scene.add(g); addDeco52(g, true); lines++;
+      }
+      // two small cosmetic stalls with an awning (no trade: the Market is still the one to use)
+      let stalls = 0;
+      for (let k = 0; k < 60 && stalls < 2; k++) {
+        const a = rnd() * Math.PI * 2, d = isl.landR * (0.25 + rnd() * 0.4), x = isl.x + Math.sin(a) * d, z = isl.z + Math.cos(a) * d;
+        if (!clear(x, z, 1.2)) continue;
+        const y = islandHeight(isl, x, z), rot = rnd() * Math.PI * 2, blk = { x: x, z: z, r: 1.0 }; blocks.push(blk);
+        const g = new THREE.Group();
+        [[-1, -0.6], [1, -0.6], [-1, 0.6], [1, 0.6]].forEach(function (q) { const p = new THREE.Mesh(R.post, R.wood); p.scale.y = 2.2; p.position.set(q[0], 1.0, q[1]); g.add(p); });
+        const top = new THREE.Mesh(R.awning, R.cloth[1 + (stalls + ii) % 3]); top.rotation.x = -Math.PI / 2 + 0.25; top.position.y = 2.05; g.add(top);
+        const tb = new THREE.Mesh(R.rail, R.dark); tb.scale.set(2.1, 6, 14); tb.position.y = 0.75; g.add(tb);
+        g.position.set(x, y, z); g.rotation.y = rot; scene.add(g); addDeco52(g, true, blk);
+        addDeco52(spawn("barrel.glb", x + Math.cos(rot) * 1.5, y, z - Math.sin(rot) * 1.5, rot, 0.6), true);
+        stalls++;
+      }
+    });
+  }
+  function applyDeco52(lo) { for (let i = 0; i < deco52.length; i++) { const d = deco52[i], show = !(lo && d.low); d.o.visible = show; if (d.blk) { if (d.blk.r52 === undefined) d.blk.r52 = d.blk.r; d.blk.r = show ? d.blk.r52 : 0; } } }
   function hitsBlock(x, z, pad) {
     for (let i = 0; i < blocks.length; i++) {
       const b = blocks[i];
@@ -5935,7 +6027,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         port: portId || "bramble",
         label: doorKind === "tavern" ? "Tavern" : doorKind === "shipyard" ? "Shipyard" : doorKind === "church" ? "Church" : "Merchant"
       });
-      { const sp = local(1.05, 1.62); makeSign47(SIGN_KINDS47.indexOf(doorKind) >= 0 ? doorKind : "merchant", sp.x, y + 2.15, sp.z, rot, false); }
+      { const sp = local(1.05, 1.62); makeSign47(SIGN_KINDS47.indexOf(doorKind) >= 0 ? doorKind : "merchant", sp.x, y + 2.15, sp.z, rot, false); } { const R47 = signRes(), wk = SIGN_KINDS47.indexOf(doorKind) >= 0 ? doorKind : "merchant", wp = local(0, 1.42), pl = new THREE.Group(); pl.add(new THREE.Mesh(R47.board, R47.wood)); const fc = new THREE.Mesh(R47.face, R47.mats[wk]); fc.position.z = 0.035; pl.add(fc); pl.position.set(wp.x, y + 2.3, wp.z); pl.rotation.y = rot; pl.scale.setScalar(0.95); pl.userData.noCam51 = true; pl.userData.wall52 = wk; scene.add(pl); } // Batch 52: a picture board on the front wall above the door
       const mark = local(0, 1.7);
       const prop = doorKind === "tavern" ? "barrel.glb" : doorKind === "shipyard" ? "cannon.glb" : doorKind === "church" ? "chest.glb" : "crate.glb";
       { const dp51 = spawn(prop, mark.x, y, mark.z, rot, doorKind === "shipyard" ? 0.7 : 0.9); dp51.userData.noCam51 = true; doorProps51.push(dp51); } // Batch 51: small door props never pull the camera in
@@ -6229,6 +6321,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       scene.add(tag);
       trackPlaceTag(tag);
     });
+    // Batch 52: fuller towns. Cosmetic background houses, fences, crates, stalls and washing lines fill each
+    // town between the real buildings, leaving clear streets from the landing to every door. Nothing new to use.
+    // Low graphics hides most of it (and frees the hidden houses' footprints).
+    townDress52();
     for (let li = 0; li < locals.length; li++) placeLocal(locals[li]);
     const cleoMade = newSailor();
     const cleoIdle = THREE.AnimationClip.findByName(cache["character-a.glb"].animations, "idle");
@@ -15161,6 +15257,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // ---- Batch 25: graphics ----
   function applyGfx() {
     const lo = !!(x3 && x3.lowGfx);
+    applyDeco52(lo); // Batch 52: low graphics hides most town dressing
     gfxLow.value = lo ? 1 : 0;
     renderer.shadowMap.enabled = !lo;
     sun.castShadow = !lo;
@@ -17877,6 +17974,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       callsNow: function () { gullCallT = 0.01; creakT = 0.01; return true; },
       setMorale: function (n) { x3.morale = n; return n; },
       setSail: function (n) { sail = n; return sail; },
+      deco52: function () { return { n: deco52.length, vis: deco52.filter(function (d) { return d.o.visible; }).length, houses: deco52.filter(function (d) { return d.blk && d.blk.r > 1.2; }).length, walls: scene.children.filter(function (o) { return o.userData.wall52; }).length }; },
       gfx: function () { return { low: !!x3.lowGfx, shadows: renderer.shadowMap.enabled, pr: renderer.getPixelRatio(), moon: !!(moonDisc && moonDisc.visible), sunCol: sun.color.getHexString(), fog: scene.fog.color.getHexString(), lightning: lightningSeen, parts: gfxParts.length, smokes: smokes.length, streaks: windStreaks ? windStreaks.filter(function (w) { return w.m.visible; }).length : 0, halo: !!(lampHalo && lampHalo.visible), quay: !!(quayGlows && quayGlows[0].visible), shallows: shallows ? shallows.length : 0, vignette: !vignette.classList.contains("low"), cloud: cloudMat ? cloudMat.color.getHexString() : "" }; },
       fps48: function () { return { interval: fps48.iv, work: fps48.work, fps: 1000 / fps48.iv, n: fps48.n, held: fps48.held, told: fps48.told, pr: renderer.getPixelRatio(), dpr: window.devicePixelRatio, low: !!(x3 && x3.lowGfx), steps: perfState.steps }; },
       setLowGfx: function (on) { x3.lowGfx = !!on; applyGfx(); return x3.lowGfx; },
