@@ -5838,7 +5838,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(a.x, ya, a.z), new THREE.Vector3((a.x + b.x) / 2, (ya + yb) / 2 - 0.35, (a.z + b.z) / 2), new THREE.Vector3(b.x, yb, b.z)]), R.lineMat));
         const yaw = Math.atan2(b.x - a.x, b.z - a.z) + Math.PI / 2;
         for (let k = 1; k <= 4; k++) { const t = k / 5, sag = -0.35 * (1 - Math.abs(2 * t - 1)); const m = new THREE.Mesh(R.sheet, R.cloth[(i + j + k) % 4]); m.position.set(a.x + (b.x - a.x) * t, ya + (yb - ya) * t + sag - 0.38, a.z + (b.z - a.z) * t); m.rotation.y = yaw; m.userData.flap52 = k; g.add(m); }
-        scene.add(g); addDeco52(g, true); lines++; alleys52.push({ isl: ii, x: (a.x + b.x) / 2, z: (a.z + b.z) / 2, ax: (b.x - a.x) / d, az: (b.z - a.z) / d });
+        scene.add(g); addDeco52(g, true); lines++; alleys52.push({ isl: ii, x: (a.x + b.x) / 2, z: (a.z + b.z) / 2, ax: (b.x - a.x) / d, az: (b.z - a.z) / d, half: d / 2 });
       }
       // two small cosmetic stalls with an awning (no trade: the Market is still the one to use)
       let stalls = 0;
@@ -6152,7 +6152,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     closedHouse(q, -9, 20, 0, "tavern", "bramble");
     closedHouse(q, 10, 18, 0, "merchant", "bramble");
     closedHouse(q, 1, 8, 0.4, "shipyard", "bramble");
-    closedHouse(q, -18, 30, 0, "church", "bramble");
+    closedHouse(q, -18, 30, Math.PI, "church", "bramble"); // Batch 52 (Games 2): the door faces the town, not the shallows
     spawn("barrel.glb", -6.2, islandHeight(q, -6.2, 23.2), 23.2, 0.5, 1);
     spawn("crate.glb", 12.4, islandHeight(q, 12.4, 21.2), 21.2, 0.2, 1);
     const ty = islandHeight(q, -6, 12);
@@ -6217,7 +6217,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     spawn("chest.glb", cay.x - 2, islandHeight(cay, cay.x - 2, cay.z + 6), cay.z + 6, 1, 1);
     const salt = PORTS[1];
     closedHouse(cay, -250, 230, 0, "merchant", "salt");
-    spawn("chest.glb", salt.gang.x + 2.2, salt.dock.deck, salt.gang.z, 0.4, 1);
+    { const c52 = spawn("chest.glb", salt.gang.x + 2.2, salt.dock.deck, salt.gang.z, 0.4, 1); c52.userData.noCam51 = true; c52.userData.rock52 = 0.6; doorProps51.push(c52); } // Batch 52 (Games 2): pier chests fade when they would hide you
     spawn("barrel.glb", -246.5, islandHeight(cay, -246.5, 233), 233, 0.6, 1);
     for (let z = 244; z <= 264; z += 2.45) {
       spawn("structure-platform-dock.glb", -250, salt.dock.deck - 1.31, z, 0, 1);
@@ -6234,7 +6234,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
     spawn("rocks-sand-a.glb", lore.x - 14, islandHeight(lore, lore.x - 14, lore.z - 4), lore.z - 4, 0.4, 1.1);
     spawn("barrel.glb", 96, islandHeight(lore, 96, -280), -280, 0.5, 1);
-    spawn("chest.glb", san.gang.x + 2.2, san.dock.deck, san.gang.z, 0.4, 1);
+    { const c52 = spawn("chest.glb", san.gang.x + 2.2, san.dock.deck, san.gang.z, 0.4, 1); c52.userData.noCam51 = true; c52.userData.rock52 = 0.6; doorProps51.push(c52); } // Batch 52 (Games 2): pier chests fade when they would hide you
     for (let z = -268; z <= -248; z += 2.45) {
       spawn("structure-platform-dock.glb", 90, san.dock.deck - 1.31, z, 0, 1);
     }
@@ -6275,7 +6275,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
     spawn("rocks-sand-a.glb", belleIsl.x + 12, islandHeight(belleIsl, belleIsl.x + 12, belleIsl.z + 10), belleIsl.z + 10, 0.5, 1);
     spawn("barrel.glb", -424, islandHeight(belleIsl, -424, -34), -34, 0.4, 1);
-    spawn("chest.glb", belle.gang.x - 2.2, belle.dock.deck, belle.gang.z, 0.2, 1);
+    { const c52 = spawn("chest.glb", belle.gang.x - 2.2, belle.dock.deck, belle.gang.z, 0.2, 1); c52.userData.noCam51 = true; c52.userData.rock52 = 0.6; doorProps51.push(c52); } // Batch 52 (Games 2): pier chests fade when they would hide you
     for (let x = -398; x <= -370; x += 2.45) {
       spawn("structure-platform-dock.glb", x, belle.dock.deck - 1.31, -30, Math.PI / 2, 1);
     }
@@ -6518,6 +6518,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     shade(clerk);
     scene.add(clerk);
     agent.group = clerk;
+    doorProps51.push(clerk); blocks.push({ x: agent.x, z: agent.z, r: 0.7 }); // Batch 52 (Games 2): you cannot walk into the agent, and the camera never sits inside her
     agent.tag = nameSprite("Governor's agent", 0); agent.tag.userData.npc = true;
     agent.tag.position.set(agent.x, ay + 2.35, agent.z);
     makeSign47("governor", agent.x + 1.4, ay + 2.4, agent.z + 0.6, -0.6, true);
@@ -7538,7 +7539,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (mode !== "land" || fightOn || menuOpen) return false;
     if (!agent.group) return false;
     if (!ashorePort || ashorePort.id !== "bramble") return false;
-    return Math.hypot(person.x - agent.x, person.z - agent.z) < 2.8;
+    return Math.hypot(person.x - agent.x, person.z - agent.z) < 3.6;
   }
 
   function tryHear() {
@@ -9720,12 +9721,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     qa("Teleport: Bramble merchant", "qamerch52", function (b) { qaDoor52(b, "merchant", "bramble"); });
     qa("Teleport: Bramble tavern", "qatav52", function (b) { qaDoor52(b, "tavern", "bramble"); });
     qa("Teleport: Bramble church", "qachurch52", function (b) { qaDoor52(b, "church", "bramble"); });
-    qa("Teleport: Governor's agent", "qagov52", function (b) { b.ashoreAt("bramble"); b.putPerson48(agent.x - 3, agent.z); snapCamFacing52(Math.PI / 2); });
+    qa("Teleport: Governor's agent", "qagov52", function (b) { b.ashoreAt("bramble"); b.putPerson48(agent.x - 2.2, agent.z); snapCamFacing52(Math.PI / 2); });
     qa("Teleport: San Lorenzo quay", "qalore52", function (b) { b.ashoreAt("lorenzo"); });
     qa("Teleport: Belleisle quay", "qabelle52", function (b) { b.ashoreAt("belle"); });
     qa("Teleport: town gate", "qagate51", function (b) { b.ashoreAt("bramble"); setTimeout(function () { const g = b.g51(); if (g.gate) b.putPerson48(g.gate.x - g.dir[0] * 3, g.gate.z - g.dir[1] * 3); }, 300); });
     qa("Teleport: bandits (wilds)", "qabandit51", function (b) { b.ashoreAt("bramble"); setTimeout(function () { const g = b.g51(); if (g.gate) b.putPerson48(g.gate.x + g.dir[0] * 10, g.gate.z + g.dir[1] * 10); }, 300); });
     qa("Spawn squall here", "qasquall51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } qbCalm47 = 0; if (!storms.length) makeStorm(ship.x, ship.z + 200, 30, 0, 0); const s = storms[0]; s.x = ship.x + Math.sin(ship.heading) * (s.r * 0.6); s.z = ship.z + Math.cos(ship.heading) * (s.r * 0.6); /* Batch 51: right over you, and the quick-battle calm no longer pushes it away */ if (s.group) s.group.position.set(s.x, s.group.position.y, s.z); squallHold52 = 12; say("QA: you are in a squall. Full sail tears after 3 s.", 2); toast("QA squall spawned on you.", "QA"); setTimeout(function () { qbCalm47 = 0; const s2 = storms[0]; if (s2 && !inSquallAt(ship.x, ship.z)) { s2.x = ship.x; s2.z = ship.z; if (s2.group) s2.group.position.set(s2.x, s2.group.position.y, s2.z); } }, 400); /* Batch 51: re-check once, in case practice or a boarding move pushed it */ });
+    qa("Teleport: Thornkey outpost", "qathorn52", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.outpost52(0); updateCamera.ready = false; });
+    qa("Teleport: Mosswood outpost", "qamoss52", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.outpost52(1); updateCamera.ready = false; });
+    qa("Force alley ambush (Bramble)", "qaamb52", function (b) { b.ashoreAt("bramble"); const al = alleys52.find(function (a) { return a.isl === ashorePort.island; }); if (!al) return; b.ambush52(true); b.putPerson48(al.x - al.ax * (al.half + 3), al.z - al.az * (al.half + 3)); snapCamFacing52(Math.atan2(al.ax, al.az)); updateCamera.ready = false; setTimeout(function () { b.putPerson48(al.x, al.z); }, 400); });
     qa("Teleport: Gull Rock", "qagull51", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.toTreasure51(); });
     document.body.appendChild(qp); const sk = document.getElementById("qasink48"); if (sk) sk.style.transform = "translateX(calc(-50% - 62px))"; }
   // Batch 48: phones often skip pagehide when you swipe away, so also save when the tab is hidden and every 20 s, so Continue picks up mid-battle hull and position.
@@ -12138,8 +12142,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       } else {
         actBtn.textContent = "Board";
         actBtn.disabled = !nearGangplank();
-        if (noticeT > 0) hint.textContent = notice;
-        else if (nearDuelist()) {
+        // Batch 52 (Games 2): a passing notice no longer hides the people you can talk to.
+        if (nearDuelist()) {
           actBtn.textContent = "Draw";
           actBtn.disabled = false;
           if (noticeT > 0) hint.textContent = notice;
@@ -12188,7 +12192,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         } else if (treasureOn51) {
           if (chestReady51()) { actBtn.textContent = "Open chest"; actBtn.disabled = false; hint.textContent = "The guards are down. Tap Open chest."; }
           else hint.textContent = noticeT > 0 ? notice : (TREASURE51.foes.some(function (f) { return !f.dead; }) ? "Gull Rock. Drop the guards (Pistol), then open the chest up the slope." : "Walk up to the chest and tap Open chest. Board takes you back aboard.");
-        } else hint.textContent = nearGangplank()
+        } else hint.textContent = noticeT > 0 ? notice : nearGangplank()
           ? "Your gangplank. Tap Board to take the helm."
           : "Walk the quay. Doors in town; your gangplank is at the end of the pier.";
       }
@@ -12498,10 +12502,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     paintSalvageMarks(ctx, X, Y, 3);
     paintFortMarks(ctx, X, Y, 5);
     paintSquadMarks(ctx, X, Y, 3);
-    const hx = X(ship.x);
-    const hy = Y(ship.z);
-    const fx = Math.sin(ship.heading);
-    const fz = Math.cos(ship.heading);
+    // Batch 52 (Games 2): ashore the marker follows you, not the moored ship, and the tag sits on the arrow with a compass heading.
+    const youL = mode === "land" && person, youX = youL ? person.x : ship.x, youZ = youL ? person.z : ship.z, youH = youL ? (person.yaw != null ? person.yaw : ship.heading) : ship.heading;
+    const hx = X(youX);
+    const hy = Y(youZ);
+    const fx = Math.sin(youH);
+    const fz = Math.cos(youH);
     const ps = Math.max(1.6, chartMarkScale(playerHull.id) * 1.6);
     // Batch 51: your ship is a large gold-ringed arrow with a "You" label so it stands out on the chart.
     ctx.fillStyle = "rgba(242,212,138,.28)"; ctx.beginPath(); ctx.arc(hx, hy, 17, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#ffd75a"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(hx, hy, 17, 0, Math.PI * 2); ctx.stroke();
@@ -12516,7 +12522,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     chartYou51 = { x: hx, y: hy };
     // Batch 51 (Games 2): a page-text "YOU" tag over the chart canvas as well, so the marker shows (and reads) even if the canvas is scaled or covered.
     { let yt = document.getElementById("chartyou51"); if (!yt) { yt = document.createElement("div"); yt.id = "chartyou51"; yt.textContent = "\u25B2 YOU"; yt.style.cssText = "position:fixed;z-index:60;pointer-events:none;font:800 13px system-ui,sans-serif;color:#ffd75a;text-shadow:0 0 3px #000,0 0 3px #000;transform:translate(-50%,0);white-space:nowrap"; document.body.appendChild(yt); }
-      const rc = cvs.getBoundingClientRect(); yt.style.left = (rc.left + hx * rc.width / w) + "px"; yt.style.top = (rc.top + (hy + 36) * rc.height / h) + "px"; yt.style.display = rc.width > 0 ? "block" : "none"; }
+      const rc = cvs.getBoundingClientRect(); yt.style.left = (rc.left + hx * rc.width / w) + "px"; yt.style.top = Math.max(rc.top + 8, Math.min(rc.bottom - 24, rc.top + (hy - 34) * rc.height / h)) + "px"; { const dirs = ["S", "SE", "E", "NE", "N", "NW", "W", "SW"]; const k = ((Math.round(Math.atan2(fx, fz) / (Math.PI / 4)) % 8) + 8) % 8; yt.textContent = "\u25B2 YOU \u00B7 " + dirs[k]; } yt.style.display = rc.width > 0 ? "block" : "none"; }
     ctx.fillStyle = "#f2d48a";
     ctx.font = chartFont(12);
     ctx.textAlign = "center";
@@ -14693,7 +14699,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (mode === "sea" && !titleOn) ISLANDS.forEach(function (L) { if (L.kind !== "outpost") return; const d = Math.hypot(ship.x - L.x, ship.z - L.z); if (d < L.landR + 4) { const a = Math.atan2(ship.x - L.x, ship.z - L.z) || 0; ship.x = L.x + Math.sin(a) * (L.landR + 10); ship.z = L.z + Math.cos(a) * (L.landR + 10); ship.speed = 0; } });
   }, 300);
   // Batch 51 (Games 2): the title screen hides the ship stats, which would show defaults until Continue loads your save.
-  setInterval(function () { const bt52 = document.getElementById("boot"), v = titleOn || (bt52 && !bt52.classList.contains("hide")) ? "hidden" : ""; /* Batch 52: QA buttons hide on the title and loading screens too */ ["qaspawn51", "qapanel51", "qasink48"].forEach(function (id) { const el = document.getElementById(id); if (el && el.style.visibility !== v) el.style.visibility = v; }); ["top", "sub", "hudrow", "windbox"].forEach(function (id) { const el = document.getElementById(id); if (el && el.style.visibility !== v) el.style.visibility = v; }); }, 250);
+  setInterval(function () { const bt52 = document.getElementById("boot"), v = titleOn || (bt52 && !bt52.classList.contains("hide")) ? "hidden" : ""; /* Batch 52: QA buttons hide on the title and loading screens too */ ["qaspawn51", "qapanel51", "qasink48"].forEach(function (id) { const el = document.getElementById(id); const vv = id === "qasink48" && (menuOpen || (typeof chartPanel !== "undefined" && chartPanel.style.display === "block")) ? "hidden" : v; if (el && el.style.visibility !== vv) el.style.visibility = vv; }); ["top", "sub", "hudrow", "windbox"].forEach(function (id) { const el = document.getElementById(id); if (el && el.style.visibility !== v) el.style.visibility = v; }); }, 250);
   function update47(dt) {
     updateSides47();
     lanes47(dt);
@@ -16122,6 +16128,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     say("Ambush! Two cutthroats step out of the alley. Tap Pistol, or walk away fast.", 3.5);
     toast("Alley ambush: drop them with the Pistol, or walk away and they give up.", "Ambush");
   }
+  // Batch 52 (Games 2): the whole alley strip under a washing line counts, not just its midpoint.
   function checkAmbush52() {
     if (AMBUSH52.on) {
       const al = AMBUSH52.alley, d = Math.hypot(person.x - al.x, person.z - al.z);
@@ -16130,10 +16137,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       return;
     }
     if (!x3 || x3.tut < 4 || !ashorePort || fightOn || menuOpen || inWilds51(person.x, person.z)) return;
-    let hit = null; for (let i = 0; i < alleys52.length; i++) { const al = alleys52[i]; if (al.isl === ashorePort.island && Math.hypot(person.x - al.x, person.z - al.z) < 2.6) { hit = al; break; } }
+    let hit = null; for (let i = 0; i < alleys52.length; i++) { const al = alleys52[i]; if (al.isl !== ashorePort.island) continue; const rx = person.x - al.x, rz = person.z - al.z, along = rx * al.ax + rz * al.az, across = Math.abs(rx * al.az - rz * al.ax); if (Math.abs(along) < (al.half || 3) + 1 && across < 3.2) { hit = al; break; } }
     if (hit === ambushAlley52) return; ambushAlley52 = hit; if (!hit) return;
     if (Date.now() < ambushNext52 && !forceAmbush52) return;
-    if (forceAmbush52 || Math.random() < 0.2) { forceAmbush52 = false; ambushNext52 = Date.now() + 900000; startAmbush52(hit); }
+    if (forceAmbush52 || Math.random() < 0.25) { forceAmbush52 = false; ambushNext52 = Date.now() + 900000; startAmbush52(hit); }
   }
   let forceAmbush52 = false;
   let landHp51 = 100, pistolCd51 = [0, 0], wasOut51 = false, hurtT51 = 0;
@@ -18076,6 +18083,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       setSail: function (n) { sail = n; return sail; },
       squall52: function () { return { in: inSquallAt(ship.x, ship.z), n: storms.length, d: storms[0] ? Math.round(Math.hypot(storms[0].x - ship.x, storms[0].z - ship.z)) : null, r: storms[0] ? storms[0].r : null, calm: qbCalm47, mode: mode }; },
       outpost52: function (i) { const I = ISLANDS.filter(function (L) { return L.kind === "outpost"; })[i || 0]; if (I && I.dock52) { ship.x = I.dock52.x; ship.z = I.dock52.z; ship.speed = 0; } return { n: ISLANDS.filter(function (L) { return L.kind === "outpost"; }).length, near: !!outpostNear52(), btn: outBtn52.style.display, gold: ledger.gold, hull: ship.hull, crew: x3.crew, menu: menuKind }; },
+      dbg52: function () { return { p: [person.x, person.z], mode: mode, port: ashorePort && ashorePort.id, fight: fightOn, menu: menuOpen, ag: !!agent.group, agD: Math.hypot(person.x - agent.x, person.z - agent.z), amb: AMBUSH52.on, force: forceAmbush52, next: ambushNext52 - Date.now(), tut: x3 && x3.tut }; },
       ambush52: function (force) { if (force) { forceAmbush52 = true; ambushAlley52 = null; } return { on: AMBUSH52.on, alleys: alleys52.length, here: ashorePort ? alleys52.filter(function (a) { return a.isl === ashorePort.island; }).map(function (a) { return [Math.round(a.x * 10) / 10, Math.round(a.z * 10) / 10]; }) : [], foes: AMBUSH52.foes.map(function (f) { return { hp: f.hp, dead: f.dead, x: Math.round(f.x), z: Math.round(f.z), vis: f.g.visible }; }), hp: landHp51 }; },
       deco52: function () { return { n: deco52.length, vis: deco52.filter(function (d) { return d.o.visible; }).length, houses: deco52.filter(function (d) { return d.blk && d.blk.r > 1.2; }).length, walls: scene.children.filter(function (o) { return o.userData.wall52; }).length }; },
       gfx: function () { return { low: !!x3.lowGfx, shadows: renderer.shadowMap.enabled, pr: renderer.getPixelRatio(), moon: !!(moonDisc && moonDisc.visible), sunCol: sun.color.getHexString(), fog: scene.fog.color.getHexString(), lightning: lightningSeen, parts: gfxParts.length, smokes: smokes.length, streaks: windStreaks ? windStreaks.filter(function (w) { return w.m.visible; }).length : 0, halo: !!(lampHalo && lampHalo.visible), quay: !!(quayGlows && quayGlows[0].visible), shallows: shallows ? shallows.length : 0, vignette: !vignette.classList.contains("low"), cloud: cloudMat ? cloudMat.color.getHexString() : "" }; },
