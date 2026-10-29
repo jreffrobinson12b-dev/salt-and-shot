@@ -6853,10 +6853,17 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       // Batch 51: three more ships so open water has more to fight.
       { name: "Tern", hullId: "cutter", nation: "pirate", pennant: 0x3a2a1c, x: 40, z: -170, heading: 0.8,
         wps: [[40, -170], [110, -150], [140, -200], [60, -230]] },
-      { name: "Saltjack", hullId: "brig", nation: "english", pennant: 0xc8102e, x: -330, z: -170, heading: 2.4,
-        wps: [[-330, -170], [-260, -130], [-230, -200], [-300, -240]] },
+      { name: "Saltjack", hullId: "brig", nation: "english", pennant: 0xc8102e, x: -280, z: -330, heading: 2.4,
+        wps: [[-280, -330], [-200, -300], [-230, -380], [-320, -370]] }, /* kept well clear of the quiet test water at (-300,-150) */
       { name: "Blue Heron", hullId: "cutter", nation: "spanish", pennant: 0xf1c40f, x: 390, z: 170, heading: -1.2,
-        wps: [[390, 170], [440, 220], [360, 260], [320, 190]] }
+        wps: [[390, 170], [440, 220], [360, 260], [320, 190]] },
+      // Batch 51: patrols that work the trade lanes between ports, so a long voyage meets someone.
+      { name: "Vigil", hullId: "cutter", nation: "spanish", pennant: 0xf1c40f, x: 45, z: -110, heading: 2.9,
+        wps: [[40, -70], [70, -160], [30, -130], [55, -90]] },
+      { name: "Kestrel", hullId: "cutter", nation: "pirate", pennant: 0x2a1c3a, x: -180, z: 0, heading: -1.5,
+        wps: [[-120, 10], [-250, -20], [-190, 35]] },
+      { name: "Black Wren", hullId: "brig", nation: "pirate", pennant: 0x101010, x: -320, z: 120, heading: 0.6,
+        wps: [[-290, 150], [-360, 95], [-300, 80]] }
     ];
     for (let i = 0; i < specs.length; i++) {
       const spec = specs[i];
@@ -9501,6 +9508,20 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   window.addEventListener("pagehide", function () { if (worldReady && !titleOn) writeSave(); });
   // Batch 48: ?qa=1 adds a small "QA: sink me" button for testers to check losing quickly.
   if (/[?&]qa=1\b/.test(location.search)) { const qa = document.createElement("button"); qa.type = "button"; qa.id = "qasink48"; qa.textContent = "QA: sink me"; qa.style.cssText = "position:fixed;left:50%;top:calc(4px + env(safe-area-inset-top));transform:translateX(-50%);z-index:60;height:28px;font-size:12px;padding:0 10px;opacity:.75"; qa.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); if (mode === "sea" && ship.hull > 0 && !titleOn) { ship.hull = 1; damagePlayer(5); if (ship.hull > 0) { ship.hull = 0; wreckPlayer(); } } else say("QA: be at sea to sink.", 2); }); document.body.appendChild(qa); }
+  // Batch 51: ?qa=1 also adds "QA: spawn enemy", which brings the nearest patrol to about 60 m off your bow at full hull, hunting you.
+  function spawnNear51() {
+    if (mode !== "sea" || titleOn) { say("QA: be at sea to spawn an enemy.", 2); return null; }
+    let best = null, bd = Infinity;
+    for (let i = 0; i < foes.length; i++) { const f = foes[i]; if (!f.alive || f.sinking || f.gone || f.boss || f.galleon || f.qb50) continue; const d = Math.hypot(f.x - ship.x, f.z - ship.z); if (d < bd) { bd = d; best = f; } }
+    if (!best) { say("QA: no ship free to spawn.", 2); return null; }
+    let a = ship.heading + 0.5, x = 0, z = 0;
+    for (let k = 0; k < 12; k++) { x = ship.x + Math.sin(a) * 60; z = ship.z + Math.cos(a) * 60; if (spotAfloat(x, z) && !safeHarbourAt(x, z)) break; a += Math.PI / 6; }
+    best.x = x; best.z = z; best.heading = Math.atan2(ship.x - x, ship.z - z); best.hull = best.hullMax; best.hunt = true; best.ignore = 0; best.flee46 = false; best.cool = 4;
+    if (best.bar) paintHullSprite(best.bar, best.hull, best.hullMax);
+    say("QA: " + best.name + " is closing on you.", 2.5);
+    return best.name;
+  }
+  if (/[?&]qa=1\b/.test(location.search)) { const qs = document.createElement("button"); qs.type = "button"; qs.id = "qaspawn51"; qs.textContent = "QA: spawn enemy"; qs.style.cssText = "position:fixed;left:calc(50% + 62px);top:calc(4px + env(safe-area-inset-top));z-index:60;height:28px;font-size:12px;padding:0 10px;opacity:.75"; qs.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); spawnNear51(); }); document.body.appendChild(qs); const sk = document.getElementById("qasink48"); if (sk) sk.style.transform = "translateX(calc(-50% - 62px))"; }
   // Batch 48: phones often skip pagehide when you swipe away, so also save when the tab is hidden and every 20 s, so Continue picks up mid-battle hull and position.
   document.addEventListener("visibilitychange", function () { if (document.hidden && worldReady && !titleOn) writeSave(); });
   setInterval(function () { if (worldReady && !titleOn && !document.hidden) writeSave(); }, 20000);
@@ -9639,8 +9660,16 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     else squallBanner.style.visibility = "";
     const bannerUp = storyBanner.style.display === "block" || squallBanner.style.display === "block";
     const show = (x3.tut >= 2) && chartPanel.style.display !== "block" && !bannerUp && toastT <= 0 && !x3.aimed && mode === "sea" && !titleOn && !fightOn && !menuOpen && !document.getElementById("howto");
-    aimTip.style.display = show ? "block" : "none";
+    // Batch 51: the tip fades out after 12 s on screen (counted across sessions) or as soon as you have swiped to look.
+    const nowA = performance.now();
+    if (show) { x3.aimTipMs51 = (x3.aimTipMs51 || 0) + Math.min(250, nowA - (aimTipAt51 || nowA)); }
+    aimTipAt51 = nowA;
+    const left = 12000 - (x3.aimTipMs51 || 0);
+    const vis = show && left > 0;
+    aimTip.style.display = vis ? "block" : "none";
+    if (vis) { const op = left < 1500 ? String(Math.max(0, left / 1500).toFixed(2)) : ""; if (aimTip.style.opacity !== op) aimTip.style.opacity = op; }
   }
+  let aimTipAt51 = 0;
 
   // ---- Squadron consort (batch 6). Saved as JSON text in x3.consort; "" means none.
   let consort = null;
@@ -11794,7 +11823,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           const ff = foes[fi];
           if (!ff.alive || ff.gone || ff.sinking) continue;
           const fd = Math.hypot(ff.x - ship.x, ff.z - ship.z);
-          if (ff.hull < 40 && fd > 36 && fd < 90) running = true;
+          if (ff.flee46 && !ff.qb50 && fd < 90) running = true; // Batch 51: only a ship that is really fleeing reads as running (never the practice foe)
           if (!ff.nation) continue;
           if (fd < flaggedD) { flaggedD = fd; flagged = ff; }
         }
@@ -11990,6 +12019,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const cz = mode === "sea" ? ship.z : person.z;
     function X(x) { return w / 2 + (x - cx) * scale; }
     function Y(z) { return h / 2 + (z - cz) * scale; }
+    let edge51 = 0;
     for (let i = 0; i < storms.length; i++) {
       paintStormMark(mapCtx, X(storms[i].x), Y(storms[i].z), Math.max(2, storms[i].r * scale));
     }
@@ -12022,6 +12052,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       mapCtx.beginPath();
       const px = X(f.x);
       const py = Y(f.z);
+      // Batch 51: a ship off the minimap shows as an arrow on the rim pointing toward her, not a mark stuck on the edge.
+      if (px < 7 || py < 7 || px > w - 7 || py > h - 7) {
+        const ddx = px - w / 2, ddy = py - h / 2, k = Math.min((w / 2 - 7) / Math.max(1e-6, Math.abs(ddx)), (h / 2 - 7) / Math.max(1e-6, Math.abs(ddy)));
+        const ex = w / 2 + ddx * k, ey = h / 2 + ddy * k, dl = Math.hypot(ddx, ddy) || 1, ux = ddx / dl, uy = ddy / dl;
+        mapCtx.fillStyle = f.hunter ? "#ff9f1a" : "#e15a4a"; mapCtx.strokeStyle = "rgba(10,16,22,.9)"; mapCtx.lineWidth = 1.5;
+        mapCtx.beginPath(); mapCtx.moveTo(ex + ux * 6, ey + uy * 6); mapCtx.lineTo(ex - ux * 4 - uy * 5, ey - uy * 4 + ux * 5); mapCtx.lineTo(ex - ux * 4 + uy * 5, ey - uy * 4 - ux * 5); mapCtx.closePath(); mapCtx.fill(); mapCtx.stroke();
+        edge51 += 1;
+        continue;
+      }
       const ffx = Math.sin(f.heading);
       const ffz = Math.cos(f.heading);
       const fs = chartMarkScale(f.hullId);
@@ -12034,6 +12073,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       mapCtx.closePath();
       mapCtx.fill();
     }
+    mapEdge51 = edge51;
     paintSalvageMarks(mapCtx, X, Y, 2);
     paintFortMarks(mapCtx, X, Y, 4);
     paintSquadMarks(mapCtx, X, Y, 2);
@@ -12100,6 +12140,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     mapCtx.lineWidth = 1;
   }
 
+  let chartYou51 = null, mapEdge51 = 0;
   function drawChart() {
     const cvs = document.getElementById("chartcvs");
     if (!cvs || chartPanel.style.display !== "block") return;
@@ -12148,10 +12189,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (!f.alive || f.gone) continue;
       if (!onChart(f.x, f.z, 0)) continue;
       shipsDrawn += 1;
-      const side = 5 * chartMarkScale(f.hullId);
+      // Batch 51: patrol marks are bigger, outlined, and move in steps once a second so they read steadily.
+      { const nowT = performance.now(); if (f.chartX51 == null || nowT - (f.chartT51 || 0) > 1000) { f.chartX51 = f.x; f.chartZ51 = f.z; f.chartT51 = nowT; } }
+      const side = Math.max(8, 7 * chartMarkScale(f.hullId));
+      const mx = Math.round(X(f.chartX51)), my = Math.round(Y(f.chartZ51));
       ctx.fillStyle = f.hunter ? "#ff9f1a" : (f.boss ? "#111111" : "#e15a4a");
-      ctx.fillRect(X(f.x) - side / 2, Y(f.z) - side / 2, side, side);
-      if (x3 && x3.met.indexOf("|" + f.name + "|") >= 0) { ctx.save(); ctx.font = chartFont(10); ctx.fillStyle = "rgba(244,239,226,.85)"; ctx.fillText(f.name, X(f.x) + side, Y(f.z) - side); ctx.restore(); }
+      ctx.strokeStyle = "rgba(10,16,22,.9)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(mx, my - side * 0.7); ctx.lineTo(mx + side * 0.7, my); ctx.lineTo(mx, my + side * 0.7); ctx.lineTo(mx - side * 0.7, my); ctx.closePath(); ctx.fill(); ctx.stroke();
+      if (x3 && x3.met.indexOf("|" + f.name + "|") >= 0) { ctx.save(); ctx.font = chartFont(11); ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.lineWidth = 3; ctx.strokeStyle = "rgba(10,16,22,.85)"; ctx.strokeText(f.name, mx + side, my); ctx.fillStyle = "#f4efe2"; ctx.fillText(f.name, mx + side, my); ctx.restore(); }
     }
     ctx.fillStyle = "#f2d48a";
     ctx.font = chartFont(13);
@@ -12184,14 +12229,18 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const hy = Y(ship.z);
     const fx = Math.sin(ship.heading);
     const fz = Math.cos(ship.heading);
-    const ps = chartMarkScale(playerHull.id);
+    const ps = Math.max(1.6, chartMarkScale(playerHull.id) * 1.6);
+    // Batch 51: your ship is a large gold-ringed arrow with a "You" label so it stands out on the chart.
+    ctx.strokeStyle = "#f2d48a"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(hx, hy, 13 * ps / 1.6, 0, Math.PI * 2); ctx.stroke();
     ctx.fillStyle = "#f4efe2";
     ctx.beginPath();
     ctx.moveTo(hx + fx * 9 * ps, hy + fz * 9 * ps);
     ctx.lineTo(hx - fz * 5 * ps - fx * 5 * ps, hy + fx * 5 * ps - fz * 5 * ps);
     ctx.lineTo(hx + fz * 5 * ps - fx * 5 * ps, hy - fx * 5 * ps - fz * 5 * ps);
     ctx.closePath();
-    ctx.fill();
+    ctx.fill(); ctx.strokeStyle = "rgba(10,16,22,.9)"; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.save(); ctx.font = chartFont(11); ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.lineWidth = 3; ctx.strokeStyle = "rgba(10,16,22,.85)"; ctx.strokeText("You", hx, hy + 15); ctx.fillStyle = "#f2d48a"; ctx.fillText("You", hx, hy + 15); ctx.restore();
+    chartYou51 = { x: hx, y: hy };
     ctx.fillStyle = "#f2d48a";
     ctx.font = chartFont(12);
     ctx.textAlign = "center";
@@ -17565,6 +17614,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       g51: function () { const w = wildHere51(); const grp = activeFoes51(); return { wilds: wilds51.length, out: mode === "land" && inWilds51(person.x, person.z), hp: landHp51, cd: pistolCd51.slice(), treasure: treasureOn51, brace: !!x3.brace51, tier: cannonTier51(), mul: cannonMul51(), gold: ledger.gold, kills: x3.landKills51 || 0, chests: x3.chests51 || 0, fireShown: fireBtn.style.display !== "none", fireText: fireBtn.textContent, gate: w ? w.gate : null, dir: w ? [w.dx, w.dz] : null, foes: grp ? grp.foes.map(function (f) { return { x: f.x, z: f.z, hp: f.hp, dead: f.dead, kind: f.kind, vis: f.g.visible }; }) : [], px: person.x, pz: person.z, land: mode === "land", onLand: onLand(person.x, person.z), econ: { salvage: SALVAGE_GOLD, crate: CRATE_GOLD, repair: hullRepairCost() } }; },
       bars51: function () { return foes.filter(function (f) { return !f.gone && f.tags51; }).map(function (f) { return { name: f.name, vis: f.tags51.every(function (o) { return o.visible; }), hid: f.tags51.every(function (o) { return !o.visible; }), over: !!f.bar51, op: f.bar ? f.bar.material.opacity : null }; }); },
       hud51: function () { return hudR51.length; },
+      g2_51: function () { return { you: chartYou51, edge: mapEdge51, aimMs: x3 ? (x3.aimTipMs51 || 0) : 0, aimShown: aimTip.style.display, aimOp: aimTip.style.opacity }; }, spawnNear51: function () { return spawnNear51(); },
       pistol51: function () { return firePistol51(); },
       hurt51: function (i, n) { const grp = activeFoes51(); if (grp && grp.foes[i]) hurtLandFoe51(grp.foes[i], n); return grp ? grp.foes[i].hp : null; },
       toTreasure51: function () { ship.x = TREASURE51.ship.x; ship.z = TREASURE51.ship.z; ship.speed = 0; mode = "sea"; return !!treasureBeach51(); },
