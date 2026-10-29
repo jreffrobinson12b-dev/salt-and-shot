@@ -5781,6 +5781,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return decoRes52;
   }
   function addDeco52(o, low, blk) { o.userData.noCam51 = !blk; o.traverse(function (m) { m.castShadow = false; }); deco52.push({ o: o, low: low, blk: blk || null }); return o; }
+  let lampPole52 = null, lampBox52 = null, lampMat52 = null;
   function townDress52() {
     let seed = 52;
     const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -5810,8 +5811,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         const y = islandHeight(isl, x, z), rot = Math.atan2(isl.x - x, isl.z - z) + (rnd() - 0.5) * 0.5, s = 0.85 + rnd() * 0.3;
         const blk = { x: x, z: z, r: 1.85 * s }; blocks.push(blk);
         const low = houses.length % 3 !== 0;
-        const g1 = new THREE.Group(); const body = new THREE.Mesh(R.house, R.walls[houses.length % R.walls.length]); body.position.y = 1.25; body.receiveShadow = true; g1.add(body); const dr = new THREE.Mesh(R.door, R.dark); dr.position.set(0, 0.75, 1.36); g1.add(dr); [-0.75, 0.75].forEach(function (wx) { const wn = new THREE.Mesh(R.win, R.dark); wn.position.set(wx, 1.6, 1.36); g1.add(wn); }); g1.position.set(x, y, z); g1.rotation.y = rot; g1.scale.setScalar(s); scene.add(g1); addDeco52(g1, low, blk); /* Batch 52: closed plaster or plank walls, a shut door and two dark windows */
-        const g2 = spawn("structure-roof.glb", x, y + 2.55 * s, z, rot, 1); g2.scale.set(1.65 * s, 1.05 * s, 1.65 * s); addDeco52(g2, low, null);
+        const g1 = new THREE.Group(); const body = new THREE.Mesh(R.house, R.walls[houses.length % R.walls.length]); body.position.y = 1.25; body.receiveShadow = true; g1.add(body); const dr = new THREE.Mesh(R.door, R.dark); dr.position.set(0, 0.75, 1.36); g1.add(dr); [-0.75, 0.75].forEach(function (wx) { const wn = new THREE.Mesh(R.win, R.dark); wn.position.set(wx, 1.6, 1.36); g1.add(wn); }); g1.position.set(x, y, z); g1.rotation.y = rot; g1.scale.setScalar(s); scene.add(g1); addDeco52(g1, low, blk); g1.userData.house52 = blk; /* Batch 52: closed plaster or plank walls, a shut door and two dark windows */
+        const g2 = spawn("structure-roof.glb", x, y + 2.55 * s, z, rot, 1); g2.scale.set(1.65 * s, 1.05 * s, 1.65 * s); addDeco52(g2, low, null); g2.userData.house52 = blk;
         houses.push({ x: x, z: z, y: y, rot: rot, s: s });
       }
       houses.forEach(function (h, hi) {
@@ -5828,6 +5829,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           [0.35, 0.7].forEach(function (yy) { const r = new THREE.Mesh(R.rail, R.dark); r.scale.x = 2.1; r.position.y = yy; f.add(r); });
           f.position.set(back.x, islandHeight(isl, back.x, back.z), back.z); f.rotation.y = h.rot; scene.add(f); addDeco52(f, true);
         }
+        // Batch 52: a street lamp outside every other house (cosmetic; dropped on low graphics).
+        if (hi % 2 === 1) { const lp = pl(1.6 * h.s, 2.4 * h.s); if (clear(lp.x, lp.z, -1.4)) { const g = new THREE.Group(); const pole = new THREE.Mesh(lampPole52 || (lampPole52 = new THREE.CylinderGeometry(0.06, 0.08, 2.6, 6)), R.dark); pole.position.y = 1.3; g.add(pole); const lan = new THREE.Mesh(lampBox52 || (lampBox52 = new THREE.BoxGeometry(0.28, 0.34, 0.28)), lampMat52 || (lampMat52 = new THREE.MeshBasicMaterial({ color: 0xffd27a }))); lan.position.y = 2.7; g.add(lan); g.position.set(lp.x, islandHeight(isl, lp.x, lp.z), lp.z); scene.add(g); addDeco52(g, true); } }
       });
       // washing lines between near neighbours
       let lines = 0;
@@ -5883,7 +5886,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       tr.userData.noCam51 = cr.userData.noCam51 = true; scene.add(tr); scene.add(cr);
     });
   }
-  function applyDeco52(lo) { for (let i = 0; i < deco52.length; i++) { const d = deco52[i], show = !(lo && d.low); d.o.visible = show; if (d.blk) { if (d.blk.r52 === undefined) d.blk.r52 = d.blk.r; d.blk.r = show ? d.blk.r52 : 0; } } }
+  function applyDeco52(lo) { for (let i = 0; i < deco52.length; i++) { const d = deco52[i], show = !(lo && d.low); d.o.visible = show; d.o.userData.decoOn52 = show; if (d.blk) { if (d.blk.r52 === undefined) d.blk.r52 = d.blk.r; d.blk.r = show ? d.blk.r52 : 0; } } }
   function hitsBlock(x, z, pad) {
     for (let i = 0; i < blocks.length; i++) {
       const b = blocks[i];
@@ -7956,6 +7959,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3) lines.push("Galley: " + (x3.ate ? x3.ate.split("||").length : 0) + " of 4 port dishes tasted \u00B7 " + x3.meals + " meals bought");
     if (x3) lines.push("Treasure: " + (x3.hasMap ? "a map, " + Math.round(Math.hypot(x3.mapX - ship.x, x3.mapZ - ship.z)) + " yards away to the " + ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"][((Math.round(Math.atan2(x3.mapX - ship.x, -(x3.mapZ - ship.z)) / (Math.PI / 4)) % 8) + 8) % 8] : "no map") + " \u00B7 found " + x3.maps + " \u00B7 flawless battles " + x3.flawless + " \u00B7 squalls ridden reefed " + x3.reefed + (glint && !glint.treasure ? " \u00B7 a golden shimmer " + Math.round(Math.hypot(glint.x - ship.x, glint.z - ship.z)) + " yards off" : ""));
     if (x3) lines.push("Career shots fired: " + x3.shots + " \u00B7 accuracy " + (x3.shots ? Math.round(100 * Math.min(x3.hits, x3.shots) / x3.shots) : 0) + "% \u00B7 critical hits: " + x3.crits + " \u00B7 top speed: " + x3.topSpeed + " knots" + (hotT > 0 ? " \u00B7 gun crews on fire" : ""));
+    if (x3) { const seen = ISLANDS.filter(function (L) { return L.kind === "outpost" && (x3.outSeen52 || "").indexOf("|" + L.name + "|") >= 0; }).map(function (L) { return L.name; }); lines.push("Ashore: " + (x3.amb52 || 0) + " alley ambushes beaten, " + (x3.ambLost52 || 0) + " lost" + (x3.ambLast52 ? " (last one " + x3.ambLast52 + ")" : "") + " \u00B7 outposts traded at: " + (seen.length ? seen.join(", ") : "none yet")); } // Batch 52
     if (x3) lines.push("Career gunnery: " + x3.hits + " hits \u00B7 " + x3.rakes + " raking \u00B7 best streak " + x3.bestStreak + " \u00B7 slipped past " + x3.shadow + " patrols at night");
     if (x3) {
       lines.push("");
@@ -9730,7 +9734,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     qa("Teleport: Thornkey outpost", "qathorn52", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.outpost52(0); updateCamera.ready = false; });
     qa("Teleport: Mosswood outpost", "qamoss52", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.outpost52(1); updateCamera.ready = false; });
     qa("Force alley ambush (Bramble)", "qaamb52", function (b) { b.ashoreAt("bramble"); const al = alleys52.find(function (a) { return a.isl === ashorePort.island; }); if (!al) return; b.ambush52(true); b.putPerson48(al.x - al.ax * (al.half + 3), al.z - al.az * (al.half + 3)); snapCamFacing52(Math.atan2(al.ax, al.az)); updateCamera.ready = false; setTimeout(function () { b.putPerson48(al.x, al.z); }, 400); });
-    qa("Teleport: Gull Rock", "qagull51", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.toTreasure51(); });
+    qa("Teleport: Gull Rock", "qagull51", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.toTreasure51(); ship.speed = 0; sail = 0; setTimeout(function () { if (mode === "sea") goAshore(); updateCamera.ready = false; }, 150); });
     document.body.appendChild(qp); const sk = document.getElementById("qasink48"); if (sk) sk.style.transform = "translateX(calc(-50% - 62px))"; }
   // Batch 48: phones often skip pagehide when you swipe away, so also save when the tab is hidden and every 20 s, so Continue picks up mid-battle hull and position.
   document.addEventListener("visibilitychange", function () { if (document.hidden && worldReady && !titleOn) writeSave(); });
@@ -11372,6 +11376,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function outpostHullCost52() { const tgt = Math.round(ship.hullMax * 0.75); return ship.hull >= tgt ? 0 : Math.ceil((tgt - ship.hull) / 5 * diffK("repair") * 1.5); }
   function renderOutpost52(title, body, purse, box) {
     const I = outpostNear52() || { name: "The" };
+    if (I.kind === "outpost" && (x3.outSeen52 || "").indexOf("|" + I.name + "|") < 0) x3.outSeen52 = (x3.outSeen52 || "") + "|" + I.name + "|";
     title.textContent = I.name + " outpost";
     const hc = outpostHullCost52(), sc = Math.round(REPAIR_COST * 1.5), room = crewMaxFor(playerHull.id) - x3.crew, took = x3.outpostHands52 || 0;
     body.textContent = "A trader rows out from a shack in the clearing. He has pitch, canvas and a few idle hands, at outpost prices. No cargo trade and no shipyard here." + (outNote52 ? " " + outNote52 : "");
@@ -11825,6 +11830,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function qaDoor52(b, kind, port) { b.ashoreAt(port); const d = doors.find(function (o) { return o.kind === kind && !o.stall && (!o.port || o.port === port); }); if (!d) return; let hb = null, hd = 1e9; blocks.forEach(function (q) { const dd = Math.hypot(q.x - d.x, q.z - d.z); if (q.r > 1.5 && dd < hd) { hd = dd; hb = q; } }); const ox = hb ? (d.x - hb.x) / (hd || 1) : 0, oz = hb ? (d.z - hb.z) / (hd || 1) : 1; b.putPerson48(d.x + ox * 3.5, d.z + oz * 3.5); snapCamFacing52(Math.atan2(-ox, -oz)); updateCamera.ready = false; }
   function snapCamFacing52(yaw) { person.yaw = yaw; landYaw = yaw; lookYaw = 0; if (person.group) person.group.rotation.y = yaw; const py = feetY(person.x, person.z); camera.position.set(person.x - Math.sin(yaw) * 6, py + 3.2, person.z - Math.cos(yaw) * 6); camera.lookAt(person.x, py + 1.3, person.z); }
   function hideNearProps51() {
+    // Batch 52 (Games 2): a cosmetic house (walls and roof) between the camera and you, or around the camera, fades out.
+    if (mode === "land" && person) { const cx = camera.position.x, cz = camera.position.z, vx = person.x - cx, vz = person.z - cz, L = vx * vx + vz * vz;
+      for (let i = 0; i < deco52.length; i++) { const o = deco52[i].o, hb = o.userData.house52; if (!hb) continue;
+        let hide = Math.hypot(cx - hb.x, cz - hb.z) < hb.r + 0.9;
+        if (!hide && L > 1) { const t = ((hb.x - cx) * vx + (hb.z - cz) * vz) / L; if (t > 0 && t < 1) hide = Math.hypot(cx + vx * t - hb.x, cz + vz * t - hb.z) < hb.r * 0.9; }
+        const want = !hide && o.userData.decoOn52 !== false; if (o.visible !== want) o.visible = want; } }
     const L52 = doorProps51.concat(signs47); const fx = person && mode === "land" ? person.x : ship.x, fz = person && mode === "land" ? person.z : ship.z;
     for (let i = 0; i < L52.length; i++) { const o = L52[i]; if (!o || !o.parent) continue; const rr = o.userData.rock52 ? 2.8 * o.userData.rock52 : 2.6; const cx = camera.position.x, cz = camera.position.z; let near = Math.hypot(cx - o.position.x, cz - o.position.z) < rr && camera.position.y < o.position.y + 5;
       if (!near && o.userData.rock52) { const vx = fx - cx, vz = fz - cz, L = vx * vx + vz * vz; if (L > 1) { const t = ((o.position.x - cx) * vx + (o.position.z - cz) * vz) / L; if (t > 0 && t < 0.9 && Math.hypot(cx + vx * t - o.position.x, cz + vz * t - o.position.z) < rr * 0.8 && Math.hypot(cx - o.position.x, cz - o.position.z) < 14) near = true; } }
@@ -12522,7 +12533,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     chartYou51 = { x: hx, y: hy };
     // Batch 51 (Games 2): a page-text "YOU" tag over the chart canvas as well, so the marker shows (and reads) even if the canvas is scaled or covered.
     { let yt = document.getElementById("chartyou51"); if (!yt) { yt = document.createElement("div"); yt.id = "chartyou51"; yt.textContent = "\u25B2 YOU"; yt.style.cssText = "position:fixed;z-index:60;pointer-events:none;font:800 13px system-ui,sans-serif;color:#ffd75a;text-shadow:0 0 3px #000,0 0 3px #000;transform:translate(-50%,0);white-space:nowrap"; document.body.appendChild(yt); }
-      const rc = cvs.getBoundingClientRect(); yt.style.left = (rc.left + hx * rc.width / w) + "px"; yt.style.top = Math.max(rc.top + 8, Math.min(rc.bottom - 24, rc.top + (hy - 34) * rc.height / h)) + "px"; { const dirs = ["S", "SE", "E", "NE", "N", "NW", "W", "SW"]; const k = ((Math.round(Math.atan2(fx, fz) / (Math.PI / 4)) % 8) + 8) % 8; yt.textContent = "\u25B2 YOU \u00B7 " + dirs[k]; } yt.style.display = rc.width > 0 ? "block" : "none"; }
+      const rc = cvs.getBoundingClientRect(); yt.style.left = Math.max(rc.left + 46, Math.min(rc.right - 46, rc.left + hx * rc.width / w)) + "px"; yt.style.top = Math.max(rc.top + 8, Math.min(rc.bottom - 24, rc.top + (hy - 34) * rc.height / h)) + "px"; { const dirs = ["S", "SE", "E", "NE", "N", "NW", "W", "SW"]; const k = ((Math.round(Math.atan2(fx, fz) / (Math.PI / 4)) % 8) + 8) % 8; yt.textContent = "\u25B2 YOU \u00B7 " + dirs[k]; } yt.style.display = rc.width > 0 ? "block" : "none"; }
     ctx.fillStyle = "#f2d48a";
     ctx.font = chartFont(12);
     ctx.textAlign = "center";
@@ -16054,7 +16065,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       }
       const lintel = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.6, 1.1), wallMat51);
       lintel.position.set(w.gate.x, 3.6, w.gate.z); lintel.rotation.y = Math.atan2(px, pz) - Math.PI / 2; scene.add(lintel);
-      const sign = nameSprite("Gate", 4.6); if (sign.material) { sign.material.depthTest = true; } sign.position.x += w.gate.x; sign.position.z += w.gate.z; scene.add(sign); w.sign = sign;
+      const sign = nameSprite("Gate", 4.6); sign.scale.set(sign.scale.x * 0.24, sign.scale.y * 0.24, 1); /* Batch 52 (Games 2): a door-sized tag, not a 22 m banner */ if (sign.material) { sign.material.depthTest = true; } sign.position.x += w.gate.x; sign.position.z += w.gate.z; scene.add(sign); w.sign = sign;
       // Jungle: instanced trunks and crowns, kept off the dirt path from the gate.
       const spots = [];
       for (let k = 0; k < 320 && spots.length < 64; k++) { // Batch 52: denser jungle for the bigger wilds
@@ -16124,7 +16135,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function startAmbush52(al) {
     if (!AMBUSH52.foes.length) for (let k = 0; k < 2; k++) AMBUSH52.foes.push(makeLandFoe51("bandit", al.x, al.z));
     AMBUSH52.alley = al; AMBUSH52.on = true; AMBUSH52.t = Date.now();
-    AMBUSH52.foes.forEach(function (f, k) { const sg = k ? 1 : -1; let x = person.x + al.ax * 5 * sg, z = person.z + al.az * 5 * sg; if (!onLand(x, z) || hitsBlock(x, z, 0.4)) { x = person.x + al.az * 5 * sg; z = person.z - al.ax * 5 * sg; } f.x = f.hx = x; f.z = f.hz = z; f.dead = false; f.fall = 0; f.hp = f.hpMax; f.paid51 = false; f.cd = 1.2 + k * 0.5; f.g.rotation.x = 0; paintHullSprite(f.bar, f.hp, f.hpMax); f.bar.visible = true; f.g.position.set(x, feetY(x, z), z); });
+    // Batch 52 (Games 2): you are put at the open end of the alley facing in, and both cutthroats step out of it 7-9 m ahead, so the camera sits on open ground and frames them.
+    let fy = person.yaw || 0;
+    { const ends = [1, -1].map(function (sg) { return { x: al.x + al.ax * sg * ((al.half || 3) + 4), z: al.z + al.az * sg * ((al.half || 3) + 4), sg: sg }; }).filter(function (e) { return onLand(e.x, e.z) && !hitsBlock(e.x, e.z, 0.5); });
+      ends.sort(function (a, b) { return Math.hypot(a.x - person.x, a.z - person.z) - Math.hypot(b.x - person.x, b.z - person.z); });
+      if (ends[0]) { person.x = ends[0].x; person.z = ends[0].z; fy = Math.atan2(al.x - person.x, al.z - person.z); } }
+    AMBUSH52.foes.forEach(function (f, k) { const sg = k ? 1 : -1; let x = 0, z = 0, okp = false; for (let t = 0; t < 12 && !okp; t++) { const yy = fy + sg * (0.12 + t * 0.2), dd = 8 - (t % 3); x = person.x + Math.sin(yy) * dd; z = person.z + Math.cos(yy) * dd; okp = onLand(x, z) && !hitsBlock(x, z, 0.4); } if (!okp) { x = person.x + Math.sin(fy) * 6 + sg * 1.5; z = person.z + Math.cos(fy) * 6; } f.x = f.hx = x; f.z = f.hz = z; f.dead = false; f.fall = 0; f.hp = f.hpMax; f.paid51 = false; f.cd = 2.4 + k * 1.2; f.g.rotation.x = 0; paintHullSprite(f.bar, f.hp, f.hpMax); f.bar.visible = true; f.g.position.set(x, feetY(x, z), z); });
+    person.yaw = fy; if (person.group) person.group.rotation.y = fy; snapCamFacing52(fy); updateCamera.ready = false;
     say("Ambush! Two cutthroats step out of the alley. Tap Pistol, or walk away fast.", 3.5);
     toast("Alley ambush: drop them with the Pistol, or walk away and they give up.", "Ambush");
   }
@@ -16132,7 +16149,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function checkAmbush52() {
     if (AMBUSH52.on) {
       const al = AMBUSH52.alley, d = Math.hypot(person.x - al.x, person.z - al.z);
-      if (AMBUSH52.foes.every(function (f) { return f.dead; }) && Date.now() - AMBUSH52.t > 2500) { if (!AMBUSH52.won) { AMBUSH52.won = true; say("The alley is quiet again.", 2); } if (d > 12) { AMBUSH52.won = false; endAmbush52(); } }
+      if (AMBUSH52.foes.every(function (f) { return f.dead; }) && Date.now() - AMBUSH52.t > 2500) { if (!AMBUSH52.won) { AMBUSH52.won = true; if (x3) { x3.amb52 = (x3.amb52 || 0) + 1; x3.ambLast52 = "won"; writeSave(); } say("Ambush beaten! Both cutthroats are down and the alley is quiet again.", 3.5); toast("You beat the alley ambush.", "Ambush"); } if (d > 12) { AMBUSH52.won = false; endAmbush52(); } }
       else if (d > 24) endAmbush52("They melt back into the alleys.");
       return;
     }
@@ -16194,7 +16211,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     else if (treasureOn51) { person.x = TREASURE51.stand.x; person.z = TREASURE51.stand.z; }
     if (!onLand(person.x, person.z) || hitsBlock(person.x, person.z, 0.35)) unstick45();
     if (person.group) person.group.position.set(person.x, feetY(person.x, person.z), person.z);
-    const grp = w || (treasureOn51 ? TREASURE51 : null); if (grp) reviveGroup51(grp, true); if (AMBUSH52.on) endAmbush52(); // Batch 52
+    const grp = w || (treasureOn51 ? TREASURE51 : null); if (grp) reviveGroup51(grp, true); const amb52 = AMBUSH52.on; if (amb52) { endAmbush52(); if (x3) { x3.ambLost52 = (x3.ambLost52 || 0) + 1; x3.ambLast52 = "lost"; } say("Ambush lost! The cutthroats knock you down and rob you" + (lost ? " of " + lost + " gold." : "."), 4); toast("You lost the alley ambush" + (lost ? " and " + lost + " gold" : "") + ". Back off and shoot from range next time.", "Ambush"); writeSave(); return; } // Batch 52
     say("Knocked down! You come to " + (w ? "inside the gate" : "by the boat") + (lost ? ", " + lost + " gold lighter." : "."), 3.5);
     toast("You were knocked down" + (lost ? " and lost " + lost + " gold" : "") + ". Shoot from range, and step back through the gate to heal.", "Ashore");
     writeSave();
@@ -18082,8 +18099,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       setMorale: function (n) { x3.morale = n; return n; },
       setSail: function (n) { sail = n; return sail; },
       squall52: function () { return { in: inSquallAt(ship.x, ship.z), n: storms.length, d: storms[0] ? Math.round(Math.hypot(storms[0].x - ship.x, storms[0].z - ship.z)) : null, r: storms[0] ? storms[0].r : null, calm: qbCalm47, mode: mode }; },
-      outpost52: function (i) { const I = ISLANDS.filter(function (L) { return L.kind === "outpost"; })[i || 0]; if (I && I.dock52) { ship.x = I.dock52.x; ship.z = I.dock52.z; ship.speed = 0; } return { n: ISLANDS.filter(function (L) { return L.kind === "outpost"; }).length, near: !!outpostNear52(), btn: outBtn52.style.display, gold: ledger.gold, hull: ship.hull, crew: x3.crew, menu: menuKind }; },
-      dbg52: function () { return { p: [person.x, person.z], mode: mode, port: ashorePort && ashorePort.id, fight: fightOn, menu: menuOpen, ag: !!agent.group, agD: Math.hypot(person.x - agent.x, person.z - agent.z), amb: AMBUSH52.on, force: forceAmbush52, next: ambushNext52 - Date.now(), tut: x3 && x3.tut }; },
+      outpost52: function (i) { const I = ISLANDS.filter(function (L) { return L.kind === "outpost"; })[i || 0]; if (I && I.dock52) { ship.x = I.dock52.x; ship.z = I.dock52.z; ship.speed = 0; sail = 0; if (typeof refreshCloth === "function") refreshCloth(); } return { n: ISLANDS.filter(function (L) { return L.kind === "outpost"; }).length, near: !!outpostNear52(), btn: outBtn52.style.display, gold: ledger.gold, hull: ship.hull, crew: x3.crew, menu: menuKind }; },
+      dbg52: function () { return { sq: inSquallAt(ship.x, ship.z), sqT: sqT50, sail: sail, safe: playerSafe(), sails: ship.sails, p: [person.x, person.z], mode: mode, port: ashorePort && ashorePort.id, fight: fightOn, menu: menuOpen, ag: !!agent.group, agD: Math.hypot(person.x - agent.x, person.z - agent.z), amb: AMBUSH52.on, force: forceAmbush52, next: ambushNext52 - Date.now(), tut: x3 && x3.tut }; },
       ambush52: function (force) { if (force) { forceAmbush52 = true; ambushAlley52 = null; } return { on: AMBUSH52.on, alleys: alleys52.length, here: ashorePort ? alleys52.filter(function (a) { return a.isl === ashorePort.island; }).map(function (a) { return [Math.round(a.x * 10) / 10, Math.round(a.z * 10) / 10]; }) : [], foes: AMBUSH52.foes.map(function (f) { return { hp: f.hp, dead: f.dead, x: Math.round(f.x), z: Math.round(f.z), vis: f.g.visible }; }), hp: landHp51 }; },
       deco52: function () { return { n: deco52.length, vis: deco52.filter(function (d) { return d.o.visible; }).length, houses: deco52.filter(function (d) { return d.blk && d.blk.r > 1.2; }).length, walls: scene.children.filter(function (o) { return o.userData.wall52; }).length }; },
       gfx: function () { return { low: !!x3.lowGfx, shadows: renderer.shadowMap.enabled, pr: renderer.getPixelRatio(), moon: !!(moonDisc && moonDisc.visible), sunCol: sun.color.getHexString(), fog: scene.fog.color.getHexString(), lightning: lightningSeen, parts: gfxParts.length, smokes: smokes.length, streaks: windStreaks ? windStreaks.filter(function (w) { return w.m.visible; }).length : 0, halo: !!(lampHalo && lampHalo.visible), quay: !!(quayGlows && quayGlows[0].visible), shallows: shallows ? shallows.length : 0, vignette: !vignette.classList.contains("low"), cloud: cloudMat ? cloudMat.color.getHexString() : "" }; },
