@@ -5671,6 +5671,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     scene.updateMatrixWorld(true);
     const buckets = new Map();
     staticProps.forEach(function (g) {
+      if (g.userData.noCam51) return; // Batch 51: Gull Rock rocks stay separate so the camera can ignore them
       let isl = 0, bd = Infinity;
       for (let i = 0; i < ISLANDS.length; i++) {
         const d = Math.hypot(g.position.x - ISLANDS[i].x, g.position.z - ISLANDS[i].z);
@@ -6073,7 +6074,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const gullPts = [[0, 0, 1.4], [8, 6, 1], [-7, 4, 1.1], [4, -8, 0.9], [-9, -5, 1.2], [12, -2, 0.8], [-2, 12, 1]];
     gullPts.forEach(function (p, i) {
       const x = gull.x + p[0], z = gull.z + p[1];
-      spawn(i % 2 ? "rocks-sand-a.glb" : "rocks-a.glb", x, islandHeight(gull, x, z), z, i * 0.7, p[2]);
+      const rk = spawn(i % 2 ? "rocks-sand-a.glb" : "rocks-a.glb", x, islandHeight(gull, x, z), z, i * 0.7, p[2]); rk.userData.noCam51 = true; // Batch 51: low rocks never pull the camera in (Gull Rock clipping)
     });
     [[10, 8], [-8, -8], [2, -12]].forEach(function (p, i) {
       const x = gull.x + p[0], z = gull.z + p[1];
@@ -7000,8 +7001,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     say(foe.name + " strikes her colours! Victory.", 3.5);
     try { stinger47("win"); cheer(foe.x, foe.z); } catch (e) { /* optional */ }
     buzz([40, 30, 80]);
-    const sh = x3 ? x3.shots - x3.battleShots : 0, hi = x3 ? Math.min(sh, x3.hits - x3.battleHits) : 0;
-    if (x3) { x3.battleShots = x3.shots; x3.battleHits = x3.hits; x3.battleDmg = 0; x3.battleCrits = x3.crits; }
+    // Batch 51 (Games 2): the Victory screen and the Log read the same tally (whichever summary runs first takes it; the other reuses it for 5 s).
+    const bc51 = battleCount51(), sh = bc51.sh, hi = bc51.hi;
     setTimeout(function () { showVictory50(foe, sh, hi); }, 900);
     setTimeout(function () { if (foe.alive && !foe.sinking && !foe.gone) { foe.sinking = true; foe.sink = 0; } }, 3500); // the prize crew scuttles her; no salvage
   }
@@ -7088,6 +7089,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       o.style.cssText = "position:fixed;inset:0;z-index:80;background:rgba(6,10,16,.88);color:#f4efe2;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font:600 15px system-ui,sans-serif;padding:20px";
       o.innerHTML = "<div style='font:800 34px system-ui;color:#ff7a6a;letter-spacing:2px'>SUNK</div><div style='margin:10px 0 18px;max-width:420px'>" + (by ? by.replace(/[<>&]/g, "") + " sent your ship to the bottom." : "Your ship went to the bottom.") + " The crew were fished out and towed back to Bramble Quay. Your hull is patched to " + hullShow50() + ".</div><button type='button' style='font:700 16px system-ui;padding:10px 26px;border-radius:10px;border:0;background:#ffd75a;color:#1a1a1a'>Carry on</button>";
       const shut = function (e) { if (e) e.preventDefault(); o.remove(); };
+      setTimeout(shut, 12000); // Batch 51: never leaves the screen stuck
       o.querySelector("button").addEventListener("pointerdown", shut); o.querySelector("button").addEventListener("click", shut);
       document.body.appendChild(o);
     }, 2500);
@@ -7102,6 +7104,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     ship.speed = 0;
     ship.yawRate = 0;
     ship.hull = 55;
+    // Batch 51 (Games 2): the harbour tow brings a few Bramble hands so she can sail, but never a full crew: hire the rest at the tavern.
+    if (x3) { const cm51 = crewMaxFor(playerHull.id); x3.crew = Math.max(x3.crew, Math.min(cm51, Math.ceil(cm51 * 0.6))); }
     if (ship.root) {
       ship.root.position.set(ship.x, 0, ship.z);
       ship.root.rotation.y = ship.heading;
@@ -8619,7 +8623,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const d = Math.hypot(dx, dz);
       if (d < 6 || d > reach) return;
       const cos = (dx * rx + dz * rz) / d;
-      if (cos < (rankOf() === 0 ? 0.52 : 0.56)) return; // Batch 50: the guns can be laid on a ship up to about 55-58 degrees off the beam (was 43-47), so a close ship on the quarter or bow is hit too
+      if (cos < (rankOf() === 0 ? 0.6 : 0.64)) return; // Batch 51: about 50 degrees off the beam at most, so a ship on the quarter or astern is out of arc // Batch 50: the guns can be laid on a ship up to about 55-58 degrees off the beam (was 43-47), so a close ship on the quarter or bow is hit too
       if (d < bd) { bd = d; best = { x: o.x + (vx || 0) * flight, z: o.z + (vz || 0) * flight, name: o.name }; }
     };
     for (let i = 0; i < foes.length; i++) {
@@ -8642,6 +8646,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return best;
   }
   // Batch 47: Fire with no side chosen lays the guns on a ship that is in reach on either beam.
+  // Batch 51 (Games 2): one arc test for both firing and the green glow: the guns can be laid on a ship in reach on that side.
+  function arc51(sg) { const sx = ship.x + Math.cos(ship.heading) * sg * 3.2, sz = ship.z - Math.sin(ship.heading) * sg * 3.2; return !!broadsideAssist(sg, sx, sz, gunType()); }
   function aimTarget47() {
     const n = nearFoe47(Math.max(60, (gunStats().range || 90) * 1.1));
     return n && n.fromLine >= BEAR_MIN ? n : null;
@@ -8691,6 +8697,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         const dv = (rx * cx + rz * cz) / cl;
         return fire(dv > 0.35 ? 1 : dv < -0.35 ? -1 : (coolS47[0] <= coolS47[1] ? 1 : -1)); }
     }
+    // Batch 51 (Games 2): with a ship within 160 yd but none in this battery's arc, the tap neither fires nor starts a reload (same test as the green glow).
+    if (nearFoe47(160) && !arc51(aim.sign)) { const nf = nearFoe47(160); if (nf.d > gunReach48() * 1.08) say("Out of range: " + nf.f.name + " is " + Math.round(nf.d) + " yd off, your guns reach about " + Math.round(gunReach48()) + ". Close in.", 1.8); else say("No target in the " + (aim.sign > 0 ? "port" : "starboard") + " arc. " + nf.f.name + " is off your " + (nf.fromLine < BEAR_MIN ? (nf.ahead ? "bow" : "stern") : (nf.sign > 0 ? "port beam" : "starboard beam")) + (nf.d > gunReach48() * 1.05 ? ", " + Math.round(nf.d) + " yd off" : "") + ".", 1.8); { const btn = typeof sideBtn47 !== "undefined" ? sideBtn47[aim.sign > 0 ? 0 : 1] : null; if (btn) { btn.classList.remove("rel50"); void btn.offsetWidth; btn.classList.add("rel50"); } } return; }
     const stats = gunStats();
     // Batch 51 (Games 2): with a ship near but beyond the guns' reach, the tap does not fire or start a reload; it says how far she is.
     { const n51 = nearFoe47(160), reach51 = gunReach48(); if (n51 && n51.d > reach51 * 1.08 && !nearFoe47(reach51 * 1.08)) { say("Out of range: " + n51.f.name + " is " + Math.round(n51.d) + " yd off, your guns reach about " + Math.round(reach51) + ". Close in.", 1.8); { const btn = typeof sideBtn47 !== "undefined" ? sideBtn47[aim.sign > 0 ? 0 : 1] : null; if (btn) { btn.classList.remove("rel50"); void btn.offsetWidth; btn.classList.add("rel50"); } } return; } }
@@ -9574,6 +9582,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     qa("Teleport: Bramble shipyard", "qayard51", function (b) { b.ashoreAt("bramble"); const d = doors.find(function (o) { return o.kind === "shipyard" && (!o.port || o.port === "bramble"); }); if (d) b.putPerson48(d.x + 2, d.z + 2); });
     qa("Teleport: town gate", "qagate51", function (b) { b.ashoreAt("bramble"); setTimeout(function () { const g = b.g51(); if (g.gate) b.putPerson48(g.gate.x - g.dir[0] * 3, g.gate.z - g.dir[1] * 3); }, 300); });
     qa("Teleport: bandits (wilds)", "qabandit51", function (b) { b.ashoreAt("bramble"); setTimeout(function () { const g = b.g51(); if (g.gate) b.putPerson48(g.gate.x + g.dir[0] * 10, g.gate.z + g.dir[1] * 10); }, 300); });
+    qa("Spawn squall ahead", "qasquall51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } if (!storms.length) makeStorm(ship.x, ship.z + 200, 30, 0, 0); const s = storms[0]; s.x = ship.x + Math.sin(ship.heading) * (s.r + 25); s.z = ship.z + Math.cos(ship.heading) * (s.r + 25); if (s.group) s.group.position.set(s.x, s.group.position.y, s.z); say("QA: a squall sits " + Math.round(s.r + 25) + " yd ahead.", 2); });
     qa("Teleport: Gull Rock", "qagull51", function (b) { if (mode !== "sea") { closeMenu(); boardShip(true); } b.toTreasure51(); });
     document.body.appendChild(qp); const sk = document.getElementById("qasink48"); if (sk) sk.style.transform = "translateX(calc(-50% - 62px))"; }
   // Batch 48: phones often skip pagehide when you swipe away, so also save when the tab is hidden and every 20 s, so Continue picks up mid-battle hull and position.
@@ -9628,7 +9637,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 50";
+    ver.textContent = "Version: batch 51";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -10135,13 +10144,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const tb51 = !beach && !harbourHere() ? treasureBeach51() : null;
     if (tb51) beach = { port: "bramble", stand: tb51.stand, treasure51: true };
     treasureOn51 = !!tb51;
-    if (tb51) { reviveGroup51(TREASURE51, false); say("Gull Rock. Pirates guard a chest up the slope. Tap Pistol to shoot.", 4); }
+    if (tb51) { reviveGroup51(TREASURE51, false); say("Gull Rock. Two pirates guard a chest up the slope. Shoot from range: they are slower than you.", 4); }
     { const w = !tb51 && !beach && harbourHere() ? wildFor51(harbourHere().island) : null; if (w) reviveGroup51(w, false); }
     const port = beach ? portById(beach.port) : harbourHere();
     if (!port) return;
     ashorePort = port;
     ashoreBeach = beach;
     if (port.id !== lastPort && !tb51) gainSkill("sail");
+    if (!tb51 && x3 && x3.crew < crewMaxFor(playerHull.id)) toast("Crew " + x3.crew + " of " + crewMaxFor(playerHull.id) + (crewShort() ? ": short-handed, so slow guns and a lazy helm." : ".") + " Hire hands at the tavern (" + handCost() + " gold each).", "Crew"); // Batch 51 (Games 2)
     addMorale(5);
     mode = "land";
     ship.speed = 0;
@@ -10801,6 +10811,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
 
   function renderMenu() {
+    { const yt51 = document.getElementById("yardtabs"); if (yt51) yt51.remove(); }
     const title = document.getElementById("mtitle");
     const body = document.getElementById("mbody");
     const purse = document.getElementById("mpurse");
@@ -11064,6 +11075,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function renderShipyard(title, body, purse, box) {
     title.textContent = "Shipyard";
     purse.textContent = ledger.gold + " gold. Sugar " + ledger.sugar + ". Rum " + ledger.rum + ". Coffee " + ledger.coffee + ". Tobacco " + ledger.tobacco + ". Silk " + ledger.silk + ".";
+    { const old = document.getElementById("yardtabs"); if (old) old.remove(); }
     const tabs = document.createElement("div");
     tabs.id = "yardtabs";
     tabs.style.cssText = "grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap";
@@ -11077,7 +11089,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       b.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); yardTab = t[0]; renderMenu(); });
       tabs.appendChild(b);
     });
-    box.appendChild(tabs);
+    // Batch 51 (Games 2): the tab row sits above the (varying) description so it no longer jumps between opens.
+    if (body && body.parentNode) { tabs.style.margin = "0 0 8px"; body.parentNode.insertBefore(tabs, body); } else box.appendChild(tabs);
     // Batch 35 fix: this tip used to live on the Guns tab only, so most players never saw it.
     capTip("yard", "Shipyards patch your hull, sell guns and fittings, sew new sails and hire specialists. Deeds unlock more sail colours.", box);
     if (yardTab === "ship") {
@@ -11271,6 +11284,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const b = menuButton("\u2715 Leave", closeMenu); b.classList.add("topleave"); box.insertBefore(b, box.firstChild);
   }
   function closeMenu() {
+    { const yt51 = document.getElementById("yardtabs"); if (yt51) yt51.remove(); }
     menuOpen = false;
     menuKind = "";
     if (townMenu) townMenu.style.display = "none";
@@ -11431,6 +11445,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           if (shotD > 45 && !s.grape) { floatText(f.x, 16, f.z, "Long shot!", "#bfe9ff"); addXp(2); }
           dmg = Math.round(dmg * cannonMul51());
           damageFoe(f, dmg);
+          if (noticeT < 0.6) say("Hit! " + f.name + " -" + dmg + (f.alive && !f.sinking ? " (" + Math.max(0, Math.round(f.hull)) + " left)." : "."), 1.4); // Batch 51 (Games 2): every hit says what it did
           if (f.alive && !f.sinking && f.hull < f.hullMax * 0.25 && !f.listSaid) { f.listSaid = true; say(f.name + " is listing badly. One more good broadside.", 2.5); }
           const nowS = performance.now() / 1000;
           hitStreak = (nowS - lastHitAt < 9) ? hitStreak + 1 : 1;
@@ -11533,6 +11548,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           if (nf) {
             const short = Math.hypot(s.mesh.position.x - ship.x, s.mesh.position.z - ship.z) < Math.hypot(nf.x - ship.x, nf.z - ship.z);
             floatText(s.mesh.position.x, 4, s.mesh.position.z, short ? "short" : "long", "#cfe6ff");
+            if (noticeT < 0.6 && x3 && x3.tipAim) say("Miss: the ball fell " + (short ? "short of " : "past ") + nf.name + ".", 1.2); // Batch 51 (Games 2): misses get a line too
             if (x3 && !x3.tipAim) { x3.tipAim = true; say(short ? "Your shot fell short. Close in: long guns reach about 30 yards." : "Your shot flew long. Turn so she sits square on your beam.", 4); writeSave(); }
             hitStreak = 0;
           }
@@ -11642,7 +11658,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   function camBlock44(d, x, y, z) {
     const now = performance.now();
-    if (now - occlAt > 700) { occlAt = now; occl44 = scene.children.filter(function (o) { return o.visible && (o.isMesh || o.isGroup) && o !== water && o !== sky && o !== sunDisc && o !== moonDisc && o !== person.group && o !== ship.root && near44(o, x, z); }); }
+    if (now - occlAt > 700) { occlAt = now; occl44 = scene.children.filter(function (o) { return o.visible && (o.isMesh || o.isGroup) && o !== water && o !== sky && o !== sunDisc && o !== moonDisc && o !== person.group && o !== ship.root && !o.userData.noCam51 && near44(o, x, z); }); }
     if (!occl44.length) return;
     camFrom.set(x, y, z); camDir.copy(d).sub(camFrom); const len = camDir.length(); if (len < 0.5) return; camDir.divideScalar(len);
     camRay.set(camFrom, camDir); camRay.far = len; camRay.camera = camera; // Batch 51: sprites inside groups (bandit health bars) need the camera to raycast
@@ -11997,8 +12013,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           actBtn.disabled = false;
           if (noticeT > 0) hint.textContent = notice;
           else hint.textContent = nearestLocal().name + ". Talk if you mean it.";
+        } else if (treasureOn51) {
+          if (chestReady51()) { actBtn.textContent = "Open chest"; actBtn.disabled = false; hint.textContent = "The guards are down. Tap Open chest."; }
+          else hint.textContent = noticeT > 0 ? notice : (TREASURE51.foes.some(function (f) { return !f.dead; }) ? "Gull Rock. Drop the guards (Pistol), then open the chest up the slope." : "Walk up to the chest and tap Open chest. Board takes you back aboard.");
         } else hint.textContent = nearGangplank()
-          ? "Your gangplank, by the sea chest. Tap Board to take the helm."
+          ? "Your gangplank. Tap Board to take the helm."
           : "Walk the quay. Doors in town; your gangplank is at the end of the pier.";
       }
     }
@@ -12319,7 +12338,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     ctx.lineTo(hx + fz * 5 * ps - fx * 5 * ps, hy - fx * 5 * ps - fz * 5 * ps);
     ctx.closePath();
     ctx.fill(); ctx.strokeStyle = "rgba(10,16,22,.9)"; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.save(); ctx.font = chartFont(14).replace("600 ", "800 "); ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.lineWidth = 4; ctx.strokeStyle = "rgba(10,16,22,.95)"; ctx.strokeText("YOU", hx, hy + 19); ctx.fillStyle = "#ffd75a"; ctx.fillText("YOU", hx, hy + 19); ctx.restore();
+    // Batch 51 (Games 2): the YOU tag is the page-text label (#chartyou51) only, so the chart shows one.
     chartYou51 = { x: hx, y: hy };
     // Batch 51 (Games 2): a page-text "YOU" tag over the chart canvas as well, so the marker shows (and reads) even if the canvas is scaled or covered.
     { let yt = document.getElementById("chartyou51"); if (!yt) { yt = document.createElement("div"); yt.id = "chartyou51"; yt.textContent = "\u25B2 YOU"; yt.style.cssText = "position:fixed;z-index:60;pointer-events:none;font:800 13px system-ui,sans-serif;color:#ffd75a;text-shadow:0 0 3px #000,0 0 3px #000;transform:translate(-50%,0);white-space:nowrap"; document.body.appendChild(yt); }
@@ -13716,11 +13735,18 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       renderMenu();
     }));
   }
+  let bcLast51 = null;
+  function battleCount51() {
+    if (bcLast51 && performance.now() - bcLast51.t < 5000) return bcLast51;
+    const sh = x3 ? x3.shots - x3.battleShots : 0;
+    bcLast51 = { t: performance.now(), sh: sh, hi: x3 ? Math.min(sh, x3.hits - x3.battleHits) : 0, dm: x3 ? x3.battleDmg : 0, cr: x3 ? Math.max(0, x3.crits - x3.battleCrits) : 0 };
+    if (x3) { x3.battleShots = x3.shots; x3.battleHits = x3.hits; x3.battleDmg = 0; x3.battleCrits = x3.crits; }
+    return bcLast51;
+  }
   function battleReport(foeName) {
     if (!x3) return;
     if (x3.qLedger === 1 && foeName === x3.qLedgerFoe) { x3.qLedger = 2; toast("The " + foeName + " is gone. Luz Cask will want to hear it in San Lorenzo.", "Errand"); }
-    const sh = x3.shots - x3.battleShots, hi = x3.hits - x3.battleHits, dm = x3.battleDmg, cr = Math.max(0, x3.crits - x3.battleCrits);
-    x3.battleShots = x3.shots; x3.battleHits = x3.hits; x3.battleDmg = 0; x3.battleCrits = x3.crits;
+    const bc51 = battleCount51(), sh = bc51.sh, hi = bc51.hi, dm = bc51.dm, cr = bc51.cr;
     if (sh > 0 && sh < 200 && dayU.value < 0.1) { x3.nightWins += 1; addXp(5); addMorale(3); if (ship.root && mode === "sea") floatText(ship.x, 4.5, ship.z, "Night action!", "#9ec8ff"); }
     const runWas = x3.flawlessRun;
     if (sh > 0 && sh < 200) x3.flawlessRun = dm === 0 ? x3.flawlessRun + 1 : 0;
@@ -14479,7 +14505,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
     // Batch 48: a side whose guns would lay on a ship right now gets a green edge, so you know which button to press.
     side48T -= 1 / 60;
-    if (side48T <= 0) { side48T = 0.2; const gt = gunType(); [1, -1].forEach(function (sg, i) { const sx = ship.x + Math.cos(ship.heading) * sg * 3.2, sz = ship.z - Math.sin(ship.heading) * sg * 3.2; const at51 = aimTarget47(); const on48 = !!broadsideAssist(sg, sx, sz, gt) && !!at51 && at51.sign === sg && at51.d <= gunReach48(gt) * 1.05; /* Batch 51 (Games 2): green only when she is in this side's arc and reach */ const b = sideBtn47[i]; if ((b.dataset.tgt === "1") !== on48) { b.dataset.tgt = on48 ? "1" : ""; b.style.boxShadow = on48 ? "0 0 0 2px #7be08a, 0 0 10px rgba(123,224,138,0.6)" : ""; } }); }
+    if (side48T <= 0) { side48T = 0.2; const gt = gunType(); [1, -1].forEach(function (sg, i) { const sx = ship.x + Math.cos(ship.heading) * sg * 3.2, sz = ship.z - Math.sin(ship.heading) * sg * 3.2; const on48 = arc51(sg); /* Batch 51 (Games 2): the glow uses the same arc test as firing */ const b = sideBtn47[i]; if ((b.dataset.tgt === "1") !== on48) { b.dataset.tgt = on48 ? "1" : ""; b.style.boxShadow = on48 ? "0 0 0 2px #7be08a, 0 0 10px rgba(123,224,138,0.6)" : ""; } }); }
   }
   function toShip47(e) { if (e) { e.preventDefault(); e.stopPropagation(); } if (mode !== "land" || menuOpen || (fightOn && fight && fight.land)) return; if (typeof uiTick47 === "function") uiTick47(); boardShip(true); }
   shipBtn47.addEventListener("pointerdown", toShip47);
@@ -15916,7 +15942,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const f = nearLandFoe51(14);
     try { noiseBurst(0.06, 0.18, 1400); } catch (e) { /* sound optional */ }
     puffAt(person.x + Math.sin(person.yaw) * 0.8, feetY(person.x, person.z) + 1.1, person.z + Math.cos(person.yaw) * 0.8);
-    if (!f) { say("Nothing in range. Pistols reach about 14 paces.", 1.4); return true; }
+    if (!f) { const nf51 = nearLandFoe51(60); say(nf51 ? "Out of range: the nearest is " + Math.round(Math.hypot(nf51.x - person.x, nf51.z - person.z)) + " paces off. Pistols reach about 14." : "Nothing in range. Pistols reach about 14 paces.", 1.4); return true; }
     person.yaw = Math.atan2(f.x - person.x, f.z - person.z); if (person.group) person.group.rotation.y = person.yaw;
     const d = Math.hypot(f.x - person.x, f.z - person.z);
     const hit = (window.__salt && window.__salt.sure51) || Math.random() < (d < 8 ? 0.9 : 0.7);
@@ -15995,10 +16021,18 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         if (landHp51 <= 0) { knockedDown51(); return; }
       }
     }
-    if (treasureOn51 && chestMesh51 && chestMesh51.visible && Math.hypot(person.x - TREASURE51.chest.x, person.z - TREASURE51.chest.z) < 2.6) {
-      if (TREASURE51.foes.some(function (f) { return !f.dead; })) { if (noticeT <= 0) say("The guards still stand. Drop them before you open the chest.", 2); }
-      else { const g = 150; ledger.gold += g; x3.chestT51 = Date.now(); x3.chests51 = (x3.chests51 || 0) + 1; say("The pirates' chest: " + g + " gold!", 3); toast("Gull Rock treasure: +" + g + " gold. The pirates will be back in a while.", "Treasure"); chime([784, 988, 1175], 0.08, 0.04); writeSave(); }
-    }
+    if (chestNear51() && TREASURE51.foes.some(function (f) { return !f.dead; }) && noticeT <= 0) say("The guards still stand. Drop them before you open the chest.", 2);
+  }
+  // Batch 51 (Games 2): the chest opens with a tap on Open, not by walking into it. It pays 150; each guard dropped already paid 25.
+  function chestNear51() { return treasureOn51 && chestMesh51 && chestMesh51.visible && mode === "land" && Math.hypot(person.x - TREASURE51.chest.x, person.z - TREASURE51.chest.z) < 2.6; }
+  function chestReady51() { return chestNear51() && !TREASURE51.foes.some(function (f) { return !f.dead; }); }
+  function openChest51() {
+    if (!chestReady51()) return false;
+    const g = 150; ledger.gold += g; x3.chestT51 = Date.now(); x3.chests51 = (x3.chests51 || 0) + 1;
+    const kills = TREASURE51.foes.length * 25;
+    say("The pirates' chest: " + g + " gold! With the guards' purses (" + kills + "), Gull Rock paid " + (g + kills) + ".", 3.5);
+    toast("Gull Rock treasure: +" + g + " gold (plus " + kills + " from the guards). The pirates will be back in a while.", "Treasure");
+    chime([784, 988, 1175], 0.08, 0.04); writeSave(); return true;
   }
   function landHud51() {
     let el = document.getElementById("landhp51");
@@ -16292,6 +16326,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     actBtn.addEventListener("pointerdown", function (e) {
       e.preventDefault();
       if (mode === "sea") { if (canPatch()) fieldPatch(); else goAshore(); }
+      else if (chestReady51()) openChest51();
       else if (digTarget()) digChest();
       else if (closestDoor()) openMenu(closestDoor().kind);
       else if (nearDuelist()) tryDraw();
@@ -16630,7 +16665,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       for (let k = 0; k < 12 && !spotAfloat(fx, fz); k++) { fz += 10; }
       f.x = fx; f.z = fz; f.heading = Math.PI + 0.6; f.hunt = true; f.ignore = 0; f.hull = f.hullMax;
       f.cool = 6;
-      { let bx = ship.x + Math.min(21, gunReach48() * 0.75), bz = ship.z + 3; for (let k = 0; k < 10 && !spotAfloat(bx, bz); k++) { bz += 8; } f.x = bx; f.z = bz; f.heading = 0; f.way = 3.2; qbFoe47 = f; qbCalm47 = 600; for (let j = 0; j < foes.length; j++) foes[j].qb50 = false; f.qb50 = true; f.cool = Math.max(f.cool || 0, 5); /* Batch 51 (Games 2): you get the first broadside in a quick battle */ f.qbWon48 = false; f.struck50 = false; f.flee46 = false; f.alive = true; f.gone = false; f.sinking = false; if (f.root) { f.root.visible = true; f.root.position.set(f.x, f.root.position.y, f.z); } }
+      { let bx = ship.x + Math.min(21, gunReach48() * 0.75), bz = ship.z + 3; for (let k = 0; k < 10 && !spotAfloat(bx, bz); k++) { bz += 8; } { const rx51 = Math.cos(ship.heading), rz51 = -Math.sin(ship.heading), dd51 = Math.min(21, gunReach48() * 0.75); let ax = ship.x + rx51 * dd51, az = ship.z + rz51 * dd51; if (!spotAfloat(ax, az)) { ax = ship.x - rx51 * dd51; az = ship.z - rz51 * dd51; } if (spotAfloat(ax, az)) { bx = ax; bz = az; } } f.x = bx; f.z = bz; f.heading = ship.heading; f.way = Math.max(3.2, Math.abs(ship.speed || 0)); qbFoe47 = f; /* Batch 51 (Games 2): she starts square on your beam, sailing your course */ qbCalm47 = 600; for (let j = 0; j < foes.length; j++) foes[j].qb50 = false; f.qb50 = true; f.cool = Math.max(f.cool || 0, 5); /* Batch 51 (Games 2): you get the first broadside in a quick battle */ f.qbWon48 = false; f.struck50 = false; f.flee46 = false; f.alive = true; f.gone = false; f.sinking = false; if (f.root) { f.root.visible = true; f.root.position.set(f.x, f.root.position.y, f.z); } }
     }
     for (let i = 0; i < storms.length; i++) { const st = storms[i]; const d = Math.hypot(st.x - ship.x, st.z - ship.z); if (d < st.r + 260) { const a = Math.atan2(st.x - ship.x, st.z - ship.z) || 1; st.x = ship.x + Math.sin(a) * (st.r + 320); st.z = ship.z + Math.cos(a) * (st.r + 320); } }
     fogT = 0; fogK = 0; gustT = 0; ship.sails = 100; refreshCloth();
@@ -16830,7 +16865,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         tapBoth47(rb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } const now = performance.now(); if (!armedR || now - armedR > 60000) { armedR = now; rb.textContent = "Swap back? Tap again"; return; } try { const cur = localStorage.getItem(SAVE_KEY); localStorage.setItem(SAVE_KEY, bk); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); else localStorage.removeItem(SAVE_KEY + "-before-new"); } catch (err) { return; } importReload47 = true; location.reload(); }); boot.appendChild(rb); } }
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 50";
+    tv.textContent = "Version: batch 51";
     // Batch 50: the version sits in the bottom-right corner of the screen, so a long tip or a short screen can never push it out of view.
     tv.style.cssText = "position:fixed;right:calc(8px + env(safe-area-inset-right));bottom:calc(6px + env(safe-area-inset-bottom));font-size:11px;opacity:.55;pointer-events:none;z-index:2";
     boot.appendChild(tv);
