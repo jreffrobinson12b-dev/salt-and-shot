@@ -6514,7 +6514,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     });
 
     makeTownWalkers();
-    try { buildWalls51(); seedLandFoes51(); try { seedCritters53(); } catch (e2) { logErr50("critters53: " + e2); } } catch (e) { logErr50("ground51: " + e); }
+    try { buildWalls51(); try { buildTown57(); } catch (e3) { logErr50("town57: " + e3); } seedLandFoes51(); try { seedCritters53(); } catch (e2) { logErr50("critters53: " + e2); } } catch (e) { logErr50("ground51: " + e); }
     const char = cache["character-a.glb"].scene;
     shade(char);
     char.rotation.y = 0;
@@ -8004,7 +8004,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3) lines.push("Sights seen: " + sightCount() + " of " + SIGHTS.length + (sightCount() ? " (" + SIGHTS.filter(function (k) { return hasSight(k.id); }).map(function (k) { return k.name; }).join(", ") + ")" : "") + " \u00B7 Gun drill: " + DRILL_NAMES[drillLevel()] + " \u00B7 Dives: " + x3.dives + (x3.wrestleWins >= 3 ? " \u00B7 Tavern arm-wrestling champion" : ""));
     if (x3) lines.push("Bounties claimed: " + x3.postings + " \u00B7 Salvage picked up: " + x3.salvaged);
     if (x3) lines.push("Sea life and wrecks: " + x3.whales + " whales \u00B7 " + x3.pods + " dolphin pods \u00B7 " + x3.wrecks + " wrecks found \u00B7 " + x3.turtles + " turtles \u00B7 " + x3.stars + " shooting stars \u00B7 Next market news in about " + Math.max(1, Math.ceil(shortT / 60)) + " min");
-    if (x3) { const r = rankOf(); lines.push("Rank: " + RANKS[r] + " \u00B7 " + x3.xp + " XP" + (r < 5 ? " \u00B7 " + (RANK_XP[r + 1] - x3.xp) + " to " + RANKS[r + 1] : "") + (r ? " \u00B7 repairs " + (3 * r) + "% cheaper" : "") + (sessionXp0 != null && x3.xp > sessionXp0 ? " \u00B7 +" + (x3.xp - sessionXp0) + " XP this session" : "")); }
+    if (x3) { const r = rankOf(); lines.push("Sea rank (XP): " + RANKS[r] + " \u00B7 " + x3.xp + " XP" + (r < 5 ? " \u00B7 " + (RANK_XP[r + 1] - x3.xp) + " to " + RANKS[r + 1] : "") + (r ? " \u00B7 repairs " + (3 * r) + "% cheaper" : "") + (sessionXp0 != null && x3.xp > sessionXp0 ? " \u00B7 +" + (x3.xp - sessionXp0) + " XP this session" : "")); }
     if (x3) lines.push(orderLine());
     if (x3) questLines40().forEach(function (l) { lines.push(l); });
     if (x3 && (x3.commissions || x3.commission)) lines.push("Admiralty commissions completed: " + x3.commissions + (x3.commission ? " \u00B7 one in hand" : ""));
@@ -8719,6 +8719,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       layWake(f.wake, f.x, f.z, f.heading, Math.abs(sp), dt, 0.4, 1.7, f.hullId === "brig" ? 5.6 : 3.8, 0.34);
       if (f.ignore > 0) f.ignore -= dt;
       if (f.cool > 0) f.cool -= dt;
+      if (f.siege54 && (!siege54 || siege54.foes.indexOf(f) < 0 || f.sinking)) { f.cool = Math.max(f.cool, 5); f.hunt = false; } // Batch 56 (Games 2): guards stop the moment the siege ends
+      if (f.cool <= 0 && f.siege54 && siege54 && (siegeVolley56 > 0 || siegeLead56() !== f)) f.cool = 0.5; // Batch 56 (Games 2): one guard engages at a time, with a gap between volleys
       if (f.cool <= 0 && ship.hull > 0 && !fightOn && f.ignore <= 0 && !playerSafe()) {
         const pdx = ship.x - f.x;
         const pdz = ship.z - f.z;
@@ -8740,7 +8742,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
             if (rankOf() >= 3 && !f.boss) { const lead = pd / 16 * 0.6; pdx2 = pdx + Math.sin(ship.heading) * ship.speed * lead; pdz2 = pdz + Math.cos(ship.heading) * ship.speed * lead; } else { pdx2 = pdx; pdz2 = pdz; }
             { const err = (Math.random() - 0.5) * 2 * (pd / 46) * 0.08 * (dayU.value < 0.35 ? 1.5 : 1), c = Math.cos(err), sn = Math.sin(err), ex = pdx2 * c - pdz2 * sn, ez = pdx2 * sn + pdz2 * c; pdx2 = ex; pdz2 = ez; }
             const chain = Math.random() < 1 / 3;
-            spawnShot("foe", sx, 3.4, sz, pdx2 * inv, 5.2, pdz2 * inv, Math.round((chain ? 10 : (f.boss ? (playerHull.id === "manowar" ? 16 : 20) : 28)) * diffK("foeDmg") * (f === qbFoe47 && qbCalm47 > 0 ? 0.5 : 1)), chain ? 20 : 0);
+            spawnShot("foe", sx, 3.4, sz, pdx2 * inv, 5.2, pdz2 * inv, Math.round((chain ? 10 : (f.boss ? (playerHull.id === "manowar" ? 16 : 20) : 28)) * diffK("foeDmg") * (f === qbFoe47 && qbCalm47 > 0 ? 0.5 : 1) * (f.siege54 ? 0.6 : 1)), chain ? 20 : 0); if (f.siege54) siegeVolley56 = 3.5;
             batteryFlash(f.root, sign);
             if (!(x3 && x3.lowGfx) && Math.hypot(f.x - ship.x, f.z - ship.z) < 140) puffAt(sx, 3.4, sz);
             f.roll = (f.roll || 0) - sign * 0.04;
@@ -9773,7 +9775,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   if (/[?&]qa=1\b/.test(location.search)) { const qs = document.createElement("button"); qs.type = "button"; qs.id = "qaspawn51"; qs.style.visibility = "hidden"; qs.textContent = "QA ▾"; qs.style.cssText = "position:fixed;left:calc(50% + 62px);top:calc(4px + env(safe-area-inset-top));z-index:60;height:28px;font-size:12px;padding:0 10px;opacity:.75"; tap51(qs, function (e) { qp.style.display = qp.style.display === "flex" ? "none" : "flex"; }); document.body.appendChild(qs);
     // Batch 51 (Games 2): QA menu with spawn and teleport shortcuts.
     const qp = document.createElement("div"); qp.id = "qapanel51"; qp.style.visibility = "hidden"; qp.style.cssText = "display:none;flex-direction:column;gap:4px;max-height:calc(100vh - 44px);overflow-y:auto;position:fixed;left:calc(50% + 62px);top:calc(36px + env(safe-area-inset-top));z-index:61;background:rgba(10,16,22,.85);padding:6px;border-radius:8px";
-    const qa = function (label, id, fn) { const b = document.createElement("button"); b.type = "button"; b.id = id; b.textContent = label; b.style.cssText = "height:30px;font-size:12px;padding:0 10px"; tap51(b, function (e) { qp.style.display = "none"; if (menuOpen && id !== "qasink48") closeMenu(); /* Batch 56 (Games 2): QA jumps always close the open screen */ try { fn(window.__salt.b4); } catch (err) { say("QA: " + err.message, 2); } }); qp.appendChild(b); };
+    const qa = function (label, id, fn) { const b = document.createElement("button"); b.type = "button"; b.id = id; b.textContent = label; b.style.cssText = "height:30px;font-size:12px;padding:0 10px"; tap51(b, function (e) { qp.style.display = "none"; if (room57 && id.indexOf("room57") < 0) exitRoom57(true); if (menuOpen && id !== "qasink48") closeMenu(); /* Batch 56 (Games 2): QA jumps always close the open screen */ try { fn(window.__salt.b4); } catch (err) { say("QA: " + err.message, 2); } }); qp.appendChild(b); };
     qa("Spawn enemy nearby", "qaspawnnear51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } spawnNear51(45); });
     qa("Spawn enemy alongside (in range)", "qaspawnside51", function () { if (mode !== "sea") { closeMenu(); boardShip(true); } spawnNear51(Math.min(26, gunReach48() * 0.75)); });
     qa("Teleport: Bramble shipyard", "qayard51", function (b) { qaDoor52(b, "shipyard", "bramble"); });
@@ -9784,8 +9786,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const qaSide56 = function () { if (!fac54()) joinFac54("england"); return fac54(); };
     const qaFoePort56 = function () { const m = qaSide56(), o = owners54(); for (let i = 0; i < o.length; i++) if (o[i] !== m) return i; return -1; };
     qa("Teleport: next enemy tavern", "qaenemytav56", function (b) { const m = fac54(); let i = -1; const own = owners54(), N = own.length; for (let t = 1; t <= N && i < 0; t++) { const j = ((qaTav56 || 0) + t) % N; if (own[j] !== m && PORTS[j].id !== "bramble") i = j; } if (i < 0) i = 1; qaTav56 = i; if (!(standing[own[i]] < 0) && !m) standing[own[i]] = -1; qaDoor52(b, "tavern", PORTS[i].id); setTimeout(function () { b.openMenu("tavern", PORTS[i].id); }, 400); });
-    qa("QA: strong ship (frigate)", "qaship56", function (b) { mountPlayerHull("frigate", "QA frigate"); ship.hull = ship.hullMax; say("QA: you now sail a frigate.", 2); });
-    qa("QA: win the siege", "qawin56", function (b) { if (!siege54) { const i = qaFoePort56(); if (i < 0) return; if (mode !== "sea") { closeMenu(); boardShip(true); } const h = PORTS[i].harbour; ship.x = h.x + 60; ship.z = h.z; startSiege54(i); } siege54.foes.forEach(function (f) { f.hull = 0; f.sinking = true; }); endSiege54(true); say("QA: siege won.", 2); });
+    ["tavern", "merchant", "shipyard"].forEach(function (k) { qa("Teleport: inside " + ({ tavern: "tavern", merchant: "market hall", shipyard: "shipyard" })[k], "qaroom57" + k, function (b) { qaDoor52(b, k, "bramble"); setTimeout(function () { if (room57) exitRoom57(true); const d = closestDoor(); doorGo57(d && d.kind === k ? d : doors.find(function (o) { return o.kind === k && o.port === "bramble"; }) || { kind: k, x: person.x, z: person.z }); }, 300); }); });
+    qa("QA: strong ship (frigate)", "qaship56", function (b) { mountPlayerHull("frigate", "QA frigate"); ship.hull = ship.hullMax; ship.sails = 100; if (x3) x3.crew = crewMaxFor("frigate"); try { updateHud(); } catch (e2) { /* optional */ } say("QA: you now sail a frigate.", 2); });
+    qa("QA: win the siege", "qawin56", function (b) { if (!siege54) { const i = qaFoePort56(); if (i < 0) return; if (mode !== "sea") { closeMenu(); boardShip(true); } const h = PORTS[i].harbour; ship.x = h.x + 60; ship.z = h.z; startSiege54(i); } const fs56 = siege54.foes.slice(); fs56.forEach(function (f) { f.hull = 0; f.sinking = true; f.cool = 99; f.hunt = false; }); endSiege54(true); shots.forEach(function (sh) { if (sh.from === "foe" || sh.owner === "foe") sh.life = 0; }); say("QA: siege won.", 2); });
     qa("QA: start a siege", "qasiege56", function (b) { const i = qaFoePort56(); if (i < 0) return; if (mode !== "sea") { closeMenu(); boardShip(true); } const h = PORTS[i].harbour; ship.x = h.x + 60; ship.z = h.z; ship.speed = 0; siege54 = null; startSiege54(i); say("QA: siege of " + PORTS[i].name + " started.", 2.5); });
     qa("QA: counter-attack", "qacounter56", function (b) { const m = qaSide56(); let taken = false; owners54().forEach(function (k, i) { if (k === m && homeOwner54(i) !== m) taken = true; }); if (!taken) { const i = qaFoePort56(); if (i >= 0) setOwner54(i, m); } if (mode !== "sea") { closeMenu(); boardShip(true); } say(startCounter54() ? "QA: a counter-attack is under way." : "QA: no counter-attack possible.", 2.5); });
     qa("QA: sign a treaty", "qatreaty56", function (b) { qaSide56(); x3.svc55 = Math.max(x3.svc55 || 0, 80); const i = qaFoePort56(); const k = i >= 0 ? owners54()[i] : "spain"; ledger.gold += treatyCost55(k); say(signTreaty55(k) ? "QA: treaty signed with " + FACNAME54[k] + "." : "QA: treaty refused.", 2.5); });
@@ -11552,6 +11555,98 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (townMenu) townMenu.style.display = "none";
   }
 
+  // Batch 57 (Jeff): walk-in tavern, market and shipyard. Each room is its own small scene, built on first entry and
+  // drawn instead of the town while you are inside, so town draw calls never rise. Walk up to the keeper to open the usual menu;
+  // walk back out of the door (or press Leave) to return to the street.
+  const ROOM57 = { tavern: { name: "Tavern", wall: 0x8a5a36, floor: 0x5b3b22, npc: 0x9a3a2a, keeper: "the landlord" }, shipyard: { name: "Shipyard", wall: 0x7d6a52, floor: 0x6b5a40, npc: 0x2f4f6f, keeper: "the shipwright" }, merchant: { name: "Market hall", wall: 0xb08a5a, floor: 0x7a6040, npc: 0x4f7a3a, keeper: "the trader" } };
+  const roomCache57 = {};
+  let room57 = null, roomFade57 = null, roomBar57 = null;
+  function roomKind57(kind) { return ROOM57[kind] ? kind : null; }
+  function buildRoom57(kind) {
+    if (roomCache57[kind]) return roomCache57[kind];
+    const R = ROOM57[kind], sc = new THREE.Scene(); sc.background = new THREE.Color(0x140c06);
+    sc.add(new THREE.HemisphereLight(0xffe6c0, 0x3a2a1a, 1.1)); const lamp = new THREE.PointLight(0xffc070, 1.4, 18); lamp.position.set(0, 3.2, 0); sc.add(lamp);
+    const box = function (w, h, d, x, y, z) { const g = new THREE.BoxGeometry(w, h, d); g.translate(x, y, z); return new THREE.Mesh(g); };
+    const mats = { floor: new THREE.MeshLambertMaterial({ color: R.floor }), wall: new THREE.MeshLambertMaterial({ color: R.wall }), wood: new THREE.MeshLambertMaterial({ color: 0x4a2e18 }), npc: new THREE.MeshLambertMaterial({ color: R.npc }), skin: new THREE.MeshLambertMaterial({ color: 0xd9a77a }), prop: new THREE.MeshLambertMaterial({ color: kind === "shipyard" ? 0x333a40 : kind === "merchant" ? 0xc9a24a : 0x7a4a22 }) };
+    const parts = { floor: [box(10, 0.2, 8.4, 0, -0.1, 0)], wall: [box(10, 3.6, 0.3, 0, 1.8, -4.2), box(0.3, 3.6, 8.4, -5, 1.8, 0), box(0.3, 3.6, 8.4, 5, 1.8, 0), box(4, 0.5, 0.3, -3, 0.25, 4.2), box(4, 0.5, 0.3, 3, 0.25, 4.2), box(0.25, 2.4, 0.3, -1.1, 1.2, 4.2), box(0.25, 2.4, 0.3, 1.1, 1.2, 4.2)],
+      wood: [box(5.4, 1.1, 0.8, 0, 0.55, -1.9), box(9.6, 0.15, 0.5, 0, 2.2, -3.9), box(9.6, 0.15, 0.5, 0, 1.4, -3.9)], npc: [box(0.7, 1.1, 0.45, 0, 1.15, -2.9)], skin: [box(0.45, 0.45, 0.45, 0, 1.95, -2.9)], prop: [] };
+    for (let t = 0; t < 4; t++) { const tx = t < 2 ? -3.2 : 3.2, tz = t % 2 ? 2.2 : 0.2; parts.wood.push(box(1.3, 0.1, 1.3, tx, 0.85, tz), box(0.15, 0.8, 0.15, tx, 0.4, tz)); parts.wood.push(box(0.5, 0.45, 0.5, tx - 1.0, 0.22, tz), box(0.5, 0.45, 0.5, tx + 1.0, 0.22, tz)); parts.prop.push(box(0.25, 0.3, 0.25, tx, 1.05, tz)); }
+    for (let q = 0; q < 6; q++) parts.prop.push(box(0.5, 0.6, 0.5, -4.4 + q * 1.76, 2.55, -3.95));
+    if (kind === "shipyard") { parts.prop.push(box(0.4, 0.4, 3.2, -4.3, 0.2, 1.0), box(2.6, 0.5, 0.9, 3.2, 0.25, -3.4)); }
+    if (kind === "tavern") { parts.prop.push(box(0.9, 1.0, 0.9, 4.2, 0.5, -3.4), box(0.9, 1.0, 0.9, 4.2, 0.5, -2.4)); }
+    if (kind === "merchant") { parts.prop.push(box(0.8, 0.8, 0.8, -4.2, 0.4, 3.0), box(0.8, 0.8, 0.8, -4.2, 1.2, 3.0), box(0.8, 0.8, 0.8, 4.2, 0.4, 3.0)); }
+    Object.keys(parts).forEach(function (k) { if (parts[k].length) { parts[k].forEach(function (o) { sc.add(o); o.updateMatrixWorld(true); }); const g = mergeList(parts[k], mats[k], null); g.castShadow = false; g.receiveShadow = false; if (g) sc.add(g); } }); // Batch 57: one draw call per material, about 8 in all
+    const me = new THREE.Group(); const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.1, 0.4), new THREE.MeshLambertMaterial({ color: 0xc23b2e })); body.position.y = 0.95; me.add(body); const head = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.42, 0.42), mats.skin); head.position.y = 1.75; me.add(head); sc.add(me);
+    const cam = new THREE.PerspectiveCamera(55, window.innerWidth / Math.max(1, window.innerHeight), 0.1, 60); cam.position.set(0, 7.2, 8.6); cam.lookAt(0, 0.6, -0.4);
+    return (roomCache57[kind] = { scene: sc, cam: cam, me: me });
+  }
+  function fade57(on) { if (!roomFade57) { roomFade57 = document.createElement("div"); roomFade57.id = "fade57"; roomFade57.style.cssText = "position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .25s;z-index:30"; document.body.appendChild(roomFade57); } roomFade57.style.opacity = on ? "1" : "0"; }
+  function enterRoom57(door, quick) {
+    const kind = roomKind57(door && door.kind); if (!kind || room57) return false;
+    const R = buildRoom57(kind);
+    room57 = { kind: kind, door: door, R: R, x: 0, z: 3.2, yaw: Math.PI, talked: false, t: 0, back: { x: person.x, z: person.z } };
+    R.me.position.set(0, 0, 3.2); x3.rooms57 = (x3.rooms57 || 0) + 1;
+    fade57(true); setTimeout(function () { fade57(false); }, quick ? 0 : 260);
+    if (!roomBar57) { roomBar57 = document.createElement("button"); roomBar57.type = "button"; roomBar57.id = "roomleave57"; roomBar57.textContent = "Leave"; roomBar57.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);top:54px;height:36px;padding:0 18px;z-index:12;font-size:15px"; tap51(roomBar57, function () { exitRoom57(); }); document.body.appendChild(roomBar57); }
+    roomBar57.style.display = ""; say("Inside the " + ROOM57[kind].name.toLowerCase() + ". Walk up to " + ROOM57[kind].keeper + " at the counter.", 3);
+    return true;
+  }
+  function exitRoom57(quick) {
+    if (!room57) return; const r = room57; room57 = null; if (menuOpen) closeMenu(); if (roomBar57) roomBar57.style.display = "none";
+    fade57(true); setTimeout(function () { fade57(false); }, quick ? 0 : 260);
+    if (r.door && mode === "land" && Math.hypot(person.x - r.back.x, person.z - r.back.z) < 2) { const dx = r.door.x - r.back.x, dz = r.door.z - r.back.z; person.x = r.back.x; person.z = r.back.z; person.yaw = Math.atan2(-dx, -dz); }
+  }
+  function room57Frame(dt) {
+    const r = room57, R = r.R; r.t += dt; if (mode !== "land") { exitRoom57(true); return; }
+    if (!menuOpen && !paused) {
+      const input = readSteer(); const f = input.forward || 0, s = input.steer || 0;
+      if (Math.abs(f) + Math.abs(s) > 0.05) { r.x += s * dt * 3.6; r.z -= f * dt * 3.6; r.yaw = Math.atan2(s, -f); }
+      r.x = Math.max(-4.4, Math.min(4.4, r.x)); r.z = Math.max(-1.0, Math.min(r.z, Math.abs(r.x) < 1.0 ? 4.4 : 3.7));
+      if (r.z > 4.1) { exitRoom57(); return; }
+      if (r.z < -0.85 && Math.abs(r.x) < 2.9) { if (!r.talked) { r.talked = true; openMenu(r.kind); } } else if (r.z > -0.3) r.talked = false;
+    }
+    R.me.position.set(r.x, 0, r.z); R.me.rotation.y = r.yaw; if (roomBar57) { const dv = menuOpen ? "none" : ""; if (roomBar57.style.display !== dv) roomBar57.style.display = dv; }
+    const a = window.innerWidth / Math.max(1, window.innerHeight); if (Math.abs(R.cam.aspect - a) > 0.01) { R.cam.aspect = a; R.cam.updateProjectionMatrix(); }
+    renderer.render(R.scene, R.cam);
+  }
+  function doorGo57(door) { if (!door) return; if (roomKind57(door.kind) && !door.stall && !fightOn) { if (!enterRoom57(door)) openMenu(door.kind); } else openMenu(door.kind); }
+  // Batch 57 (Jeff): bigger towns. An outer ring of cottages and a wider paved street round each port, drawn as just two
+  // instanced meshes for every town together (walls and roofs), so the towns grow without new draw calls per house.
+  let town57 = null;
+  function buildTown57() {
+    if (town57) return town57;
+    const spots = [];
+    PORTS.forEach(function (P) {
+      const isl = ISLANDS[P.island]; if (!isl) return;
+      const ds = doors.filter(function (d) { return d.port === P.id; }); if (!ds.length) return;
+      let cx = 0, cz = 0; ds.forEach(function (d) { cx += d.x; cz += d.z; }); cx /= ds.length; cz /= ds.length;
+      let R = 0; ds.forEach(function (d) { R = Math.max(R, Math.hypot(d.x - cx, d.z - cz)); });
+      const g = P.gang || P.harbour, w = wildFor51(P.island);
+      let n = 0;
+      for (let ring = 0; ring < 2; ring++) for (let k = 0; k < 18 && n < 12; k++) {
+        const a = k / 18 * Math.PI * 2 + ring * 0.17, r = R + 9 + ring * 7, x = cx + Math.sin(a) * r, z = cz + Math.cos(a) * r;
+        if (Math.hypot(x - isl.x, z - isl.z) > isl.landR - 8) continue;
+        const y = islandHeight(isl, x, z); if (y < 0.8 || y > 7) continue;
+        if (Math.abs(islandHeight(isl, x + 2, z) - y) > 1.2 || Math.abs(islandHeight(isl, x, z + 2) - y) > 1.2) continue;
+        if (blocks.some(function (q) { return Math.hypot(q.x - x, q.z - z) < q.r + 4.2; })) continue;
+        if (doors.some(function (d) { return Math.hypot(d.x - x, d.z - z) < 7; })) continue;
+        if (g && Math.hypot(g.x - x, g.z - z) < 14) continue;
+        if (w && w.gate && Math.hypot(w.gate.x - x, w.gate.z - z) < 14) continue;
+        if (dockUnder(x, z)) continue;
+        spots.push({ x: x, y: y, z: z, rot: Math.atan2(cx - x, cz - z), s: 0.85 + ((k * 7 + ring * 3) % 5) * 0.08 }); blocks.push({ x: x, z: z, r: 1.9, town57: true }); n++;
+      }
+    });
+    if (!spots.length) return (town57 = { n: 0 });
+    const wallG = new THREE.BoxGeometry(3.2, 2.4, 3.0); wallG.translate(0, 1.2, 0);
+    const roofG = new THREE.ConeGeometry(2.6, 1.6, 4); roofG.rotateY(Math.PI / 4); roofG.translate(0, 3.2, 0);
+    const walls = new THREE.InstancedMesh(wallG, new THREE.MeshLambertMaterial({ color: 0xffffff }), spots.length);
+    const roofs = new THREE.InstancedMesh(roofG, new THREE.MeshLambertMaterial({ color: 0xffffff }), spots.length);
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), c = new THREE.Color();
+    const wallCols = [0xe9dcc0, 0xd8c39a, 0xf0e6d0, 0xc9b28a, 0xe3cfa9], roofCols = [0x9a4a32, 0x7a3a2a, 0x5a6a7a, 0xa8653a];
+    spots.forEach(function (p, i) { q.setFromEuler(e.set(0, p.rot, 0)); m.compose(v.set(p.x, p.y - 0.2, p.z), q, sc.set(p.s, p.s, p.s)); walls.setMatrixAt(i, m); roofs.setMatrixAt(i, m); walls.setColorAt(i, c.setHex(wallCols[i % wallCols.length])); roofs.setColorAt(i, c.setHex(roofCols[(i * 3) % roofCols.length])); });
+    [walls, roofs].forEach(function (o) { o.instanceMatrix.needsUpdate = true; if (o.instanceColor) o.instanceColor.needsUpdate = true; o.castShadow = !(x3 && x3.lowGfx); o.receiveShadow = true; o.name = "town57"; o.computeBoundingSphere && o.computeBoundingSphere(); scene.add(o); });
+    return (town57 = { n: spots.length, walls: walls, roofs: roofs, spots: spots });
+  }
   function closestDoor() {
     let best = null;
     let bd = 3.6;
@@ -12873,7 +12968,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!x3) return "";
     const fh54 = factionHtml54();
     const r = rankOf(), nx = r < 5 ? RANK_XP[r + 1] : RANK_XP[5];
-    let h = "<b>" + RANKS[r] + " \u00B7 " + x3.xp + " XP</b>" + bookBar(r < 5 ? (x3.xp - RANK_XP[r]) / (nx - RANK_XP[r]) : 1) + (r < 5 ? (nx - x3.xp) + " XP to " + RANKS[r + 1] + "." : "The highest rank in the islands. Laurels: " + x3.laurels + ", next in " + (500 - (x3.xp - RANK_XP[5]) % 500) + " XP." + bookBar(((x3.xp - RANK_XP[5]) % 500) / 500)) + "<div style='margin-top:10px'>";
+    let h = "<b>Sea rank (XP): " + RANKS[r] + " \u00B7 " + x3.xp + " XP</b>" + bookBar(r < 5 ? (x3.xp - RANK_XP[r]) / (nx - RANK_XP[r]) : 1) + (r < 5 ? (nx - x3.xp) + " XP to " + RANKS[r + 1] + "." : "The highest rank in the islands. Laurels: " + x3.laurels + ", next in " + (500 - (x3.xp - RANK_XP[5]) % 500) + " XP." + bookBar(((x3.xp - RANK_XP[5]) % 500) / 500)) + "<div style='margin-top:10px'>";
     if (sessionXp0 != null) h += "<div style='opacity:.85;margin-top:4px'>+" + (x3.xp - sessionXp0) + " XP this session.</div>";
     RANKS.forEach(function (nm, i) { h += "<div class='rk" + (i === r ? " on" : "") + "'" + (i === r + 1 ? " style='border-style:dashed;border-color:#f2d48a'" : "") + ">" + (i === r + 1 ? "<small style='float:right;opacity:.8'>next</small>" : "") + (i <= r ? "\u2605 " : "\u2606 ") + "<b>" + nm + "</b> \u00B7 " + RANK_XP[i] + " XP<small style='display:block;opacity:.8'>" + RANK_PERK[i] + "</small></div>"; });
     return fh54 + h + "</div><div style='margin-top:8px;opacity:.85'>" + esc(orderLine()) + "</div><h4>Where XP comes from</h4><div style='font-size:14px;line-height:1.45;opacity:.9'>Time at sea \u00B7 hits, sinkings and flawless battles \u00B7 deeds and new sights \u00B7 daily orders \u00B7 treasure \u00B7 sea stories and new dishes at taverns</div>";
@@ -13549,7 +13644,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     toast("You serve " + FACNAME54[k] + ". Enemy forts fire on you, enemy ships hunt you from further off, and their markets add a war levy. Besiege an enemy port from the sea to take it.", "Faction");
     writeSave();
   }
-  let qaTav56 = 0;
+  let qaTav56 = 0, siegeVolley56 = 0;
+  function siegeLead56() { if (!siege54) return null; let b = null, bd = 1e9; siege54.foes.forEach(function (f) { if (f.alive && !f.sinking && f.hull > 0) { const d = Math.hypot(f.x - ship.x, f.z - ship.z); if (d < bd) { bd = d; b = f; } } }); return b; }
   function resignFac54() { const k = fac54(); if (!k) return; x3.fac54 = ""; goldV54 = null; standing[k] = Math.min(standing[k], 1); x3.resigned56 = (x3.resigned56 || 0) + 1; say("You hand back your commission. Your old enemies still remember you; a pardon can clear that.", 3.5); /* Batch 56 (Games 2): resigning no longer clears war for free */ writeSave(); }
   function portIdx54(port) { return port ? PORTS.indexOf(port) : -1; }
   function facButtons54(body, box) {
@@ -13627,7 +13723,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   let goldB54 = null, goldV54 = null;
   function goldBadge54() {
     if (!goldB54) { const hh55 = document.getElementById("hullhud"); if (!hh55) return; goldB54 = document.createElement("div"); /* Batch 55: the badge sits under the hull bar, not over the hull line */ goldB54.id = "gold54"; goldB54.style.cssText = "font:800 14px system-ui,sans-serif;color:#ffd75a;text-shadow:0 1px 2px #000,0 0 3px #000;opacity:1;margin-top:3px;pointer-events:none;white-space:nowrap"; hh55.appendChild(goldB54); }
-    if (goldV54 !== ledger.gold) { goldV54 = ledger.gold; goldB54.textContent = "\u25CF " + ledger.gold + " gold" + (fac54() ? " \u00B7 " + SVCRANK55[svcRank55()].n + ", " + FACNAME54[fac54()].replace("the ", "") : ""); }
+    { const gt56 = "\u25CF " + ledger.gold + " gold" + (fac54() ? " \u00B7 " + SVCRANK55[svcRank55()].n + ", " + FACNAME54[fac54()].replace("the ", "") : ""); if (goldV54 !== gt56) { goldV54 = gt56; goldB54.textContent = gt56; } } // Batch 56 (Games 2): always the current service rank, never a stale one
   }
   // Batch 54 (Games 2): if a newer build is live, offer a reload (cache-busted fetch; web only).
   function newBuild54() {
@@ -13643,7 +13739,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     let h = "<h4>Sides and ports</h4><div style='font-size:14px;line-height:1.45'>" + (mine ? "You serve <b>" + esc(FACNAME54[mine]) + "</b>. At war with the other three." : "You serve no side. Join one in any tavern.") + "<br>";
     h += o.map(function (k, i) { return esc(PORTS[i].name) + ": <b>" + esc(FACSHORT54[k]) + "</b>" + (k !== homeOwner54(i) ? " (taken from " + esc(FACSHORT54[homeOwner54(i)]) + ")" : "") + (mine && k !== mine ? ", " + defenders54(k) + " guards" : ""); }).join("<br>");
     if (counter54) h += "<br><b style='color:#ffb4a8'>" + esc(FACSHORT54[counter54.k]) + " is sailing to retake " + esc(PORTS[counter54.i].name) + " (" + Math.ceil(counter54.t) + " s).</b>";
-    if (mine) { const r55 = svcRank55(); h += "<br>Service: <b>" + SVCRANK55[r55].n + "</b> (" + (x3.svc55 || 0) + " points" + (r55 < 4 ? ", next " + SVCRANK55[r55 + 1].n + " at " + SVCRANK55[r55 + 1].at : "") + "). " + esc(SVCPERK55[r55]); const pm = peaceMap55(); Object.keys(pm).forEach(function (k) { h += "<br>At peace with " + esc(FACNAME54[k]) + ": " + Math.ceil(pm[k] / 60) + " min left."; }); }
+    if (mine) { const r55 = svcRank55(); h += "<br>Service rank (" + FACNAME54[mine].replace("the ", "") + "): <b>" + SVCRANK55[r55].n + "</b> (" + (x3.svc55 || 0) + " points" + (r55 < 4 ? ", next " + SVCRANK55[r55 + 1].n + " at " + SVCRANK55[r55 + 1].at : "") + "). " + esc(SVCPERK55[r55]); const pm = peaceMap55(); Object.keys(pm).forEach(function (k) { h += "<br>At peace with " + esc(FACNAME54[k]) + ": " + Math.ceil(pm[k] / 60) + " min left."; }); }
     { const hate55 = FAC54.filter(function (k) { return k !== mine && standing[k] < 0; }); if (hate55.length) h += "<br><b style='color:#ffd75a'>Pardons:</b> " + hate55.map(function (k) { return esc(FACSHORT54[k]); }).join(", ") + (mine ? " are at war with you. A side you serve against stays at war; resign first, or sign a treaty." : " are at war with you. Buy a 100 gold pardon at any of their taverns (" + hate55.map(function (k) { return owners54().map(function (q, j) { return q === k ? esc(PORTS[j].name) : ""; }).filter(Boolean).join(", ") || "no port held"; }).join("; ") + ")."); }
     h += "<br>Ports taken: " + (x3.caps54 || 0) + (x3.held54 ? ". Defended: " + x3.held54 : "") + (x3.lost54 ? ". Lost: " + x3.lost54 : "") + ".</div>";
     return h;
@@ -13690,7 +13786,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     syncForts54();
     if (siegeCool54 > 0) siegeCool54 -= dt;
     if (siege54) {
-      const S = siege54, h = PORTS[S.i].harbour; S.t += dt; for (let q = 0; q < foes.length; q++) { const f = foes[q]; if (!f.siege54 && f.alive && Math.hypot(f.x - h.x, f.z - h.z) < 220) { f.ignore = Math.max(f.ignore || 0, 1); f.hunt = false; } } // Batch 56 (Games 2): passers-by keep out of a siege
+      const S = siege54, h = PORTS[S.i].harbour; S.t += dt; if (siegeVolley56 > 0) siegeVolley56 -= dt; for (let q = 0; q < foes.length; q++) { const f = foes[q]; if (!f.siege54 && f.alive && Math.hypot(f.x - h.x, f.z - h.z) < 220) { f.ignore = Math.max(f.ignore || 0, 1); f.hunt = false; } } // Batch 56 (Games 2): passers-by keep out of a siege
       const left = S.foes.filter(function (f) { return f.alive && !f.sinking && !f.gone; }).length;
       if (S.left != null && left < S.left && left > 0) say(left + " guard" + (left > 1 ? "s" : "") + " left at " + PORTS[S.i].name + ".", 2.5); S.left = left;
       if (!left) endSiege54(true);
@@ -13743,7 +13839,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!fac54() || !ashorePort) return;
     const i = portIdx54(ashorePort); if (owner54(i) !== fac54()) return;
     const r = svcRank55();
-    body.textContent += " Service: " + SVCRANK55[r].n + " (" + (x3.svc55 || 0) + " points" + (r < 4 ? ", " + (SVCRANK55[r + 1].at - (x3.svc55 || 0)) + " to " + SVCRANK55[r + 1].n : "") + ").";
+    body.textContent += " Service rank: " + SVCRANK55[r].n + " (" + (x3.svc55 || 0) + " points" + (r < 4 ? ", " + (SVCRANK55[r + 1].at - (x3.svc55 || 0)) + " to " + SVCRANK55[r + 1].n : "") + ").";
     if (r < 2) return;
     FAC54.forEach(function (k) { if (k === fac54()) return; const pl = peaceLeft55(k); if (pl > 0) { body.textContent += " At peace with " + FACNAME54[k] + " (" + Math.ceil(pl / 60) + " min)."; return; } box.appendChild(menuButton("Sue for peace with " + FACNAME54[k] + " (" + treatyCost55(k) + " gold)", function () { if (!signTreaty55(k)) say("Not enough gold for the envoys.", 2); renderMenu(); })); });
   }
@@ -14462,7 +14558,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         qDone("job56", q.t + " done.", g, 15); renderMenu(); }));
     });
     const offers = JOBS56.filter(function (q) { return q.at === pid && !J[q.id] && !(done[q.id] && x3.questsDone < done[q.id] + 3); });
-    if (offers.length) body.textContent += " Notice board: " + offers.length + " job" + (offers.length > 1 ? "s" : "") + " posted.";
+    if (offers.length) { const all56 = JOBS56.filter(function (q) { return !J[q.id] && !(done[q.id] && x3.questsDone < done[q.id] + 3); }).length; body.textContent += " Notice board here: " + offers.length + " job" + (offers.length > 1 ? "s" : "") + " posted" + (all56 > offers.length ? " (" + all56 + " open across the four ports)" : "") + "."; }
     offers.forEach(function (q) { box.appendChild(menuButton("\uD83D\uDCCC " + q.t + " (" + qPay(q.pay) + " gold): " + q.d, function () {
       const J2 = jobs56(); if (Object.keys(J2).length >= 3) { say("Three jobs at once is plenty. Finish or drop one first.", 2.5); return; }
       J2[q.id] = jobStart56(q); setJobs56(J2); say("Taken: " + q.t + ". It's in your Log" + (q.to !== pid ? " and on the chart" : "") + ".", 3); writeSave(); renderMenu(); })); });
@@ -16386,6 +16482,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (paused) dayOffset -= (now - pauseClock) / 1000;
     else if (mode === "land" && !titleOn && now - pauseClock < 250) dayOffset -= (now - pauseClock) / 1000 * 0.6; // Batch 48: ashore the day runs at 40% speed
     pauseClock = now;
+    if (room57) { room57Frame(dt); updateHud(); probeFps48(now, performance.now() - work48); return; } // Batch 57: inside a building only the small room is drawn
     updateDaylight(now / 1000);
     if (!paused) windAngle += dt * (Math.PI * 2 / WIND_TURN);
     if (fireCool > Math.max(coolS47[0], coolS47[1]) + 0.05) { coolS47[0] = coolS47[1] = fireCool; } // fireCool set from outside (tests, events) loads both batteries
@@ -16860,7 +16957,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   // A blow that lands while you are mid-dodge misses. Returns true when it was dodged.
   let dodgeAt56 = -1e9; const dodgeLog56 = [];
-  function dodgedBlow53(f) { const pre54 = f && f.dodge54; if (f) f.dodge54 = false; const ago56 = (performance.now() - dodgeAt56) / 1000, win56 = f && f.kind === "boar" ? 1.0 : 0.6; const ok56 = dodgeT53 > 0 || pre54 || ago56 < win56; dodgeLog56.push({ k: f ? f.kind : "?", ago: Math.round(ago56 * 100) / 100, t: Math.round(dodgeT53 * 100) / 100, pre: !!pre54, ok: ok56 }); if (dodgeLog56.length > 8) dodgeLog56.shift(); if (qaOn56) qaDodge56(); if (ok56) { dodged53++; if (x3) x3.dodged53 = (x3.dodged53 || 0) + 1; floatText(person.x + 0.8, feetY(person.x, person.z) + 2.2, person.z, "Dodged", "#bfe6ff"); return true; } return false; }
+  function dodgedBlow53(f) { const pre54 = f && f.dodge54; if (f) f.dodge54 = false; const ago56 = (performance.now() - dodgeAt56) / 1000, win56 = f && f.kind === "boar" ? 1.0 : 0.6; const paw56 = f && f.kind === "boar" && f.paw56 ? (performance.now() - f.paw56) / 1000 + 0.3 : 0, ok56 = dodgeT53 > 0 || pre54 || ago56 < Math.max(win56, paw56); /* Batch 56 (Games 2): any press from the boar's "!" on counts */ dodgeLog56.push({ k: f ? f.kind : "?", ago: Math.round(ago56 * 100) / 100, t: Math.round(Math.max(dodgeT53, win56, paw56) * 100) / 100, pre: !!pre54, ok: ok56 }); if (dodgeLog56.length > 8) dodgeLog56.shift(); if (qaOn56) qaDodge56(); if (ok56) { dodged53++; if (x3) x3.dodged53 = (x3.dodged53 || 0) + 1; floatText(person.x + 0.8, feetY(person.x, person.z) + 2.2, person.z, "Dodged", "#bfe6ff"); return true; } return false; }
   function swordUi53(dt) {
     swordCd53 = Math.max(0, swordCd53 - dt); dodgeCd53 = Math.max(0, dodgeCd53 - dt); dodgeT53 = Math.max(0, dodgeT53 - dt); comboT53 = Math.max(0, comboT53 - dt); if (comboT53 === 0) combo53 = 0;
     if (!swordBtn53 && fireBtn && fireBtn.parentNode) {
@@ -16936,9 +17033,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       // Batch 53: the boar. Paws (0.7 s, "!") at 3.5-10 m, then charges straight at speed 8 for up to 1.1 s; a hit is 12. After a charge he stands winded for 1.6 s.
       if (f.kind === "boar") {
         if (f.tired53 > 0) { f.tired53 -= dt; tx = f.x; tz = f.z; }
-        else if (f.ch53 === 1) { f.chT53 -= dt; f.g.rotation.x = 0.15; tx = f.x; tz = f.z; if (f.chT53 <= 0) { f.ch53 = 2; f.chT53 = 1.1; f.g.rotation.x = 0; } }
-        else if (f.ch53 === 2) { f.chT53 -= dt; tx = f.x + f.cdx53 * 5; tz = f.z + f.cdz53 * 5; sp = 8; if (d < 1.3) { f.ch53 = 0; f.tired53 = 1.6; if (!dodgedBlow53(f)) { const dm = Math.round(12 * (diffK("repair") || 1)); landHp51 = Math.max(0, landHp51 - dm); hurtT51 = 0.4; floatText(person.x, feetY(person.x, person.z) + 2.2, person.z, "-" + dm, "#ff6a5a"); try { buzz([30, 20, 30]); } catch (e) { /* optional */ } if (landHp51 <= 0) { knockedDown51(); return; } } } else if (f.chT53 <= 0) { f.ch53 = 0; f.tired53 = 1.6; floatText(f.x, feetY(f.x, f.z) + 1.8, f.z, "Winded", "#dddddd"); } }
-        else if (playerOk && !f.hold54 && grace55 <= 0 && d > 3.5 && d < 10 && f.cd <= 0) { f.ch53 = 1; f.chT53 = 0.7; f.dodge54 = false; f.cd = 3; f.cdx53 = dx / d; f.cdz53 = dz / d; f.yaw = Math.atan2(dx, dz); floatText(f.x, feetY(f.x, f.z) + 1.9, f.z, "!", "#ffcf5a"); try { buzz(10); } catch (e) { /* optional */ } }
+        else if (f.ch53 === 1) { f.chT53 -= dt; f.g.rotation.x = 0.15; tx = f.x; tz = f.z; if (f.chT53 <= 0) { f.ch53 = 2; f.chT53 = 1.1; f.g.rotation.x = 0; floatText(f.x, feetY(f.x, f.z) + 1.9, f.z, "Charge!", "#ff6a3a"); } }
+        else if (f.ch53 === 2) { f.chT53 -= dt; tx = f.x + f.cdx53 * 5; tz = f.z + f.cdz53 * 5; sp = 8; if (d < 1.3) { f.ch53 = 0; f.tired53 = 1.6; f.cd = Math.max(f.cd, 4); if (!dodgedBlow53(f)) { const dm = Math.round(12 * (diffK("repair") || 1)); landHp51 = Math.max(0, landHp51 - dm); hurtT51 = 0.4; floatText(person.x, feetY(person.x, person.z) + 2.2, person.z, "-" + dm, "#ff6a5a"); try { buzz([30, 20, 30]); } catch (e) { /* optional */ } if (landHp51 <= 0) { knockedDown51(); return; } } } else if (f.chT53 <= 0) { f.ch53 = 0; f.tired53 = 1.6; floatText(f.x, feetY(f.x, f.z) + 1.8, f.z, "Winded", "#dddddd"); } }
+        else if (playerOk && !f.hold54 && grace55 <= 0 && d > 3.5 && d < 10 && f.cd <= 0) { f.ch53 = 1; f.chT53 = 0.7; f.dodge54 = false; f.cd = 3; f.paw56 = performance.now(); f.cdx53 = dx / d; f.cdz53 = dz / d; f.yaw = Math.atan2(dx, dz); floatText(f.x, feetY(f.x, f.z) + 1.9, f.z, "!", "#ffcf5a"); floatText(f.x, feetY(f.x, f.z) + 2.6, f.z, "! ! !", "#ff9a3a"); say("The boar paws the ground. Dodge!", 1.2); /* Batch 56 (Games 2): a clear tell */ try { buzz(10); } catch (e) { /* optional */ } }
       } // Batch 51 (Games 2): Gull Rock guards notice later and walk slower than you
       const mx = tx - f.x, mz = tz - f.z, md = Math.hypot(mx, mz);
       if (md > 1.3) {
@@ -17092,7 +17189,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         toggleShot();
       } else if (k === "e" && mode !== "sea") {
         if (digTarget()) digChest();
-        else if (closestDoor()) openMenu(closestDoor().kind);
+        else if (closestDoor()) doorGo57(closestDoor());
         else if (nearDuelist()) tryDraw();
         else if (nearAgent()) tryHear();
         else if (nearQuarter()) tryQuarter();
@@ -17274,7 +17371,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (mode === "sea") { if (canPatch()) fieldPatch(); else goAshore(); }
       else if (chestReady51()) openChest51();
       else if (digTarget()) digChest();
-      else if (closestDoor()) openMenu(closestDoor().kind);
+      else if (closestDoor()) doorGo57(closestDoor());
       else if (nearDuelist()) tryDraw();
       else if (nearAgent()) tryHear();
       else if (nearQuarter()) tryQuarter();
@@ -18737,6 +18834,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       heading47: function (h) { ship.heading = h; ship.yawRate = 0; if (ship.root) ship.root.rotation.y = h; return h; },
       sails47: function (v) { ship.sails = v; refreshCloth(); return ship.sails; },
       land47: function () { const cp = camera.position; let lineHit = false; { camFrom.set(person.x, person.group.position.y + 1.4, person.z); camDir.copy(cp).sub(camFrom); const len = camDir.length(); camDir.divideScalar(Math.max(0.001, len)); camRay.set(camFrom, camDir); camRay.far = len; const h = occl44.length ? camRay.intersectObjects(occl44, true).find(function (q) { return !q.object.isSprite && q.distance > 0.6; }) : null; lineHit = !!h; } return { mode: mode, x: person.x, z: person.z, cam: [cp.x, cp.y, cp.z], camInBlock: camHits52(cp.x, cp.z, 0.2), inHouse52: hitsBlock(cp.x, cp.z, 0.2), lineHit: lineHit, menuOpen: menuOpen, near: camera.near }; },
+      room57: function () { return room57 ? { kind: room57.kind, x: room57.x, z: room57.z, talked: room57.talked, calls: room57.R.scene.children.filter(function (o) { return o.isMesh; }).length + room57.R.me.children.length } : null; }, enterRoom57: function (kind, port) { if (port) ashorePort = portById(port); const d = doors.find(function (o) { return o.kind === kind && !o.stall && (!ashorePort || o.port === ashorePort.id); }) || { kind: kind, x: person.x, z: person.z }; return enterRoom57(d, true); }, exitRoom57: function () { exitRoom57(true); return !room57; }, roomWalk57: function (x, z) { if (room57) { room57.x = x; room57.z = z; } },
+      town57: function () { return town57 ? { n: town57.n, per: PORTS.map(function (P) { return town57.spots ? town57.spots.filter(function (p) { return Math.hypot(p.x - P.harbour.x, p.z - P.harbour.z) < 200; }).length : 0; }) } : null; },
       menu56: function () { return { open: menuOpen, kind: menuKind, port: menuAt56 ? menuAt56.port || null : null, x: person ? Math.round(person.x) : 0, z: person ? Math.round(person.z) : 0 }; },
       ghostMenu47: function () { menuOpen = true; return menuOpen; },
       tagOrder47: function () { return { tags: placeTags.map(function (t) { return t.renderOrder; }), foe: foes.slice(0, 3).map(function (f) { const kids = f.root ? f.root.children.filter(function (c) { return c.isSprite; }) : []; return kids.map(function (c) { return [+c.position.y.toFixed(2), c.renderOrder, +c.scale.y.toFixed(2)]; }); }) }; },
