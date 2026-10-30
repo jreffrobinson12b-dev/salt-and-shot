@@ -6746,6 +6746,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
 
   function say(msg, seconds) {
+    try { if (room57 && /squall|fog rolls|storm|reef in/i.test(msg)) return; } catch (e) { /* not ready */ }
     notice = msg;
     noticeT = seconds;
   }
@@ -7443,6 +7444,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   function damagePlayer(n) {
     if (ship.hull <= 0) return;
+    try { if (god57) { floatText(ship.x, 8, ship.z, "god", "#bfe8ff"); return; } } catch (e) { /* not ready */ } // Batch 59 (Games 2): god mode blocks sea damage outright
     if (playerSafe()) { if (safeWarnT <= 0) { floatText(ship.x, 8, ship.z, "safe", "#bfe8ff"); safeWarnT = 2; } return; }
     if (x3 && x3.reinforced) n = Math.max(1, Math.round(n * 0.85));
     if (x3 && rankOf() === 0) n = Math.max(1, Math.round(n * 0.8));
@@ -8036,6 +8038,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3) { lines.push(""); lines.push("\u2014 Voyage" + (x3.shipName ? " of the " + x3.shipName : "") + " \u2014"); }
     if (x3) lines.push("Time at sea: " + Math.floor(x3.seaTime / 60) + " min \u00B7 Sailed: " + (x3.dist / 185).toFixed(1) + " nautical miles");
     if (hunterFoe && !hunterFoe.gone && !hunterFoe.sinking) lines.push("A bounty hunter, " + hunterFoe.name + ", is on your trail.");
+    if (x3 && x3.capLog59 && x3.capLog59.length) lines.push("Ports captured: " + x3.capLog59.join("; ")); // Batch 59
     if (x3) lines.push("Ships sunk or taken: " + x3.sunk + " \u00B7 Gold earned: " + x3.earned + " \u00B7 Crew morale: " + x3.morale + " (" + (x3.morale > 80 ? "merry" : x3.morale < 30 ? "glum" : "steady") + ")");
     if (x3 && x3.posting) lines.push("Wanted: " + x3.posting + " \u00B7 " + postingPay() + " gold \u00B7 about " + Math.max(1, Math.ceil((POSTING_LIFE - x3.postingAge) / 60)) + " min left");
     if (x3) lines.push("Fish in the hold: " + x3.fish + " \u00B7 Caught: " + x3.fishCaught + (x3.fish ? " \u00B7 Catch worth about " + x3.fishValue + " gold" : "") + (x3.bigFish ? " \u00B7 Best catch: a " + x3.bigFish : "") + " \u00B7 Races won: " + x3.races + (x3.raceBest ? " (best " + x3.raceBest + " s)" : "") + (race ? " \u00B7 Racing to " + race.dest.name + ", " + Math.max(0, Math.ceil(race.limit - race.t)) + " s left" : ""));
@@ -8608,6 +8611,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (f.hull < runAt && pd > 36 && !f.qb50) { if (!f.flee46) { f.flee46 = true; floatText(f.x, 10, f.z, "fleeing!", "#9dffb0"); } return { want: avoid46(f, windAngle), dist: Infinity, hunting: true }; }
       f.flee46 = false;
       const bear = Math.atan2(pdx, pdz);
+      if (f.siege54 && pd > 26) return { want: bear + (pd < 40 ? 0.5 : 0) * (((f.x - ship.x) * Math.cos(ship.heading) - (f.z - ship.z) * Math.sin(ship.heading)) >= 0 ? -1 : 1), dist: Infinity, hunting: true }; // Batch 59 (Games 2): siege guards close to about 20-28 yd, inside gun and boarding range
       // Some captains try to cross your bow or stern to rake you. They break off after 9 s, when hurt, or once in place.
       if (foeRakes(f) && !f.boss && f.hull > 45) {
         f.rakeCd = (f.rakeCd == null ? 12 + Math.random() * 10 : f.rakeCd) - steerDt;
@@ -9587,6 +9591,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   let toastT = 0;
   const toastQueue = [];
   function toast(line, head) {
+    try { if (room57 && /squall|fog|storm|weather|wind/i.test((head || "") + " " + line)) return; } catch (e) { /* not ready */ } // Batch 59 (Games 2): no weather news indoors
     const item = head ? { line: line, head: head } : line;
     if (toastQueue.some(function (q) { return JSON.stringify(q) === JSON.stringify(item); })) return;
     if (toastT > 0 || toastHeld()) { toastQueue.push(item); return; }
@@ -9832,7 +9837,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     // Batch 56 (Games 2): faction QA
     const qaSide56 = function () { if (!fac54()) joinFac54("england"); return fac54(); };
     const qaFoePort56 = function () { const m = qaSide56(), o = owners54(); for (let i = 0; i < o.length; i++) if (o[i] !== m) return i; return -1; };
-    qa("Teleport: next enemy tavern", "qaenemytav56", function (b) { const m = fac54(); let i = -1; const own = owners54(), N = own.length; for (let t = 1; t <= N && i < 0; t++) { const j = ((qaTav56 || 0) + t) % N; if (own[j] !== m && PORTS[j].id !== "bramble") i = j; } if (i < 0) i = 1; qaTav56 = i; if (!(standing[own[i]] < 0) && !m) standing[own[i]] = -1; qaDoor52(b, "tavern", PORTS[i].id); setTimeout(function () { b.openMenu("tavern", PORTS[i].id); }, 400); });
+    qa("Teleport: next enemy tavern", "qaenemytav56", function (b) { const m = fac54(); let i = -1; const own = owners54(), N = own.length; for (let t = 1; t <= N && i < 0; t++) { const j = ((qaTav56 || 0) + t) % N; if (own[j] !== m && PORTS[j].id !== "bramble") i = j; } if (i < 0) i = 1; qaTav56 = i; if (!(standing[own[i]] < 0) && !m) standing[own[i]] = -1; qaDoor52(b, "tavern", PORTS[i].id); /* Batch 59 (Games 2): stand at the door, do not open the menu */ });
     ["tavern", "merchant", "shipyard"].forEach(function (k) { qa("Teleport: inside " + ({ tavern: "tavern", merchant: "market hall", shipyard: "shipyard" })[k], "qaroom57" + k, function (b) { qaDoor52(b, k, "bramble"); setTimeout(function () { if (mode !== "land") return; if (room57) exitRoom57(true); const d = closestDoor(); doorGo57(d && d.kind === k ? d : doors.find(function (o) { return o.kind === k && o.port === "bramble"; }) || { kind: k, x: person.x, z: person.z }); }, 900); }); });
     qa("QA: strong ship (frigate)", "qaship56", function (b) { mountPlayerHull("frigate", "QA frigate"); ship.hull = ship.hullMax; ship.sails = 100; if (x3) x3.crew = crewMaxFor("frigate"); try { updateHud(); } catch (e2) { /* optional */ } say("QA: you now sail a frigate.", 2); });
     qa("QA: win the siege", "qawin56", function (b) { if (!siege54) { const i = qaFoePort56(); if (i < 0) return; if (mode !== "sea") { closeMenu(); boardShip(true); } const h = PORTS[i].harbour; ship.x = h.x + 60; ship.z = h.z; startSiege54(i); } const fs56 = siege54.foes.slice(); fs56.forEach(function (f) { f.hull = 0; f.sinking = true; f.cool = 99; f.hunt = false; }); endSiege54(true); shots.forEach(function (sh) { if (sh.from === "foe" || sh.owner === "foe") sh.life = 0; }); say("QA: siege won.", 2); });
@@ -11622,9 +11627,12 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const roomCache57 = {};
   let room57 = null, roomFade57 = null, roomBar57 = null;
   function roomKind57(kind) { return ROOM57[kind] ? kind : null; }
-  function buildRoom57(kind) {
-    if (roomCache57[kind]) return roomCache57[kind];
-    const R = ROOM57[kind], sc = new THREE.Scene(); sc.background = new THREE.Color(0x140c06);
+  // Batch 59 (Games 2): every port's rooms look different: own wall and floor colours plus a few port furnishings.
+  const ROOMVAR59 = { bramble: { wall: 0, floor: 0 }, salt: { wall: 0xc9b48a, floor: 0x8a7a5a, pk: "salt" }, lorenzo: { wall: 0xd8c3a0, floor: 0x9a4a32, pk: "tile" }, belle: { wall: 0x5f6f7a, floor: 0x4a3a2a, pk: "nets" } };
+  function buildRoom57(kind, port) {
+    const V59 = ROOMVAR59[port] || ROOMVAR59.bramble, key59 = kind + ":" + (ROOMVAR59[port] ? port : "bramble");
+    if (roomCache57[key59]) return roomCache57[key59];
+    const R = Object.assign({}, ROOM57[kind], V59.wall ? { wall: V59.wall, floor: V59.floor } : {}), sc = new THREE.Scene(); sc.background = new THREE.Color(0x140c06);
     sc.add(new THREE.HemisphereLight(0xffe6c0, 0x3a2a1a, 1.1)); const lamp = new THREE.PointLight(0xffc070, 1.4, 18); lamp.position.set(0, 3.2, 0); sc.add(lamp);
     const box = function (w, h, d, x, y, z) { const g = new THREE.BoxGeometry(w, h, d); g.translate(x, y, z); return new THREE.Mesh(g); };
     const mats = { floor: new THREE.MeshLambertMaterial({ color: R.floor }), wall: new THREE.MeshLambertMaterial({ color: R.wall }), wood: new THREE.MeshLambertMaterial({ color: 0x4a2e18 }), npc: new THREE.MeshLambertMaterial({ color: R.npc }), skin: new THREE.MeshLambertMaterial({ color: 0xd9a77a }), prop: new THREE.MeshLambertMaterial({ color: kind === "shipyard" ? 0x333a40 : kind === "merchant" ? 0xc9a24a : 0x7a4a22 }), glow: new THREE.MeshBasicMaterial({ color: 0xffd890 }) };
@@ -11639,15 +11647,18 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (kind === "merchant") { for (let q = 0; q < 3; q++) { parts.wood.push(box(2.0, 0.9, 1.0, -3.2 + q * 3.2, 0.45, 1.0), box(0.1, 2.0, 0.1, -4.1 + q * 3.2, 1.0, 0.55), box(0.1, 2.0, 0.1, -2.3 + q * 3.2, 1.0, 0.55)); parts.glow.push(box(2.2, 0.08, 1.3, -3.2 + q * 3.2, 2.0, 0.9)); parts.prop.push(box(0.5, 0.35, 0.5, -3.6 + q * 3.2, 1.07, 1.0), box(0.5, 0.35, 0.5, -2.8 + q * 3.2, 1.07, 1.0)); } parts.prop.push(box(0.7, 0.5, 0.7, 4.2, 0.25, 2.2), box(0.7, 0.5, 0.7, 4.2, 0.75, 2.2), box(0.7, 0.5, 0.7, 3.4, 0.25, 2.2)); }
     if (kind === "tavern") { for (let q = 0; q < 4; q++) parts.prop.push(box(0.9, 1.0, 0.9, 4.2, 0.5, -3.4 + q * 1.0)); }
     if (kind === "merchant") { parts.prop.push(box(0.8, 0.8, 0.8, -4.2, 0.4, 3.0), box(0.8, 0.8, 0.8, -4.2, 1.2, 3.0), box(0.8, 0.8, 0.8, 4.2, 0.4, 3.0)); }
+    if (V59.pk === "salt") { for (let q = 0; q < 5; q++) parts.prop.push(box(0.7, 0.5, 0.5, -4.3, 0.25 + (q % 2) * 0.5, 0.4 + Math.floor(q / 2) * 0.8)); parts.wood.push(box(0.2, 3.4, 0.2, -2.0, 1.7, -0.6), box(0.2, 3.4, 0.2, 2.0, 1.7, -0.6)); }
+    if (V59.pk === "tile") { for (let q = 0; q < 4; q++) parts.prop.push(box(1.4, 0.03, 1.4, -3.0 + q * 2.0, 0.03, -0.4)); parts.wall.push(box(0.6, 3.6, 0.6, -2.6, 1.8, -3.9), box(0.6, 3.6, 0.6, 2.6, 1.8, -3.9)); parts.glow.push(box(1.2, 1.2, 0.05, 0, 2.7, -4.03)); }
+    if (V59.pk === "nets") { parts.prop.push(box(3.4, 1.6, 0.04, 2.6, 2.2, -4.02), box(0.04, 1.6, 2.6, 4.82, 2.0, 2.2)); parts.wood.push(box(2.6, 0.15, 0.3, -3.2, 3.0, 2.0), box(0.3, 0.3, 2.2, 4.4, 0.15, 2.6)); }
     const keep57 = {}; Object.keys(parts).forEach(function (k) { if (parts[k].length) { parts[k].forEach(function (o) { sc.add(o); o.updateMatrixWorld(true); }); const g = mergeList(parts[k], mats[k], null); g.castShadow = false; g.receiveShadow = false; if (g) { sc.add(g); keep57[k] = g; } } }); // Batch 57: one draw call per material, about 8 in all
     const me = new THREE.Group(); const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.1, 0.4), new THREE.MeshLambertMaterial({ color: 0xc23b2e })); body.position.y = 0.95; me.add(body); const head = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.42, 0.42), mats.skin); head.position.y = 1.75; me.add(head); sc.add(me);
     const cam = new THREE.PerspectiveCamera(55, window.innerWidth / Math.max(1, window.innerHeight), 0.1, 60); cam.position.set(0, 7.2, 8.6); cam.lookAt(0, 0.6, -0.4);
-    return (roomCache57[kind] = { scene: sc, cam: cam, me: me, npc: keep57.npc, head: keep57.skin });
+    return (roomCache57[key59] = { scene: sc, cam: cam, me: me, npc: keep57.npc, head: keep57.skin });
   }
   function fade57(on) { if (!roomFade57) { roomFade57 = document.createElement("div"); roomFade57.id = "fade57"; roomFade57.style.cssText = "position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .25s;z-index:30"; document.body.appendChild(roomFade57); } roomFade57.style.opacity = on ? "1" : "0"; }
   function enterRoom57(door, quick) {
     const kind = roomKind57(door && door.kind); if (!kind || room57) return false;
-    const R = buildRoom57(kind);
+    const R = buildRoom57(kind, door && door.port);
     room57 = { kind: kind, door: door, R: R, x: 0, z: 3.2, yaw: Math.PI, talked: false, t: 0, back: { x: person.x, z: person.z } };
     R.me.position.set(0, 0, 3.2); x3.rooms57 = (x3.rooms57 || 0) + 1;
     fade57(true); setTimeout(function () { fade57(false); }, quick ? 0 : 260);
@@ -13793,7 +13804,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       if (standing[mine] < 3) standing[mine] += 1;
       serve55(30, "capture"); if (svcRank55() >= 4) patrol54(S.i);
       floatText(ship.x, 10, ship.z, "+" + pay + " gold", "#ffd75a");
-      say(P.name + " is taken for " + FACNAME54[mine] + "! Prize money: " + pay + " gold.", 5);
+      say(P.name + " is captured! It now flies the colours of " + FACNAME54[mine] + ". Prize money: " + pay + " gold.", 6); try { x3.capLog59 = (x3.capLog59 || []).concat([P.name + " taken for " + FACNAME54[mine] + " (" + pay + " gold)"]).slice(-8); } catch (e) { /* optional */ } /* Batch 59 (Games 2): clear capture message and a Log line */
       toast(P.name + " now flies the colours of " + FACNAME54[mine] + ". Its fort is yours and its market is fair to you. " + FACNAME54[S.k] + " holds " + held54(S.k) + " port" + (held54(S.k) === 1 ? "" : "s") + " now" + (held54(S.k) ? ", so the next one will be harder." : "."), "Port captured");
       try { buzz([60, 40, 60, 40, 100]); safeChime(true); } catch (e) { /* optional */ }
     } else {
@@ -13816,7 +13827,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   setTimeout(newBuild54, 8000); setInterval(newBuild54, 600000);
   const FACCOL54 = { england: 0xe0453a, spain: 0xf1c40f, france: 0x4f8fe0, pirates: 0x141414 };
-  const FACSHORT54 = { england: "England", spain: "Spain", france: "France", pirates: "Pirates" };
+  const FACSHORT54 = { england: "England", spain: "Spain", france: "France", pirates: "Brethren" }; /* Batch 59: one name for the pirates side */
   function factionHtml54() {
     const mine = fac54(), o = owners54();
     let h = "<h4>Sides and ports</h4><div style='font-size:14px;line-height:1.45'>" + (mine ? "You serve <b>" + esc(FACNAME54[mine]) + "</b>. At war with the other three." : "You serve no side. Join one in any tavern.") + "<br>";
@@ -13960,7 +13971,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function devTick57() { if (!dev57) return; if (god57) { if (ship.hull < ship.hullMax) ship.hull = ship.hullMax; if (typeof landHp51 === "number" && landHp51 < 100) landHp51 = 100; } if (god57) { const cm = crewMaxFor(playerHull.id); if (x3.crew < cm) x3.crew = cm; ship.sails = Math.max(ship.sails, 100); } if (rich57 && ledger.gold < 99999) { ledger.gold = 99999; } }
   function devPanel57() {
     if (!devOn57 || document.getElementById("devbtn57")) return;
-    const btn = document.createElement("button"); btn.type = "button"; btn.id = "devbtn57"; btn.textContent = "Dev"; btn.style.cssText = "position:fixed;top:112px;right:8px;height:30px;padding:0 12px;font-size:13px;z-index:30;background:#a02a2a;color:#fff;border-radius:8px"; /* Batch 58 (Games 2): was hidden under QA */
+    const btn = document.createElement("button"); btn.type = "button"; btn.id = "devbtn57"; btn.textContent = "Dev"; btn.style.cssText = "position:fixed;top:" + (function () { const m = document.getElementById("map"); const r = m && m.getBoundingClientRect(); return r && r.height ? Math.round(r.bottom + 8) : 112; })() + "px;right:8px;height:30px;padding:0 12px;font-size:13px;z-index:30;background:#a02a2a;color:#fff;border-radius:8px"; /* Batch 58 (Games 2): was hidden under QA */
     const p = document.createElement("div"); p.id = "devpanel57"; p.style.cssText = "display:none;position:fixed;top:40px;left:50%;transform:translateX(-50%);background:rgba(20,14,8,.94);color:#f6ead0;padding:10px;border-radius:10px;z-index:25;font:13px system-ui;max-height:80vh;overflow:auto;min-width:260px";
     const row = function (label) { const r = document.createElement("div"); r.style.cssText = "margin:6px 0;display:flex;flex-wrap:wrap;gap:4px;align-items:center"; const l = document.createElement("b"); l.textContent = label + " "; l.style.minWidth = "70px"; r.appendChild(l); p.appendChild(r); return r; };
     const b = function (r, text, id, fn) { const x = document.createElement("button"); x.type = "button"; x.id = id; x.textContent = text; x.style.cssText = "height:28px;padding:0 8px;font-size:12px"; tap51(x, function () { if (!devArm57()) return; try { fn(); } catch (e) { say("Dev: " + e.message, 2); } devSync57(); setTimeout(devSync57, 120); setTimeout(devSync57, 600); }); r.appendChild(x); return x; };
@@ -13975,7 +13986,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const close = document.createElement("button"); close.type = "button"; close.textContent = "Close"; close.style.cssText = "margin-top:6px;height:28px"; tap51(close, function () { p.style.display = "none"; }); p.appendChild(close);
     tap51(btn, function () { p.style.display = p.style.display === "none" ? "block" : "none"; devSync57(); });
     setInterval(function () { if (p.style.display !== "none") devSync57(); }, 400); // Batch 58: live status
-    document.body.appendChild(btn); document.body.appendChild(p);
+    document.body.appendChild(btn); document.body.appendChild(p); addEventListener("resize", function () { const m = document.getElementById("map"), r = m && m.getBoundingClientRect(); if (r && r.height) btn.style.top = Math.round(r.bottom + 8) + "px"; });
   }
   function devSync57() { const st = document.getElementById("devstate57"); if (!st || !x3) return; st.textContent = "Hull " + playerHull.id + " " + Math.round(ship.hull) + "/" + ship.hullMax + " \u00B7 crew " + x3.crew + " \u00B7 cannon tier " + ((x3.cannon51 | 0) || 0) + " \u00B7 shot " + shotKind + " \u00B7 brace " + (x3.brace51 ? "on" : "off") + " \u00B7 god " + (god57 ? "on" : "off") + " \u00B7 gold " + (rich57 ? "infinite" : "normal") + (dev57 ? " \u00B7 saving paused" : "") + " \u00B7 " + Math.round(1000 / Math.max(1, fps48.iv)) + " fps, " + renderer.info.render.calls + " draw calls"; } /* Batch 58: frame rate in the dev panel */
   function qaDodge56() { if (!qaDodgeEl56) { qaDodgeEl56 = document.createElement("div"); qaDodgeEl56.id = "qadodge56"; qaDodgeEl56.style.cssText = "position:fixed;left:50%;bottom:calc(120px + env(safe-area-inset-bottom));transform:translateX(-50%);font:600 11px system-ui;color:#bfe6ff;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:8px;pointer-events:none;z-index:9"; document.body.appendChild(qaDodgeEl56); } const L = dodgeLog56[dodgeLog56.length - 1]; if (L) qaDodgeEl56.textContent = "QA dodge: " + L.k + " blow, dodge pressed " + (L.ago > 99 ? "never" : L.ago + " s before") + ", window " + L.t + " s, early " + L.pre + " -> " + (L.ok ? "DODGED" : "HIT"); }
@@ -13984,6 +13995,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // Batch 55 (Games 2: 1170 draw calls at Belleisle): far ships drop deck crew, trim, anchors and gunports from the render (layer 1), without touching .visible.
   const DETAIL55 = /^(leg-|torso|arm-|head|contact|ship-trim|anchor|gunport|hullstripe)/; let lodT55 = 0, lodScan55 = 0, lodShips55 = [];
   let blobs58 = [];
+  const far59 = { list: null, scan: 0, n: 0 };
   function lod55(dt) {
     lodScan55 -= dt; if (lodScan55 <= 0) { lodScan55 = 2; lodShips55 = []; scene.children.forEach(function (o) { if (!o.isGroup) return; if (!o.userData.lod55) { let ship55 = false; const det = []; o.traverse(function (m) { if (!m.isMesh) return; if (/^ship-pirate/.test(m.name)) ship55 = true; else if (DETAIL55.test(m.name)) det.push(m); }); o.userData.lod55 = ship55 ? det : 0; } if (o.userData.lod55) lodShips55.push(o); }); } if (lodScan55 === 2) { blobs58 = scene.children.filter(function (o) { return o.name === "contact" || o.name === "character-a"; }); }
     lodT55 -= dt; if (lodT55 > 0) return; lodT55 = 0.25;
@@ -13992,6 +14004,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     // Batch 58 (Belleisle fps): ashore, contact blobs beyond 30 m and townsfolk beyond 50 m leave the main view.
     signs47.forEach(function (o) { if (!o || !o.position) return; const f = mode === "land" && Math.hypot(o.position.x - cx, o.position.z - cz) > 35; if (!!o.userData.far58 === f) return; o.userData.far58 = f; o.traverse(function (m) { if (m.isMesh || m.isSprite) m.layers.set(f ? 1 : 0); }); }); // Batch 58: swinging signs beyond 35 m ashore
     blobs58.forEach(function (o) { const lim = o.name === "contact" ? 30 : 50, f = mode === "land" && Math.hypot(o.position.x - cx, o.position.z - cz) > lim; if (!!o.userData.far58 === f) return; o.userData.far58 = f; o.traverse(function (m) { if (m.isMesh) m.layers.set(f ? 1 : 0); }); });
+    // Batch 59 (Games 2: Salt Cay 4-5 fps, ~500 calls): ashore, scenery on other islands (houses, palms, rocks, chests, lanterns, buyers, shore rings) leaves the main view beyond 150 m.
+    if (!far59.list || far59.scan <= 0) { far59.scan = 8; far59.list = []; const skip = new Set(blobs58.concat(signs47)); scene.children.forEach(function (o) { if (o === ship.root || skip.has(o) || o.userData.lod55 || o.isCamera || o.isLight) return; const tag = o.userData.tag || o.name || ""; if (/^(sun|cloud|gull|sea|water|sky)/.test(tag)) return; let c = null; if (o.isMesh && o.geometry) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); const bs = o.geometry.boundingSphere; if (bs.radius > 120) return; c = bs.center.clone().applyMatrix4(o.matrixWorld); } else c = o.position.clone(); if (Math.abs(c.x) + Math.abs(c.z) < 0.01 && !o.isMesh) return; far59.list.push({ o: o, x: c.x, z: c.z }); }); }
+    far59.scan -= 0.25; far59.n = 0;
+    far59.list.forEach(function (e) { const f = mode === "land" && !room57 && Math.hypot(e.x - cx, e.z - cz) > 150; if (f) far59.n++; if (!!e.o.userData.far59 === f) return; e.o.userData.far59 = f; e.o.traverse(function (m) { if (m.isMesh || m.isSprite || m.isPoints) m.layers.set(f ? 1 : 0); }); });
     // Batch 57 (Games 2): Belleisle ran at 4-8 fps. Ashore, whole ships beyond 110 m drop out of the main view (they are only specks behind the town).
     lodShips55.forEach(function (o) { const f57 = o !== ship.root && mode === "land" && Math.hypot(o.position.x - cx, o.position.z - cz) > 110; if (!!o.userData.far57 === f57) return; o.userData.far57 = f57; const det = o.userData.lod55; o.traverse(function (m) { if (!m.isMesh && !m.isSprite) return; m.layers.set(f57 || (o.userData.far55 && det.indexOf(m) >= 0) ? 1 : 0); }); });
   }
@@ -19137,6 +19153,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       setStanding: function (k, v) { standing[k] = v; return standing[k]; },
       mergeStats: function () { return mergeStats; },
       perf: function () { const i = renderer.info; return { calls: i.render.calls, tris: i.render.triangles, geos: i.memory.geometries, tex: i.memory.textures, pr: renderer.getPixelRatio(), objs: (function () { let n = 0; scene.traverse(function () { n++; }); return n; })(), gulls: gulls.length, shots: shots.length, splashes: splashes.length, smokes: smokes.length }; },
+      drawNear59: function (r) { const m = {}, v = new THREE.Vector3(); const fr = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)); scene.traverseVisible(function (o) { if (!o.isMesh || !o.layers.test(camera.layers)) return; if (o.frustumCulled && o.geometry && !fr.intersectsObject(o)) return; o.getWorldPosition(v); if (Math.hypot(v.x - person.x, v.z - person.z) > r) return; let top = o; while (top.parent && top.parent !== scene) top = top.parent; const k = (top.userData.tag || top.name || "?") + "/" + (o.name || (o.parent && o.parent.name) || "-") + (o.castShadow ? "*" : ""); m[k] = (m[k] || 0) + (Array.isArray(o.material) ? o.material.length : 1); }); return Object.keys(m).map(function (k) { return [k, m[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 25); },
       drawTally: function () { const m = {}; scene.traverseVisible(function (o) { if (!o.isMesh && !o.isSprite && !o.isPoints && !o.isLine) return; let top = o; while (top.parent && top.parent !== scene) top = top.parent; const k = (top.userData.tag || top.name || top.type) + "|" + (o.geometry && o.geometry.uuid.slice(0, 4)); m[k] = (m[k] || 0) + 1; }); const a = Object.keys(m).map(function (k) { return [k, m[k]]; }); a.sort(function (x, y) { return y[1] - x[1]; }); const byTop = {}; a.forEach(function (e) { const t = e[0].split("|")[0]; byTop[t] = (byTop[t] || 0) + e[1]; }); return { byTop: byTop, top: a.slice(0, 15) }; },
       consortAvoid: function (tx, tz, cx, cz) { return consortAvoid(tx, tz, { x: cx, z: cz }); },
       storms: function () { return storms.map(function (s) { return { x: s.x, z: s.z, r: s.r }; }); },
