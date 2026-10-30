@@ -1,6 +1,6 @@
 /* Salt & Shot service worker (batch 66). App shell cached so the game opens offline;
    the page itself is network-first so a new build always wins when online. */
-const V = "salt-shell-b75";
+const V = "salt-shell-b76";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).catch(() => {})); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
