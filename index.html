@@ -6,12 +6,19 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<link rel="icon" href="data:,">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#071018">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
 <title>Salt &amp; Shot</title>
 <style>
   html, body {
     margin: 0; height: 100%; background: #071018; color: #f4efe2;
-    overflow: hidden; touch-action: none; overscroll-behavior: none;
+    overflow: hidden; touch-action: none; overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
     font-family: "Palatino Linotype", Palatino, Georgia, serif;
   }
   #view { position: fixed; inset: 0; }
@@ -5801,6 +5808,23 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     buckets.forEach(function (b) { const mesh = mergeList(b.list, b.mat, null); mesh.name = "merged-deco55"; mesh.castShadow = false; mesh.receiveShadow = true; mesh.matrixAutoUpdate = false; mesh.updateMatrix(); mesh.userData.noCam51 = true; mesh.userData.decoOn52 = true; scene.add(mesh); deco52.push({ o: mesh, low: b.low, blk: null }); merge55.after++; });
     done.forEach(function (d) { scene.remove(d.o); d.o = new THREE.Object3D(); d.o.userData.decoOn52 = true; });
   }
+  // Batch 55 (Games 2 FPS): each house, sign and wall group keeps its own transform (so fading and sway still work) but merges its parts that share a material.
+  const within55 = { groups: 0, before: 0, after: 0 };
+  function mergeWithin55() {
+    scene.updateMatrixWorld(true);
+    const L = scene.children.filter(function (o) { return o.isGroup && (o.userData.house52 || o.userData.sign47 || o.userData.wall52); });
+    L.forEach(function (g) {
+      const buckets = new Map(); let bad = false, n = 0;
+      g.traverse(function (m) { if (m.isSkinnedMesh || m.isSprite || m.isLight || m.isInstancedMesh) bad = true; if (!m.isMesh) return; if (Array.isArray(m.material) || !m.geometry.attributes.normal || m.geometry.morphAttributes.position) { bad = true; return; } n++; const a = m.geometry.attributes, key = m.material.uuid + "|" + (a.uv ? 1 : 0) + (a.color ? 1 : 0); if (!buckets.has(key)) buckets.set(key, []); buckets.get(key).push(m); });
+      if (bad || buckets.size >= n) return;
+      within55.groups++; within55.before += n; within55.after += buckets.size;
+      const made = [];
+      buckets.forEach(function (list) { const mm = mergeList(list, list[0].material, g); mm.castShadow = list.some(function (x) { return x.castShadow; }); mm.receiveShadow = list.some(function (x) { return x.receiveShadow; }); mm.name = "within55"; made.push(mm); });
+      const kids = g.children.slice(); kids.forEach(function (k) { g.remove(k); });
+      made.forEach(function (mm) { mm.position.set(0, 0, 0); mm.rotation.set(0, 0, 0); mm.scale.set(1, 1, 1); g.add(mm); });
+      g.userData.bs51 = null;
+    });
+  }
   function townDress52() {
     let seed = 52;
     const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -6380,6 +6404,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     // Low graphics hides most of it (and frees the hidden houses' footprints).
     townDress52();
     mergeDeco55();
+    mergeWithin55(); // Batch 55: houses, signs and house walls merge their own parts by material
     buildOutposts52();
     for (let li = 0; li < locals.length; li++) placeLocal(locals[li]);
     const cleoMade = newSailor();
@@ -9821,7 +9846,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 54";
+    ver.textContent = "Version: batch 55";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -9870,6 +9895,20 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     paused = false;
     last = performance.now();
   }
+  // Batch 55: Android beta. The system Back button closes the top overlay (Chart, a building, settings) or opens Pause, and never leaves the game by accident.
+  let backArm55 = 0, wake55 = null; const back55 = { n: 0, last: "" };
+  function backPress55() {
+    back55.n++;
+    if (chartPanel.style.display === "block") { chartPanel.style.display = "none"; back55.last = "chart"; return; }
+    if (paused) { closeSettings(); back55.last = "settings"; return; }
+    if (menuOpen && !fightOn) { closeMenu(); back55.last = "menu"; return; }
+    if (!titleOn && x3 && !fightOn) { openSettings("pause"); back55.last = "pause"; return; }
+    back55.last = "none";
+  }
+  try { if (window.history && history.pushState) { history.pushState({ salt55: 1 }, ""); window.addEventListener("popstate", function () { try { backPress55(); } catch (e) { /* optional */ } history.pushState({ salt55: 1 }, ""); }); } } catch (e) { /* optional */ }
+  function wakeLock55() { try { if (navigator.wakeLock && document.visibilityState === "visible" && !wake55) navigator.wakeLock.request("screen").then(function (w) { wake55 = w; w.addEventListener("release", function () { wake55 = null; }); }).catch(function () { /* optional */ }); } catch (e) { /* optional */ } }
+  window.addEventListener("pointerdown", wakeLock55, { passive: true });
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") wakeLock55(); else if (worldReady && !titleOn && x3 && !paused && !fightOn) { try { openSettings("pause"); } catch (e) { /* optional */ } } });
   let gullWait = 6;
   let gullClock = 0;
   function gullCry() {
@@ -17678,7 +17717,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         tapBoth47(rb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } const now = performance.now(); if (!armedR || now - armedR > 60000) { armedR = now; rb.textContent = "Swap back? Tap again"; return; } try { const cur = localStorage.getItem(SAVE_KEY); localStorage.setItem(SAVE_KEY, bk); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); else localStorage.removeItem(SAVE_KEY + "-before-new"); } catch (err) { return; } importReload47 = true; location.reload(); }); boot.appendChild(rb); } }
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 54";
+    tv.textContent = "Version: batch 55";
     // Batch 50: the version sits in the bottom-right corner of the screen, so a long tip or a short screen can never push it out of view.
     tv.style.cssText = "position:fixed;right:calc(8px + env(safe-area-inset-right));bottom:calc(6px + env(safe-area-inset-bottom));font-size:11px;opacity:.55;pointer-events:none;z-index:2";
     boot.appendChild(tv);
@@ -18578,7 +18617,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       critDbg53: function () { return wilds51.map(function (w) { return { town: w.town, p: townSpot53(w), n: critters53.filter(function (c) { return Math.hypot(c.hx - ISLANDS[w.town].x, c.hz - ISLANDS[w.town].z) < ISLANDS[w.town].landR; }).length }; }); },
       trees53: function (sp) { if (sp) return wilds51[0].spots.slice(0, 12); return wilds51.map(function (w) { return w.hid53 ? w.hid53.split(",").length - 1 : 0; }); }, bars53: function () { const g = activeFoes51(); return g ? g.foes.filter(function (f) { return !f.dead; }).map(function (f) { return Math.round(f.bar.scale.x * 100) / 100; }) : []; },
       critters53: function () { const n = {}; critters53.forEach(function (c) { n[c.kind] = (n[c.kind] || 0) + 1; }); return { n: n, total: critters53.length, vis: critters53.filter(function (c) { return c.g.visible; }).length }; },
-      merge55: function () { return merge55; }, scene55: function () { return scene; }, lod55: function () { return lodShips55.filter(function (o) { return o.userData.far55; }).length + '/' + lodShips55.length; }, wreck55: function () { wreckPlayer(); }, stand55: function (k, v) { standing[k] = v; }, setGold55: function (v) { ledger.gold = v; }, st55: function () { return { sail: sail, speed: ship.speed, docked: !!safeHarbourAt(ship.x, ship.z) && Math.abs(ship.speed) < 0.6, grace: grace55, chart: chartPanel.style.display, menu: menuKind, mode: mode, hp: landHp51 }; }, chartOn55: function () { chartPanel.style.display = 'block'; }, f55: function () { return { svc: x3.svc55 || 0, rank: svcRank55(), peace: peaceMap55(), war: FAC54.map(atWar54), aiwar: x3.aiwar55 || 0, own: owners54() }; }, serve55: function (n) { serve55(n); return svcRank55(); }, treaty55: function (k) { return signTreaty55(k); }, aiWar55: function () { return aiWar55(true); }, peaceTick55: function (t) { peaceTick55(t); return peaceMap55(); }, dc55: function () { const fr = new THREE.Frustum(), m = new THREE.Matrix4(); camera.updateMatrixWorld(); m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); fr.setFromProjectionMatrix(m); const out = {}; scene.children.forEach(function (top, ti) { let n = 0; top.traverseVisible(function (o) { if ((o.isMesh || o.isSprite || o.isLine || o.isPoints) && o.layers.test(camera.layers) && (o.frustumCulled === false || !o.geometry || (o.geometry.boundingSphere || o.geometry.computeBoundingSphere(), fr.intersectsObject(o)))) n++; }); if (!n) return; const ud = Object.keys(top.userData || {}).join("|"); const key = (top.name || top.type) + ":" + ud + (top.isSprite ? ":spr" : ""); out[key] = (out[key] || 0) + n; }); return { calls: renderer.info.render.calls, groups: Object.entries(out).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 25) }; },
+      merge55: function () { return merge55; }, scene55: function () { return scene; }, back55: function () { backPress55(); return back55.last; }, paused55: function () { return paused; }, within55: function () { return within55; }, lod55: function () { return lodShips55.filter(function (o) { return o.userData.far55; }).length + '/' + lodShips55.length; }, wreck55: function () { wreckPlayer(); }, stand55: function (k, v) { standing[k] = v; }, setGold55: function (v) { ledger.gold = v; }, st55: function () { return { sail: sail, speed: ship.speed, docked: !!safeHarbourAt(ship.x, ship.z) && Math.abs(ship.speed) < 0.6, grace: grace55, chart: chartPanel.style.display, menu: menuKind, mode: mode, hp: landHp51 }; }, chartOn55: function () { chartPanel.style.display = 'block'; }, f55: function () { return { svc: x3.svc55 || 0, rank: svcRank55(), peace: peaceMap55(), war: FAC54.map(atWar54), aiwar: x3.aiwar55 || 0, own: owners54() }; }, serve55: function (n) { serve55(n); return svcRank55(); }, treaty55: function (k) { return signTreaty55(k); }, aiWar55: function () { return aiWar55(true); }, peaceTick55: function (t) { peaceTick55(t); return peaceMap55(); }, dc55: function () { const fr = new THREE.Frustum(), m = new THREE.Matrix4(); camera.updateMatrixWorld(); m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); fr.setFromProjectionMatrix(m); const out = {}; scene.children.forEach(function (top, ti) { let n = 0; top.traverseVisible(function (o) { if ((o.isMesh || o.isSprite || o.isLine || o.isPoints) && o.layers.test(camera.layers) && (o.frustumCulled === false || !o.geometry || (o.geometry.boundingSphere || o.geometry.computeBoundingSphere(), fr.intersectsObject(o)))) n++; }); if (!n) return; const ud = Object.keys(top.userData || {}).join("|"); const key = (top.name || top.type) + ":" + ud + (top.isSprite ? ":spr" : ""); out[key] = (out[key] || 0) + n; }); return { calls: renderer.info.render.calls, groups: Object.entries(out).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 25) }; },
       counter54: function (go) { if (go) { counterT54 = 0.01; } return counter54 ? { i: counter54.i, k: counter54.k, t: counter54.t, fought: counter54.fought, n: counter54.foes.length } : null; }, startCounter54: function () { return startCounter54(); }, sinkCounter54: function () { if (counter54) counter54.foes.forEach(function (f) { f.alive = false; f.sinking = true; }); }, patrols54: function () { return patrols54.filter(function (f) { return f.alive; }).map(function (f) { return { nation: f.nation, hunt: f.hunt, port: f.port54 }; }); }, gold54: function () { const g = document.getElementById("gold54"); return g ? { t: g.textContent, op: getComputedStyle(g).opacity } : null; }, fpsTxt54: function () { const e = document.getElementById("qafps54"); return e ? e.textContent : ""; },
       fac54: function () { return { fac: fac54(), own: owners54(), held: FAC54.map(held54), def: FAC54.map(defenders54), siege: siege54 ? { i: siege54.i, n: siege54.foes.length, left: siege54.foes.filter(function (f) { return f.alive && !f.sinking; }).length } : null, caps: x3.caps54 || 0, forts: forts.map(function (g) { return g.key; }), st: Object.assign({}, standing), btn: siegeBtn54 ? siegeBtn54.style.display + "|" + siegeBtn54.textContent : "" }; }, join54: function (k) { joinFac54(k); return fac54(); }, siege54: function (i) { startSiege54(i); return siege54 ? siege54.foes.length : 0; }, sinkSiege54: function () { if (siege54) siege54.foes.forEach(function (f) { f.hull = 0; f.alive = false; f.sinking = true; }); }, levy54: function (g) { return { buy: buyOf(g), sell: sellOf(g), levy: levy54() }; },
       pack54: function () { const g = activeFoes51(); if (!g) return 0; let n = 0; g.foes.forEach(function (f, j) { if (f.dead) return; const a = j * 0.7; const nx = person.x + Math.sin(a) * 5, nz = person.z + Math.cos(a) * 5; if (onLand(nx, nz)) { f.x = nx; f.z = nz; n++; } }); return n; },
