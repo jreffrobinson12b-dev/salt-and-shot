@@ -5785,6 +5785,22 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   function addDeco52(o, low, blk) { o.userData.noCam51 = !blk; o.traverse(function (m) { m.castShadow = false; }); deco52.push({ o: o, low: low, blk: blk || null }); return o; }
   let lampPole52 = null, lampBox52 = null, lampMat52 = null;
+  // Batch 55: static town dressing (everything in deco52 except the fading houses) is merged per island, per low-graphics flag and per material,
+  // so a town costs a handful of draw calls instead of ~130. The low-graphics toggle still works because applyDeco52 toggles the merged meshes.
+  const merge55 = { before: 0, after: 0 };
+  function mergeDeco55() {
+    scene.updateMatrixWorld(true);
+    const buckets = new Map(), done = [];
+    for (let i = 0; i < deco52.length; i++) {
+      const d = deco52[i], o = d.o; if (o.userData.house52 || o.userData.sway || !o.parent || o.parent !== scene) continue;
+      let ok = true; o.traverse(function (m) { if (m.isSkinnedMesh || m.isInstancedMesh || m.isSprite || m.isLight || (m.isMesh && (Array.isArray(m.material) || !m.geometry.attributes.normal || m.geometry.morphAttributes.position))) ok = false; }); if (!ok) continue;
+      let isl = 0, bd = Infinity; for (let k = 0; k < ISLANDS.length; k++) { const dd = Math.hypot(o.position.x - ISLANDS[k].x, o.position.z - ISLANDS[k].z); if (dd < bd) { bd = dd; isl = k; } }
+      o.traverse(function (m) { if (!m.isMesh) return; const a = m.geometry.attributes, mt = m.material; const key = isl + "|" + !!d.low + "|" + mt.uuid + "|" + (a.uv ? 1 : 0) + (a.color ? 1 : 0); if (!buckets.has(key)) buckets.set(key, { mat: mt, low: !!d.low, list: [] }); buckets.get(key).list.push(m); merge55.before++; });
+      done.push(d);
+    }
+    buckets.forEach(function (b) { const mesh = mergeList(b.list, b.mat, null); mesh.name = "merged-deco55"; mesh.castShadow = false; mesh.receiveShadow = true; mesh.matrixAutoUpdate = false; mesh.updateMatrix(); mesh.userData.noCam51 = true; mesh.userData.decoOn52 = true; scene.add(mesh); deco52.push({ o: mesh, low: b.low, blk: null }); merge55.after++; });
+    done.forEach(function (d) { scene.remove(d.o); d.o = new THREE.Object3D(); d.o.userData.decoOn52 = true; });
+  }
   function townDress52() {
     let seed = 52;
     const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -6363,6 +6379,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     // town between the real buildings, leaving clear streets from the landing to every door. Nothing new to use.
     // Low graphics hides most of it (and frees the hidden houses' footprints).
     townDress52();
+    mergeDeco55();
     buildOutposts52();
     for (let li = 0; li < locals.length; li++) placeLocal(locals[li]);
     const cleoMade = newSailor();
@@ -11010,6 +11027,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       tavernExtras31(body, box);
       tavernExtras(box);
       facButtons54(body, box);
+      treatyButtons55(body, box);
       box.appendChild(menuButton("Leave", closeMenu));
       questButtons40("tavern", body, box);
     } else if (menuKind === "shipyard") {
@@ -13461,11 +13479,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function setOwner54(i, k) { const o = owners54(); o[i] = k; x3.own54 = o.join(","); syncForts54(); }
   function held54(k) { return owners54().filter(function (o) { return o === k; }).length; }
   function fac54() { return x3 && FAC54.indexOf(x3.fac54) >= 0 ? x3.fac54 : ""; }
-  function atWar54(k) { const f = fac54(); return !!f && !!k && k !== f; }
+  function atWar54(k) { const f = fac54(); return !!f && !!k && k !== f && !peaceLeft55(k); }
   function ally54(foe) { const f = fac54(); return !!f && !!foe && !foe.offended && !foe.qb50 && !foe.siege54 && NATFAC54[foe.nation] === f; }
   function syncForts54() { const o = owners54(); forts.forEach(function (g) { if (o[g.port] && g.key !== o[g.port]) g.key = o[g.port]; }); }
   // How many ships defend a port: the fewer ports its owner has, the more ships stand guard.
-  function defenders54(k) { const h = held54(k); let n = h >= 3 ? 1 : h === 2 ? 2 : 3; if (x3 && x3.diff === "easy") n = Math.max(1, n - 1); if (x3 && x3.diff === "hard") n += 1; return n; }
+  function defenders54(k) { const h = held54(k); let n = h >= 3 ? 1 : h === 2 ? 2 : 3; if (x3 && x3.diff === "easy") n = Math.max(1, n - 1); if (x3 && x3.diff === "hard") n += 1; if (svcRank55() >= 3) n = Math.max(1, n - 1); return n; }
   function joinFac54(k) {
     if (!x3 || FAC54.indexOf(k) < 0) return;
     const was = fac54(); x3.fac54 = k; goldV54 = null;
@@ -13488,7 +13506,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   // War levy: an enemy port charges a third more and pays a quarter less.
   function levy54() { if (!ashorePort) return false; const i = portIdx54(ashorePort); return i >= 0 && atWar54(owner54(i)); }
-  function buyOf(good) { const b = buyOf0(good); return levy54() ? Math.ceil(b * 1.33) : b; }
+  function buyOf(good) { const b = buyOf0(good); if (levy54()) return Math.ceil(b * 1.33); if (ashorePort && fac54() && svcRank55() >= 1 && owner54(portIdx54(ashorePort)) === fac54()) return Math.max(1, Math.floor(b * 0.9)); return b; } // Batch 55: Lieutenant perk
   function sellOf(good) { const v = sellOf0(good); return levy54() ? Math.max(1, Math.floor(v * 0.75)) : v; }
   // Sieges.
   let siege54 = null, siegeBtn54 = null, siegeCool54 = 0;
@@ -13535,6 +13553,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       setOwner54(S.i, mine); x3.caps54 = (x3.caps54 || 0) + 1; patrol54(S.i); counterT54 = Math.max(counterT54, 180);
       const pay = 150 + 50 * S.foes.length; ledger.gold += pay;
       if (standing[mine] < 3) standing[mine] += 1;
+      serve55(30, "capture"); if (svcRank55() >= 4) patrol54(S.i);
       floatText(ship.x, 10, ship.z, "+" + pay + " gold", "#ffd75a");
       say(P.name + " is taken for " + FACNAME54[mine] + "! Prize money: " + pay + " gold.", 5);
       toast(P.name + " now flies the colours of " + FACNAME54[mine] + ". Its fort is yours and its market is fair to you. " + FACNAME54[S.k] + " holds " + held54(S.k) + " port" + (held54(S.k) === 1 ? "" : "s") + " now" + (held54(S.k) ? ", so the next one will be harder." : "."), "Port captured");
@@ -13548,8 +13567,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // Batch 54 (Games 2): gold in its own solid badge under the title, so it never fades or gets cut off.
   let goldB54 = null, goldV54 = null;
   function goldBadge54() {
-    if (!goldB54) { const sb = document.getElementById("sub"); if (!sb || !sb.parentElement) return; goldB54 = document.createElement("div"); goldB54.id = "gold54"; goldB54.style.cssText = "font:800 14px system-ui,sans-serif;color:#ffd75a;text-shadow:0 1px 2px #000,0 0 3px #000;opacity:1;margin-top:1px;pointer-events:none;white-space:nowrap"; sb.parentElement.insertBefore(goldB54, sb.nextSibling); }
-    if (goldV54 !== ledger.gold) { goldV54 = ledger.gold; goldB54.textContent = "\u25CF " + ledger.gold + " gold" + (fac54() ? " \u00B7 " + FACNAME54[fac54()].replace("the ", "") : ""); }
+    if (!goldB54) { const hh55 = document.getElementById("hullhud"); if (!hh55) return; goldB54 = document.createElement("div"); /* Batch 55: the badge sits under the hull bar, not over the hull line */ goldB54.id = "gold54"; goldB54.style.cssText = "font:800 14px system-ui,sans-serif;color:#ffd75a;text-shadow:0 1px 2px #000,0 0 3px #000;opacity:1;margin-top:3px;pointer-events:none;white-space:nowrap"; hh55.appendChild(goldB54); }
+    if (goldV54 !== ledger.gold) { goldV54 = ledger.gold; goldB54.textContent = "\u25CF " + ledger.gold + " gold" + (fac54() ? " \u00B7 " + SVCRANK55[svcRank55()].n + ", " + FACNAME54[fac54()].replace("the ", "") : ""); }
   }
   // Batch 54 (Games 2): if a newer build is live, offer a reload (cache-busted fetch; web only).
   function newBuild54() {
@@ -13565,6 +13584,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     let h = "<h4>Sides and ports</h4><div style='font-size:14px;line-height:1.45'>" + (mine ? "You serve <b>" + esc(FACNAME54[mine]) + "</b>. At war with the other three." : "You serve no side. Join one in any tavern.") + "<br>";
     h += o.map(function (k, i) { return esc(PORTS[i].name) + ": <b>" + esc(FACSHORT54[k]) + "</b>" + (k !== homeOwner54(i) ? " (taken from " + esc(FACSHORT54[homeOwner54(i)]) + ")" : "") + (mine && k !== mine ? ", " + defenders54(k) + " guards" : ""); }).join("<br>");
     if (counter54) h += "<br><b style='color:#ffb4a8'>" + esc(FACSHORT54[counter54.k]) + " is sailing to retake " + esc(PORTS[counter54.i].name) + " (" + Math.ceil(counter54.t) + " s).</b>";
+    if (mine) { const r55 = svcRank55(); h += "<br>Service: <b>" + SVCRANK55[r55].n + "</b> (" + (x3.svc55 || 0) + " points" + (r55 < 4 ? ", next " + SVCRANK55[r55 + 1].n + " at " + SVCRANK55[r55 + 1].at : "") + "). " + esc(SVCPERK55[r55]); const pm = peaceMap55(); Object.keys(pm).forEach(function (k) { h += "<br>At peace with " + esc(FACNAME54[k]) + ": " + Math.ceil(pm[k] / 60) + " min left."; }); }
     h += "<br>Ports taken: " + (x3.caps54 || 0) + (x3.held54 ? ". Defended: " + x3.held54 : "") + (x3.lost54 ? ". Lost: " + x3.lost54 : "") + ".</div>";
     return h;
   }
@@ -13598,7 +13618,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       return;
     }
     const left = C.foes.filter(function (f) { return f.alive && !f.sinking && !f.gone; }).length;
-    if (!left) { counter54 = null; x3.held54 = (x3.held54 || 0) + 1; ledger.gold += 120; floatText(ship.x, 10, ship.z, "+120 gold", "#ffd75a"); say(PORTS[C.i].name + " holds! The crown pays 120 gold for the defence.", 4); writeSave(); }
+    if (!left) { counter54 = null; x3.held54 = (x3.held54 || 0) + 1; ledger.gold += 120; floatText(ship.x, 10, ship.z, "+120 gold", "#ffd75a"); say(PORTS[C.i].name + " holds! Your side pays 120 gold for the defence.", 4); serve55(15, "defence"); writeSave(); }
     else if (mode !== "sea" || Math.hypot(ship.x - h.x, ship.z - h.z) > 350) { counter54 = null; setOwner54(C.i, C.k); x3.lost54 = (x3.lost54 || 0) + 1; C.foes.forEach(function (f) { f.hunt = false; f.ignore = 30; }); toast("You left the fight and " + PORTS[C.i].name + " fell back to " + FACNAME54[C.k] + ".", "Port lost"); writeSave(); }
     else C.foes.forEach(function (f) { if (f.alive && !f.sinking && !safeHarbourAt(ship.x, ship.z)) { f.hunt = true; f.ignore = 0; } });
   }
@@ -13606,6 +13626,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!x3) return;
     goldBadge54();
     counterUpdate54(dt);
+    update55(dt);
     syncForts54();
     if (siegeCool54 > 0) siegeCool54 -= dt;
     if (siege54) {
@@ -13627,6 +13648,74 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (siegeBtn54.textContent !== want) siegeBtn54.textContent = want;
     const disp = want ? "block" : "none"; if (siegeBtn54.style.display !== disp) siegeBtn54.style.display = disp;
   }
+  // ===== Batch 55: service rank, treaties and the sides' own wars.
+  // Service: points for serving your side (x3.svc55). Captures 30, defences 15, enemy ships sunk 4. Ranks bring prize money and perks.
+  const SVCRANK55 = [{ n: "Privateer", at: 0 }, { n: "Lieutenant", at: 30 }, { n: "Captain", at: 80 }, { n: "Commodore", at: 160 }, { n: "Admiral", at: 300 }];
+  const SVCPERK55 = ["Fight under your side's colours.", "Your side's markets sell to you 10% cheaper.", "Treaties open up: you may sue for peace with a side.", "Sieges you lead face one guard fewer (never fewer than one).", "An extra patrol ship guards every port your side takes."];
+  function svcRank55() { const p = x3 ? (x3.svc55 || 0) : 0; let r = 0; for (let i = 0; i < SVCRANK55.length; i++) if (p >= SVCRANK55[i].at) r = i; return r; }
+  function serve55(pts, why) {
+    if (!x3 || !fac54()) return;
+    const r0 = svcRank55(); x3.svc55 = (x3.svc55 || 0) + pts; const r1 = svcRank55();
+    floatText(ship.x + 6, 11, ship.z, "+" + pts + " service", "#bfe6ff");
+    if (r1 > r0) { const pay = 100 * r1; ledger.gold += pay; goldV54 = null; say("Promoted to " + SVCRANK55[r1].n + " of " + FACNAME54[fac54()] + "! " + pay + " gold prize money.", 5); toast(SVCRANK55[r1].n + ": " + SVCPERK55[r1], "Promotion"); try { buzz([50, 40, 50, 40, 120]); safeChime(true); } catch (e) { /* optional */ } }
+    writeSave();
+  }
+  // Treaties: x3.peace55 is "spain:600,france:0" (seconds of peace left, ticking at sea). At peace their forts hold fire, there is no levy and no siege.
+  function peaceMap55() { const m = {}; if (x3 && typeof x3.peace55 === "string") x3.peace55.split(",").forEach(function (kv) { const a = kv.split(":"); if (FAC54.indexOf(a[0]) >= 0 && +a[1] > 0) m[a[0]] = +a[1]; }); return m; }
+  function setPeace55(m) { x3.peace55 = Object.keys(m).filter(function (k) { return m[k] > 0; }).map(function (k) { return k + ":" + Math.round(m[k]); }).join(","); }
+  function peaceLeft55(k) { return peaceMap55()[k] || 0; }
+  function treatyCost55(k) { return 150 + 75 * held54(k); }
+  function signTreaty55(k) {
+    const c = treatyCost55(k); if (!x3 || svcRank55() < 2 || ledger.gold < c || !fac54() || k === fac54()) return false;
+    ledger.gold -= c; goldV54 = null; const m = peaceMap55(); m[k] = 600; setPeace55(m);
+    if (standing[k] < 0) standing[k] = 0;
+    if (siege54 && siege54.k === k) endSiege54(false);
+    say("Treaty signed with " + FACNAME54[k] + ": ten minutes at sea of peace.", 4);
+    toast("At peace with " + FACNAME54[k] + ": their forts hold fire, their markets are fair, and you cannot besiege them. The treaty runs out after 10 minutes at sea.", "Treaty");
+    writeSave(); return true;
+  }
+  function peaceTick55(dt) {
+    const m = peaceMap55(); let ch = false;
+    Object.keys(m).forEach(function (k) { m[k] -= dt; if (m[k] <= 0) { ch = true; if (fac54() && k !== fac54()) { standing[k] = -1; toast("The treaty with " + FACNAME54[k] + " has run out. You are at war again.", "Treaty ended"); } } });
+    if (ch || Math.random() < dt) setPeace55(m);
+  }
+  function treatyButtons55(body, box) {
+    if (!fac54() || !ashorePort) return;
+    const i = portIdx54(ashorePort); if (owner54(i) !== fac54()) return;
+    const r = svcRank55();
+    body.textContent += " Service: " + SVCRANK55[r].n + " (" + (x3.svc55 || 0) + " points" + (r < 4 ? ", " + (SVCRANK55[r + 1].at - (x3.svc55 || 0)) + " to " + SVCRANK55[r + 1].n : "") + ").";
+    if (r < 2) return;
+    FAC54.forEach(function (k) { if (k === fac54()) return; const pl = peaceLeft55(k); if (pl > 0) { body.textContent += " At peace with " + FACNAME54[k] + " (" + Math.ceil(pl / 60) + " min)."; return; } box.appendChild(menuButton("Sue for peace with " + FACNAME54[k] + " (" + treatyCost55(k) + " gold)", function () { if (!signTreaty55(k)) say("Not enough gold for the envoys.", 2); renderMenu(); })); });
+  }
+  // The sides' own wars: while you serve a side, every 5-8 minutes at sea one side attacks another's port (never yours).
+  // The fewer ports the defender holds, the better its odds of holding.
+  let aiWarT55 = 300 + Math.random() * 180;
+  function aiWarOdds55(def) { const h = held54(def); return Math.min(0.6, 0.15 + 0.12 * h); }
+  function aiWar55(force) {
+    const mine = fac54(); if (!mine && !force) return null;
+    const o = owners54(), att = FAC54.filter(function (k) { return k !== mine && held54(k) > 0; });
+    const targets = []; o.forEach(function (k, i) { if (k !== mine && !(counter54 && counter54.i === i) && !(siege54 && siege54.i === i)) targets.push(i); });
+    if (!att.length || !targets.length) return null;
+    const i = targets[Math.floor(Math.random() * targets.length)], def = o[i], pool = att.filter(function (k) { return k !== def; });
+    if (!pool.length) return null;
+    const a = pool[Math.floor(Math.random() * pool.length)], won = Math.random() < aiWarOdds55(def);
+    if (won) setOwner54(i, a);
+    x3.aiwar55 = (x3.aiwar55 || 0) + 1;
+    const cap = function (k) { return FACNAME54[k].replace(/^the /, "The "); };
+    toast(won ? cap(a) + " has taken " + PORTS[i].name + " from " + FACNAME54[def] + "." : cap(def) + " beat off " + FACNAME54[a] + " at " + PORTS[i].name + ".", "War news");
+    writeSave();
+    return { i: i, a: a, def: def, won: won };
+  }
+  function svcScan55() {
+    if (!fac54()) return;
+    for (let i = 0; i < foes.length; i++) { const f = foes[i]; if (f.sinking && !f.svc55 && f.nation && atWar54(NATFAC54[f.nation]) && !f.qb50) { f.svc55 = true; serve55(4, "ship"); } }
+  }
+  function update55(dt) {
+    if (!x3) return;
+    if (mode === "sea") { peaceTick55(dt); if (fac54() && !siege54) { aiWarT55 -= dt; if (aiWarT55 <= 0) { aiWarT55 = 300 + Math.random() * 180; aiWar55(false); } } }
+    svcScan55();
+  }
+
   // The hunter goes home after a wreck, or once you have sheltered in harbour for 45 s.
   let shelterT = 0;
   function hunterLeave() {
@@ -18469,6 +18558,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       critDbg53: function () { return wilds51.map(function (w) { return { town: w.town, p: townSpot53(w), n: critters53.filter(function (c) { return Math.hypot(c.hx - ISLANDS[w.town].x, c.hz - ISLANDS[w.town].z) < ISLANDS[w.town].landR; }).length }; }); },
       trees53: function (sp) { if (sp) return wilds51[0].spots.slice(0, 12); return wilds51.map(function (w) { return w.hid53 ? w.hid53.split(",").length - 1 : 0; }); }, bars53: function () { const g = activeFoes51(); return g ? g.foes.filter(function (f) { return !f.dead; }).map(function (f) { return Math.round(f.bar.scale.x * 100) / 100; }) : []; },
       critters53: function () { const n = {}; critters53.forEach(function (c) { n[c.kind] = (n[c.kind] || 0) + 1; }); return { n: n, total: critters53.length, vis: critters53.filter(function (c) { return c.g.visible; }).length }; },
+      merge55: function () { return merge55; }, f55: function () { return { svc: x3.svc55 || 0, rank: svcRank55(), peace: peaceMap55(), war: FAC54.map(atWar54), aiwar: x3.aiwar55 || 0, own: owners54() }; }, serve55: function (n) { serve55(n); return svcRank55(); }, treaty55: function (k) { return signTreaty55(k); }, aiWar55: function () { return aiWar55(true); }, peaceTick55: function (t) { peaceTick55(t); return peaceMap55(); }, dc55: function () { const fr = new THREE.Frustum(), m = new THREE.Matrix4(); camera.updateMatrixWorld(); m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); fr.setFromProjectionMatrix(m); const out = {}; scene.children.forEach(function (top, ti) { let n = 0; top.traverseVisible(function (o) { if ((o.isMesh || o.isSprite || o.isLine || o.isPoints) && (o.frustumCulled === false || !o.geometry || (o.geometry.boundingSphere || o.geometry.computeBoundingSphere(), fr.intersectsObject(o)))) n++; }); if (!n) return; const ud = Object.keys(top.userData || {}).join("|"); const key = (top.name || top.type) + ":" + ud + (top.isSprite ? ":spr" : ""); out[key] = (out[key] || 0) + n; }); return { calls: renderer.info.render.calls, groups: Object.entries(out).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 25) }; },
       counter54: function (go) { if (go) { counterT54 = 0.01; } return counter54 ? { i: counter54.i, k: counter54.k, t: counter54.t, fought: counter54.fought, n: counter54.foes.length } : null; }, startCounter54: function () { return startCounter54(); }, sinkCounter54: function () { if (counter54) counter54.foes.forEach(function (f) { f.alive = false; f.sinking = true; }); }, patrols54: function () { return patrols54.filter(function (f) { return f.alive; }).map(function (f) { return { nation: f.nation, hunt: f.hunt, port: f.port54 }; }); }, gold54: function () { const g = document.getElementById("gold54"); return g ? { t: g.textContent, op: getComputedStyle(g).opacity } : null; }, fpsTxt54: function () { const e = document.getElementById("qafps54"); return e ? e.textContent : ""; },
       fac54: function () { return { fac: fac54(), own: owners54(), held: FAC54.map(held54), def: FAC54.map(defenders54), siege: siege54 ? { i: siege54.i, n: siege54.foes.length, left: siege54.foes.filter(function (f) { return f.alive && !f.sinking; }).length } : null, caps: x3.caps54 || 0, forts: forts.map(function (g) { return g.key; }), st: Object.assign({}, standing), btn: siegeBtn54 ? siegeBtn54.style.display + "|" + siegeBtn54.textContent : "" }; }, join54: function (k) { joinFac54(k); return fac54(); }, siege54: function (i) { startSiege54(i); return siege54 ? siege54.foes.length : 0; }, sinkSiege54: function () { if (siege54) siege54.foes.forEach(function (f) { f.hull = 0; f.alive = false; f.sinking = true; }); }, levy54: function (g) { return { buy: buyOf(g), sell: sellOf(g), levy: levy54() }; },
       pack54: function () { const g = activeFoes51(); if (!g) return 0; let n = 0; g.foes.forEach(function (f, j) { if (f.dead) return; const a = j * 0.7; const nx = person.x + Math.sin(a) * 5, nz = person.z + Math.cos(a) * 5; if (onLand(nx, nz)) { f.x = nx; f.z = nz; n++; } }); return n; },
