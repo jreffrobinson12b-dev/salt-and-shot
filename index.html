@@ -9857,7 +9857,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 55";
+    ver.textContent = "Version: batch 56";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -10643,7 +10643,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function updateGulls(dt, t) {
     for (let i = 0; i < gulls.length; i++) {
       const g = gulls[i];
-      if (g.group) { const far56 = Math.hypot(g.group.position.x - camera.position.x, g.group.position.z - camera.position.z) > 70; if (g.far56 !== far56) { g.far56 = far56; g.group.traverse(function (m) { if (m.isMesh) m.layers.set(far56 ? 1 : 0); }); } } // Batch 56: distant gulls are not drawn
+      if (g.group) { const far56 = Math.hypot(g.group.position.x - camera.position.x, g.group.position.z - camera.position.z) > 45; /* Batch 56: was 70 m */ if (g.far56 !== far56) { g.far56 = far56; g.group.traverse(function (m) { if (m.isMesh) m.layers.set(far56 ? 1 : 0); }); } } // Batch 56: distant gulls are not drawn
       const home = gullHome(g);
       const k = 1 - Math.exp(-dt * 0.45);
       g.cx += (home.x - g.cx) * k;
@@ -10820,6 +10820,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     }
     for (let i = 0; i < wake.parts.length; i++) {
       const p = wake.parts[i];
+      if (p.life > 0 && wake !== playerWake && (i & 1) && Math.hypot(p.mesh.position.x - camera.position.x, p.mesh.position.z - camera.position.z) > 60) { p.life -= dt; p.mesh.visible = false; continue; } // Batch 56: half of other ships' wake quads drop out beyond 60 m
       if (p.life <= 0) {
         p.mesh.visible = false;
         p.mesh.material.opacity = 0;
@@ -15247,7 +15248,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     // Incoming balls whistle as they pass close.
     for (let i = 0; i < shots.length; i++) { const b = shots[i]; if (b.from === "player" || b.whistle46) continue; if (Math.hypot(b.mesh.position.x - ship.x, b.mesh.position.z - ship.z) < 9) { b.whistle46 = true; try { noiseBurst(0.04, 0.25, 3200); } catch (e) { /* optional */ } } }
     // Gulls rest on harbour buoys by day; ripple rings round the buoys.
-    buoys46.forEach(function (b) { if (!b.gull) { b.gull = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false })); b.gull.scale.set(0.5, 0.3, 1); scene.add(b.gull); b.ring = flat45(RING45, 0xeef8ff, 0.3); } b.gull.visible = night < 0.3 && !low && (b.ph | 0) % 2 === 0; b.gull.position.set(b.x, b.m.position.y + 1, b.z); b.ring.position.set(b.x, 0.12, b.z); const u = (t * 0.4 + b.ph) % 1; b.ring.scale.setScalar(0.8 + u * 1.6); b.ring.material.opacity = (1 - u) * 0.35; b.ring.visible = !low; });
+    buoys46.forEach(function (b) { if (!b.gull) { b.gull = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false })); b.gull.scale.set(0.5, 0.3, 1); scene.add(b.gull); b.ring = flat45(RING45, 0xeef8ff, 0.3); } b.gull.visible = night < 0.3 && !low && (b.ph | 0) % 2 === 0; b.gull.position.set(b.x, b.m.position.y + 1, b.z); b.ring.position.set(b.x, 0.12, b.z); { const fd56 = Math.hypot(b.x - camera.position.x, b.z - camera.position.z), L56 = fd56 > 90 ? 1 : 0; b.m.layers.set(L56); b.gull.layers.set(L56); b.ring.layers.set(fd56 > 55 ? 1 : 0); b.l.layers.set(fd56 > 160 ? 1 : 0); } /* Batch 56: far buoys, rings and gulls drop off the draw list */ const u = (t * 0.4 + b.ph) % 1; b.ring.scale.setScalar(0.8 + u * 1.6); b.ring.material.opacity = (1 - u) * 0.35; b.ring.visible = !low; });
     // Kegs drift toward a ship close by.
     kegs45.forEach(function (k) { const d = Math.hypot(ship.x - k.x, ship.z - k.z); if (sea && d < 14 && d > 1) { k.x += (ship.x - k.x) / d * dt * 2.5; k.z += (ship.z - k.z) / d * dt * 2.5; } });
     // An anchored ship slowly swings head to wind.
@@ -17814,7 +17815,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         tapBoth47(rb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } const now = performance.now(); if (!armedR || now - armedR > 60000) { armedR = now; rb.textContent = "Swap back? Tap again"; return; } try { const cur = localStorage.getItem(SAVE_KEY); localStorage.setItem(SAVE_KEY, bk); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); else localStorage.removeItem(SAVE_KEY + "-before-new"); } catch (err) { return; } importReload47 = true; location.reload(); }); boot.appendChild(rb); } }
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 55";
+    tv.textContent = "Version: batch 56";
     // Batch 50: the version sits in the bottom-right corner of the screen, so a long tip or a short screen can never push it out of view.
     tv.style.cssText = "position:fixed;right:calc(8px + env(safe-area-inset-right));bottom:calc(6px + env(safe-area-inset-bottom));font-size:11px;opacity:.55;pointer-events:none;z-index:2";
     boot.appendChild(tv);
