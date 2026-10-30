@@ -5507,7 +5507,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     "\u201CNights are for lanterns and quiet trading.\u201D",
     "\u201CMake a nation hate you and it hires a bounty hunter. They follow far, but never into harbour.\u201D",
     "\u201CSilk bought cheap here sells dear at Belleisle. Check the Log for the best run.\u201D",
-    "\u201CA French frigate, the Marigold, patrols east of San Lorenzo.\u201D"
+    "\u201CA French frigate, the Marigold, patrols east of San Lorenzo.\u201D",
+    /* Batch 58 */ "\u201CThe tavern keeper always has work. Look for the anchor sign.\u201D",
+    "\u201CA boar paws the ground before he charges. Step aside then.\u201D",
+    "\u201CNew cottages up on the hill. The town grows every season.\u201D",
+    "\u201CThe market hall weighs your goods fair. Mostly.\u201D",
+    "\u201CThe shipwright has a hull on the slip. Lovely ribs on her.\u201D",
+    "\u201CRest a while after a fight and you\u2019ll feel better.\u201D"
   ];
   function townChatter(portId, who) {
     if (paused) return "";
@@ -5819,6 +5825,28 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   // Batch 55 (Games 2 FPS): each house, sign and wall group keeps its own transform (so fading and sway still work) but merges its parts that share a material.
   const within55 = { groups: 0, before: 0, after: 0 };
+  // Batch 58 (Games 2: Belleisle 4-8 fps): every island's houses and roofs also get one merged copy per material. The merged copy draws
+  // while no house on that island is faded; the moment one fades (camera behind it), that island swaps back to the separate houses.
+  const house58 = { isl: [], before: 0, after: 0 };
+  function houseMerge58() {
+    scene.updateMatrixWorld(true);
+    const per = new Map();
+    deco52.forEach(function (d) { const o = d.o; if (!o.userData.house52 || !o.parent) return; let isl = 0, bd = Infinity; for (let k = 0; k < ISLANDS.length; k++) { const dd = Math.hypot(o.position.x - ISLANDS[k].x, o.position.z - ISLANDS[k].z); if (dd < bd) { bd = dd; isl = k; } } if (!per.has(isl)) per.set(isl, { houses: [], merged: [], low: [] }); const P = per.get(isl); P.houses.push(d); o.userData.isl58 = isl; });
+    per.forEach(function (P, isl) {
+      [false, true].forEach(function (low) {
+        const buckets = new Map(), dummy = new THREE.Group();
+        P.houses.forEach(function (d) { if (!!d.low !== low) return; d.o.traverse(function (m) { if (!m.isMesh || m.isInstancedMesh || m.isSkinnedMesh || Array.isArray(m.material) || !m.geometry.attributes.normal) return; const a = m.geometry.attributes, key = m.material.uuid + "|" + (a.uv ? 1 : 0) + (a.color ? 1 : 0); if (!buckets.has(key)) buckets.set(key, []); const px = new THREE.Mesh(m.geometry, m.material); px.matrixAutoUpdate = false; px.matrixWorld.copy(m.matrixWorld); dummy.add(px); buckets.get(key).push(px); house58.before++; }); });
+        buckets.forEach(function (list) { const mm = mergeList(list, list[0].material, null); mm.name = "merged-house58"; mm.castShadow = false; mm.receiveShadow = true; mm.matrixAutoUpdate = false; mm.updateMatrix(); mm.userData.noCam51 = true; mm.userData.low58 = low; scene.add(mm); P.merged.push(mm); house58.after++; });
+      });
+      house58.isl[isl] = P;
+    });
+  }
+  function houseSwap58() {
+    house58.isl.forEach(function (P) { if (!P) return; let faded = false; for (let i = 0; i < P.houses.length; i++) { const o = P.houses[i].o; if (o.userData.want58 === false && o.userData.decoOn52 !== false) { faded = true; break; } }
+      for (let i = 0; i < P.houses.length; i++) { const o = P.houses[i].o, want = faded && o.userData.want58 !== false && o.userData.decoOn52 !== false; if (o.visible !== want) o.visible = want; }
+      const lowOn = P.houses.some(function (d) { return d.low && d.o.userData.decoOn52 !== false; });
+      for (let i = 0; i < P.merged.length; i++) { const m = P.merged[i], want = !faded && (!m.userData.low58 || lowOn); if (m.visible !== want) m.visible = want; } });
+  }
   function mergeWithin55() {
     scene.updateMatrixWorld(true);
     const L = scene.children.filter(function (o) { return o.isGroup && (o.userData.house52 || o.userData.sign47 || o.userData.wall52); });
@@ -6413,7 +6441,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     // Low graphics hides most of it (and frees the hidden houses' footprints).
     townDress52();
     mergeDeco55();
-    mergeWithin55(); // Batch 55: houses, signs and house walls merge their own parts by material
+    mergeWithin55(); houseMerge58(); // Batch 55: houses, signs and house walls merge their own parts by material
     buildOutposts52();
     for (let li = 0; li < locals.length; li++) placeLocal(locals[li]);
     const cleoMade = newSailor();
@@ -9471,6 +9499,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (x3 && contract.galleonPaid && x3.sManifest === 0) pool.push("Rumour: not all of the Santa Miseria's gold was aboard when you took her.");
     if (x3 && x3.qRiddle === 0) pool.push("Rumour: an old map-maker drinks at the Bramble tavern and talks in riddles.");
     if (x3) pool.push("Rumour: customs cutters never put out after dark. Smugglers know it.");
+    /* Batch 58 */ if (x3 && (x3.boars56 || 0) < 2) pool.push("Rumour: the Salt Cay tanner pays for boar hides. The wilds are full of them.");
+    if (x3 && (x3.bandits56 || 0) < 3) pool.push("Rumour: bandits on the San Lorenzo road. The tavern there posts a bounty.");
+    if (x3 && (x3.sunk || 0) < 2) pool.push("Rumour: Belleisle pays well for pirate hunters.");
+    if (x3) pool.push("Rumour: each town\u2019s notice board posts different work. Read them all.");
     if (x3 && x3.qContest === 0) pool.push("Rumour: Salt Cay holds a fishing contest. Three fish in five minutes wins.");
     if (x3 && (ledger.silk || 0) > 0) pool.push("Rumour: customs cutters watch the approaches to the big ports for silk.");
     if (x3 && x3.qRelic === 0) pool.push("Rumour: the church at Belleisle needs a careful captain to carry a relic to San Lorenzo.");
@@ -9830,6 +9862,17 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     b.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); uiTick47(); fn(); });
     return b;
   }
+  // Batch 58 (private beta): one tap copies a short report (build, place, ship, money, frame rate, device) to paste into a message.
+  const session58 = performance.now();
+  function bugReport58() {
+    let isl = "?"; try { const px = mode === "land" ? person.x : ship.x, pz = mode === "land" ? person.z : ship.z; let bd = 1e9; ISLANDS.forEach(function (q) { const d = Math.hypot(q.x - px, q.z - pz); if (d < bd) { bd = d; isl = (q.name || "island") + " " + Math.round(d) + " m"; } }); } catch (e) { /* optional */ }
+    const L = ["Salt & Shot bug report", "Build: batch 58", "Time: " + new Date().toString(), "Where: " + mode + (room57 ? " (inside " + room57.kind + ")" : "") + ", near " + isl, "Ship: " + playerHull.id + " hull " + Math.round(ship.hull) + "/" + ship.hullMax + ", crew " + x3.crew, "Gold " + ledger.gold + " \u00B7 XP " + x3.xp + " \u00B7 " + DIFF_WORD[x3.diff] + (dev57 ? " \u00B7 DEV MODE" : ""), "Frame rate about " + Math.round(1000 / Math.max(1, fps48.iv)) + " fps, draw calls " + (renderer.info.render.calls || "?"), "Screen " + innerWidth + "x" + innerHeight + " @" + (window.devicePixelRatio || 1) + ", graphics " + (x3.lowGfx ? "low" : "full"), "Device: " + navigator.userAgent, "What happened: "];
+    const txt = L.join("\n"); bugText58 = txt;
+    const done = function () { say("Bug report copied. Paste it into your message and add what happened.", 3); };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt).then(done, function () { window.prompt("Copy this report:", txt); }); return; } } catch (e) { /* fall through */ }
+    window.prompt("Copy this report:", txt);
+  }
+  let bugText58 = "";
   function renderSettings() {
     const box = document.getElementById("setbtns");
     document.getElementById("settitle").textContent = pauseKind === "pause" ? "Paused" : "Settings";
@@ -9866,11 +9909,13 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (pauseKind === "pause") box.appendChild(setRow("Photo mode (tap to bring buttons back)", photoMode));
     box.appendChild(setRow("Export save (code or file)", function () { showExport47(); }));
     box.appendChild(setRow("Import save", function () { showImport47(); }));
+    box.appendChild(setRow("Copy a bug report (beta)", function () { bugReport58(); }));
     box.appendChild(setRow("Credits", showCredits));
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
     ver.textContent = "Version: batch 57";
+    ver.title = "Private beta"; ver.textContent += " \u00B7 private beta \u00B7 played " + Math.max(1, Math.round((performance.now() - session58) / 60000)) + " min this session";
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
   }
@@ -10656,7 +10701,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function updateGulls(dt, t) {
     for (let i = 0; i < gulls.length; i++) {
       const g = gulls[i];
-      if (g.group) { const far56 = Math.hypot(g.group.position.x - camera.position.x, g.group.position.z - camera.position.z) > 45; /* Batch 56: was 70 m */ if (g.far56 !== far56) { g.far56 = far56; g.group.traverse(function (m) { if (m.isMesh) m.layers.set(far56 ? 1 : 0); }); } } // Batch 56: distant gulls are not drawn
+      if (g.group) { const far56 = Math.hypot(g.group.position.x - camera.position.x, g.group.position.z - camera.position.z) > (mode === "land" ? 32 : 45) || (mode === "land" && i % 2 === 1); /* Batch 56: was 70 m. Batch 58 (Belleisle fps): ashore, half the gulls and only within 32 m */ if (g.far56 !== far56) { g.far56 = far56; g.group.traverse(function (m) { if (m.isMesh) m.layers.set(far56 ? 1 : 0); }); } } // Batch 56: distant gulls are not drawn
       const home = gullHome(g);
       const k = 1 - Math.exp(-dt * 0.45);
       g.cx += (home.x - g.cx) * k;
@@ -11602,6 +11647,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     R.me.position.set(0, 0, 3.2); x3.rooms57 = (x3.rooms57 || 0) + 1;
     fade57(true); setTimeout(function () { fade57(false); }, quick ? 0 : 260);
     if (!roomBar57) { roomBar57 = document.createElement("button"); roomBar57.type = "button"; roomBar57.id = "roomleave57"; roomBar57.textContent = "Leave"; roomBar57.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);top:54px;height:36px;padding:0 18px;z-index:12;font-size:15px"; tap51(roomBar57, function () { exitRoom57(); }); document.body.appendChild(roomBar57); }
+    roomBar57.textContent = "Leave the " + ROOM57[kind].name.toLowerCase(); /* Batch 58 */
+    if (!x3["room58" + kind]) { x3["room58" + kind] = 1; if (x3.room58tavern && x3.room58merchant && x3.room58shipyard && !x3.room58all) { x3.room58all = 1; x3.xp = (x3.xp || 0) + 20; setTimeout(function () { say("You've seen inside a tavern, a market hall and a shipyard: +20 XP.", 3); }, 3200); } } /* Batch 58: a small reward for looking round */
     roomBar57.style.display = ""; say("Inside the " + ROOM57[kind].name.toLowerCase() + ". Walk up to " + ROOM57[kind].keeper + " at the counter.", 3);
     return true;
   }
@@ -12047,7 +12094,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         let hide = Math.hypot(cx - hb.x, cz - hb.z) < hb.r + 0.9;
         if (!hide && L > 1) { const t = ((hb.x - cx) * vx + (hb.z - cz) * vz) / L; if (t > 0 && t < 1) hide = Math.hypot(cx + vx * t - hb.x, cz + vz * t - hb.z) < hb.r * 0.9; }
         { const tn = performance.now(); if (hide) o.userData.hT56 = tn + 600; else if (o.userData.hT56 && tn < o.userData.hT56) hide = true; } // Batch 56 (Games 2: Salt Cay flicker): a faded house stays faded 0.6 s
-        const want = !hide && o.userData.decoOn52 !== false; if (o.visible !== want) o.visible = want; } }
+        o.userData.want58 = !hide; } }
+    else for (let i = 0; i < deco52.length; i++) { const o = deco52[i].o; if (o.userData.house52) o.userData.want58 = true; }
+    houseSwap58();
     const L52 = doorProps51.concat(signs47); const fx = person && mode === "land" ? person.x : ship.x, fz = person && mode === "land" ? person.z : ship.z;
     for (let i = 0; i < L52.length; i++) { const o = L52[i]; if (!o || !o.parent) continue; const rr = o.userData.rock52 ? 2.8 * o.userData.rock52 : 2.6; const cx = camera.position.x, cz = camera.position.z; let near = Math.hypot(cx - o.position.x, cz - o.position.z) < rr && camera.position.y < o.position.y + 5;
       if (!near && o.userData.rock52 && mode === "land") { const vx = fx - cx, vz = fz - cz, L = vx * vx + vz * vz; if (L > 1) { const t = ((o.position.x - cx) * vx + (o.position.z - cz) * vz) / L; if (t > 0 && t < 0.9 && Math.hypot(cx + vx * t - o.position.x, cz + vz * t - o.position.z) < rr * 0.8 && Math.hypot(cx - o.position.x, cz - o.position.z) < 14) near = true; } }
@@ -13464,7 +13513,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
 
   // Difficulty: Easy / Normal / Hard scale enemy damage, enemy reload and your repair costs. Normal = 1.
   const DIFF = {
-    easy: { foeDmg: 0.7, foeCool: 1.25, repair: 0.7, name: "Easy" },
+    easy: { foeDmg: 0.6, /* Batch 58 (beta balance): 0.7 -> 0.6 */ foeCool: 1.25, repair: 0.7, name: "Easy" },
     normal: { foeDmg: 1, foeCool: 1, repair: 1, name: "Normal" },
     hard: { foeDmg: 1.3, foeCool: 0.85, repair: 1.25, name: "Hard" }
   };
@@ -13891,7 +13940,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     for (let i = 0; i < foes.length; i++) { const f = foes[i]; if (f.sinking && !f.svc55 && f.nation && atWar54(NATFAC54[f.nation]) && !f.qb50) { f.svc55 = true; serve55(4, "ship"); } }
   }
   let heal56 = 0, healSaid56 = false, healShown57 = 0, healEl57 = null; let grace55 = 0, lastPX55 = null, lastPZ55 = 0, lastMode55 = "", dockHold55 = 0, healT55 = 0;
-  function healHud57() { if (!healEl57) { healEl57 = document.createElement("div"); healEl57.id = "heal57"; healEl57.style.cssText = "position:fixed;left:50%;top:38%;transform:translateX(-50%);font:800 18px system-ui;color:#9dffb0;text-shadow:0 2px 4px #000;pointer-events:none;z-index:9;transition:opacity .6s"; document.body.appendChild(healEl57); } healEl57.textContent = "+" + healShown57 + " HP \u00B7 health " + Math.round(landHp51); healEl57.style.opacity = "1"; clearTimeout(healHud57.t); healHud57.t = setTimeout(function () { healEl57.style.opacity = "0"; healShown57 = 0; }, 1400); } // Batch 57 (Games 2): the heal shows on screen, not only above your head let grace55 = 0, lastPX55 = null, lastPZ55 = 0, lastMode55 = "", dockHold55 = 0, healT55 = 0;
+  function healHud57() { if (!healEl57) { healEl57 = document.createElement("div"); healEl57.id = "heal57"; healEl57.style.cssText = "position:fixed;left:50%;top:38%;transform:translateX(-50%);font:800 18px system-ui;color:#9dffb0;text-shadow:0 2px 4px #000;pointer-events:none;z-index:9;transition:opacity .6s"; document.body.appendChild(healEl57); } if (room57) return; healEl57.textContent = "+" + healShown57 + " HP \u00B7 health " + Math.round(landHp51); healEl57.style.opacity = "1"; clearTimeout(healHud57.t); healHud57.t = setTimeout(function () { healEl57.style.opacity = "0"; healShown57 = 0; }, 1400); } // Batch 57 (Games 2): the heal shows on screen, not only above your head let grace55 = 0, lastPX55 = null, lastPZ55 = 0, lastMode55 = "", dockHold55 = 0, healT55 = 0;
   function closeOverlays55() { try { chartPanel.style.display = "none"; } catch (e) { /* optional */ } const yt = document.getElementById("chartyou51"); if (yt) yt.style.display = "none"; if (typeof menuKind !== "undefined" && menuKind && menuKind !== "fight") { try { closeMenu(); } catch (e) { /* optional */ } } }
   const qaOn56 = /[?&]qa=1/.test(location.search); let qaDodgeEl56 = null;
   // Batch 57 (Jeff): dev mode for Games 2, on ?qa=1 or ?dev=1. Switch to any hull at full hull and crew, any cannon tier,
@@ -13910,6 +13959,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const rs = row("Shot"); ["round", "chain", "grape"].forEach(function (k) { b(rs, k, "devshot57" + k, function () { shotKind = k; showShotKind(); }); });
     const rp = row("Pistol"); b(rp, "Brace on/off", "devbrace57", function () { x3.brace51 = !x3.brace51; });
     const rg = row("Cheats"); b(rg, "God mode", "devgod57", function () { god57 = !god57; }); b(rg, "Infinite gold", "devgold57", function () { rich57 = !rich57; if (!rich57) ledger.gold = Math.min(ledger.gold, 500); }); b(rg, "Full repair", "devfix57", function () { ship.hull = ship.hullMax; ship.sails = 100; x3.crew = crewMaxFor(playerHull.id); landHp51 = 100; });
+    const rj = row("Jump"); [["bramble", "Bramble"], ["salt", "Salt Cay"], ["lorenzo", "San Lorenzo"], ["belle", "Belleisle"]].forEach(function (q) { b(rj, q[1], "devport58" + q[0], function () { if (room57) exitRoom57(); window.__salt.b4.ashoreAt(q[0]); }); });
+    const rx = row("Progress"); b(rx, "+300 XP", "devxp58", function () { x3.xp = (x3.xp || 0) + 300; }); b(rx, "Ready sword/dodge", "devcd58", function () { swordCd53 = 0; dodgeCd53 = 0; }); b(rx, "Fill hold", "devhold58", function () { ["sugar", "rum", "coffee", "tobacco", "silk"].forEach(function (g) { ledger[g] = (ledger[g] || 0) + 3; }); });
     const st = document.createElement("div"); st.id = "devstate57"; st.style.cssText = "margin-top:6px;font-size:12px;opacity:.85"; p.appendChild(st);
     const close = document.createElement("button"); close.type = "button"; close.textContent = "Close"; close.style.cssText = "margin-top:6px;height:28px"; tap51(close, function () { p.style.display = "none"; }); p.appendChild(close);
     tap51(btn, function () { p.style.display = p.style.display === "none" ? "block" : "none"; devSync57(); });
@@ -13921,11 +13972,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function jump55() { grace55 = 2.5; try { chartPanel.style.display = "none"; } catch (e) { /* optional */ } const px = mode === "land" ? person.x : ship.x, pz = mode === "land" ? person.z : ship.z; if (menuOpen && !fightOn && menuAt56 && (menuAt56.mode !== mode || Math.hypot(menuAt56.x - px, menuAt56.z - pz) > 12)) { try { closeMenu(); } catch (e) { /* optional */ } } } // Batch 56 (Games 2): every building or outpost overlay opened elsewhere closes on a teleport
   // Batch 55 (Games 2: 1170 draw calls at Belleisle): far ships drop deck crew, trim, anchors and gunports from the render (layer 1), without touching .visible.
   const DETAIL55 = /^(leg-|torso|arm-|head|contact|ship-trim|anchor|gunport|hullstripe)/; let lodT55 = 0, lodScan55 = 0, lodShips55 = [];
+  let blobs58 = [];
   function lod55(dt) {
-    lodScan55 -= dt; if (lodScan55 <= 0) { lodScan55 = 2; lodShips55 = []; scene.children.forEach(function (o) { if (!o.isGroup) return; if (!o.userData.lod55) { let ship55 = false; const det = []; o.traverse(function (m) { if (!m.isMesh) return; if (/^ship-pirate/.test(m.name)) ship55 = true; else if (DETAIL55.test(m.name)) det.push(m); }); o.userData.lod55 = ship55 ? det : 0; } if (o.userData.lod55) lodShips55.push(o); }); }
+    lodScan55 -= dt; if (lodScan55 <= 0) { lodScan55 = 2; lodShips55 = []; scene.children.forEach(function (o) { if (!o.isGroup) return; if (!o.userData.lod55) { let ship55 = false; const det = []; o.traverse(function (m) { if (!m.isMesh) return; if (/^ship-pirate/.test(m.name)) ship55 = true; else if (DETAIL55.test(m.name)) det.push(m); }); o.userData.lod55 = ship55 ? det : 0; } if (o.userData.lod55) lodShips55.push(o); }); } if (lodScan55 === 2) { blobs58 = scene.children.filter(function (o) { return o.name === "contact" || o.name === "character-a"; }); }
     lodT55 -= dt; if (lodT55 > 0) return; lodT55 = 0.25;
     const cx = camera.position.x, cz = camera.position.z, R = mode === "land" ? 60 : 85;
     lodShips55.forEach(function (o) { if (o === ship.root) { if (o.userData.far55) { o.userData.far55 = false; o.userData.lod55.forEach(function (m) { m.layers.set(0); }); } return; } const far = Math.hypot(o.position.x - cx, o.position.z - cz) > R; if (o.userData.far55 === far) return; o.userData.far55 = far; o.userData.lod55.forEach(function (m) { if (far) m.layers.set(1); else m.layers.set(0); }); });
+    // Batch 58 (Belleisle fps): ashore, contact blobs beyond 30 m and townsfolk beyond 50 m leave the main view.
+    blobs58.forEach(function (o) { const lim = o.name === "contact" ? 30 : 50, f = mode === "land" && Math.hypot(o.position.x - cx, o.position.z - cz) > lim; if (!!o.userData.far58 === f) return; o.userData.far58 = f; o.traverse(function (m) { if (m.isMesh) m.layers.set(f ? 1 : 0); }); });
     // Batch 57 (Games 2): Belleisle ran at 4-8 fps. Ashore, whole ships beyond 110 m drop out of the main view (they are only specks behind the town).
     lodShips55.forEach(function (o) { const f57 = o !== ship.root && mode === "land" && Math.hypot(o.position.x - cx, o.position.z - cz) > 110; if (!!o.userData.far57 === f57) return; o.userData.far57 = f57; const det = o.userData.lod55; o.traverse(function (m) { if (!m.isMesh && !m.isSprite) return; m.layers.set(f57 || (o.userData.far55 && det.indexOf(m) >= 0) ? 1 : 0); }); });
   }
@@ -14555,17 +14609,17 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   // Batch 56: the tavern notice board. Twelve small jobs, three at a time, with Log lines, chart marks, standing with the port's owner and a cooldown.
   const JOBS56 = [
     { id: "coffee", at: "bramble", to: "bramble", t: "Coffee for the governor's table", d: "Bring 4 coffee to Bramble Quay.", need: { good: "coffee", n: 4 }, pay: 70 },
-    { id: "dispatch", at: "bramble", to: "lorenzo", t: "Dispatch to San Lorenzo", d: "Carry the governor's dispatch to the San Lorenzo tavern.", need: {}, pay: 55 },
-    { id: "lamp", at: "bramble", to: "bramble", t: "Check the Gull Rock light", d: "Sail within 75 yards of Gull Rock, then report back.", need: { near: 1 }, pay: 40 },
+    { id: "dispatch", at: "bramble", to: "lorenzo", t: "Dispatch to San Lorenzo", d: "Carry the governor's dispatch to the San Lorenzo tavern.", need: {}, pay: 60 },
+    { id: "lamp", at: "bramble", to: "bramble", t: "Check the Gull Rock light", d: "Sail within 75 yards of Gull Rock, then report back.", need: { near: 1 }, pay: 50 },
     { id: "tobacco", at: "salt", to: "lorenzo", t: "Tobacco for the garrison", d: "Carry 3 tobacco to San Lorenzo.", need: { good: "tobacco", n: 3 }, pay: 65 },
     { id: "hides", at: "salt", to: "salt", t: "Hides for the tanner", d: "Bring down 2 boars in the wilds, then come back.", need: { kill: "boar", n: 2 }, pay: 60 },
-    { id: "orphans", at: "salt", to: "salt", t: "Fish for the orphanage", d: "Bring 5 fish to Salt Cay.", need: { fish: 5 }, pay: 45 },
+    { id: "orphans", at: "salt", to: "salt", t: "Fish for the orphanage", d: "Bring 5 fish to Salt Cay.", need: { fish: 5 }, pay: 55 },
     { id: "road", at: "lorenzo", to: "lorenzo", t: "Clear the road", d: "Drop 3 bandits in the wilds, then come back.", need: { kill: "bandit", n: 3 }, pay: 75 },
     { id: "bride", at: "lorenzo", to: "salt", t: "Silk for the bride", d: "Carry 2 silk to Salt Cay.", need: { good: "silk", n: 2 }, pay: 90 },
     { id: "medicine", at: "lorenzo", to: "bramble", t: "Medicine run", d: "Get the surgeon's chest to Bramble Quay within 6 minutes.", need: { time: 360 }, pay: 85 },
     { id: "wedding", at: "belle", to: "belle", t: "Rum for the wedding", d: "Bring 5 rum to Belleisle.", need: { good: "rum", n: 5 }, pay: 60 },
-    { id: "survey", at: "belle", to: "belle", t: "Survey the four harbours", d: "Sail into the other three harbours, then come back.", need: { survey: 1 }, pay: 80 },
-    { id: "hunters", at: "belle", to: "belle", t: "Pirate hunters", d: "Sink 2 ships, then come back.", need: { sink: 2 }, pay: 110 }
+    { id: "survey", at: "belle", to: "belle", t: "Survey the four harbours", d: "Sail into the other three harbours, then come back.", need: { survey: 1 }, pay: 100 },
+    { id: "hunters", at: "belle", to: "belle", t: "Pirate hunters", d: "Sink 2 ships, then come back.", need: { sink: 2 }, pay: 130 }
   ];
   function jobs56() { try { const j = JSON.parse(x3.jobs56 || "{}"); return j && typeof j === "object" ? j : {}; } catch (e) { return {}; } }
   function setJobs56(j) { x3.jobs56 = JSON.stringify(j); }
@@ -15173,6 +15227,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   window.addEventListener("pointerdown", unlockAudio47, true);
   window.addEventListener("pointerdown", function (e) { const b = e.target && e.target.closest ? e.target.closest("#ui button, #boot button, #townmenu button") : null; if (b && !b.disabled) { uiTick47(); if (b.closest("#btns")) buzz(6); } }, true);
   window.addEventListener("keydown", unlockAudio47, true);
+  window.addEventListener("keydown", function (e) { if (e.key !== "Escape") return; const dp = document.getElementById("devpanel57"); if (dp && dp.style.display !== "none") { dp.style.display = "none"; return; } if (room57 && !menuOpen) exitRoom57(); }); // Batch 58: Esc closes the dev panel or leaves a room
 
   // Music: a small generative score in D dorian. Moods: title, sea, night, town, battle. Moods crossfade; cannon fire ducks the music.
   let mus47 = null, nearFoes47 = 0;
@@ -17037,7 +17092,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   }
   function knockedDown51() {
     if (x3) x3.knock53 = (x3.knock53 || 0) + 1;
-    const lost = Math.min(15, Math.floor(ledger.gold * 0.1));
+    const lost = Math.min(x3 && x3.diff === "easy" ? 8 : 15, Math.floor(ledger.gold * 0.1)); /* Batch 58: easy loses at most 8 */
     ledger.gold -= lost;
     landHp51 = 60;
     const w = wildHere51();
@@ -17952,7 +18007,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     boot.appendChild(tag);
     boot.appendChild(note);
     if (savedRenown >= 0) {
-      const TIPS = ["Tip: every fifth shooting star is worth a little XP.", "Tip: ashore, a foe shows \u201C!\u201D before he strikes. Tap Dodge, or cut into the wind-up to break it.", "Tip: three sword cuts in a row make a combo for half again the damage.", "Tip: the shipyard sells a cutlass: longer reach and harder cuts.", "Tip: win ten battles at night for the Nightwatch sails.", "Tip: the logbook shows how close each deed is.", "Tip: a rampage now pays gold as well as XP.", "Tip: tap a deed in the logbook to pin it.", "Tip: Settings can reef your sails for you in squalls.", "Tip: two hits in quick succession earn extra XP.", "Tip: tap a message to clear it. Tap a deed message to open the logbook.", "Tip: the first change of orders each day is free.", "Tip: a promotion comes with gold from the admiralty.", "Tip: the logbook's Deeds tab shows how close you are to each deed.", "Tip: new to the sea? Finish the captain's checklist in the logbook for 50 gold.", "Tip: captain's tips can be switched off, or shown again, in Settings.", "Tip: taste every port's tavern dish for XP and a new sail colour.", "Tip: half sail in a squall saves your canvas and earns XP.", "Tip: anchor right over a map's red X and the crew will dive for the chest.", "Tip: the harbour master pays double on every third order.", "Tip: fire from her bow or stern to rake for extra damage.", "Tip: at night, patrols only spot you up close.", "Tip: selling lots of one good in one port floods it. Spread your cargo.", "Tip: lie still in a safe harbour and the crew patch the hull.", "Tip: three hits in a row lift crew morale.", "Tip: if a ship tries to cross your bow, turn toward her.", "Tip: patrols can't see far in fog.", "Tip: market news in the Log tells you which port is short of what.", "Tip: taverns post bounties on named patrol ships.", "Tip: wreckage sometimes hides a crate worth more gold.", "Tip: drop anchor at sea and the crew will fish.", "Tip: taverns run harbour races to the next port.", "Tip: fish bite faster at night, and a grouper fetches the most.", "Tip: a fish stew lifts crew spirits more than gold can.", "Tip: diving birds mark a shoal. Anchor there and fish bite twice as fast.", "Tip: a golden shimmer on the water means sunken gold. Anchor on it to dive.", "Tip: take in sail when a rogue wave rolls in.", "Tip: sell often in one port and they will know you, and patch your hull for less.", "Tip: dolphins lead you on for a few seconds. Follow them.", "Tip: after a wind shift, check where the wind settles and trim to suit.", "Tip: when the crew is full, castaways pay for their passage.", "Tip: look up on clear nights. Shooting stars cheer the crew.", "Tip: sail out of a storm by day and you may see a rainbow.", "Tip: selling into a shortage earns double favour in that port.", "Tip: check the Log for today's orders. They pay gold and experience.", "Tip: land five hits in a row and your gun crews reload faster for a while.", "Tip: rise in rank and shipyards patch your hull for less.", "Tip: the tavern can give you different orders for 5 gold.", "Tip: every third order pays double.", "Tip: a sailing master halves the damage rogue waves do to your sails.", "Tip: reef your sails in a squall or the canvas tears.", "Tip: taverns sell treasure maps. Follow the red X.", "Tip: every port's tavern has its own dish for the crew."];
+      const TIPS = [/* Batch 58 */ "Tip: walk up to the counter in a tavern, market or shipyard to trade.", "Tip: the \u2693 Tavern marker shows the way to the notice board.", "Tip: out of a fight in the wilds, you mend a little health every few seconds.", "Tip: when the boar paws the ground, tap Dodge right away.", "Tip: board a siege guard and it counts as beaten.", "Tip: Settings has a one-tap bug report for the beta.", "Tip: the towns now spread over the far hills. Explore past the cottages.", "Tip: every port\u2019s notice board posts its own jobs.", "Tip: every fifth shooting star is worth a little XP.", "Tip: ashore, a foe shows \u201C!\u201D before he strikes. Tap Dodge, or cut into the wind-up to break it.", "Tip: three sword cuts in a row make a combo for half again the damage.", "Tip: the shipyard sells a cutlass: longer reach and harder cuts.", "Tip: win ten battles at night for the Nightwatch sails.", "Tip: the logbook shows how close each deed is.", "Tip: a rampage now pays gold as well as XP.", "Tip: tap a deed in the logbook to pin it.", "Tip: Settings can reef your sails for you in squalls.", "Tip: two hits in quick succession earn extra XP.", "Tip: tap a message to clear it. Tap a deed message to open the logbook.", "Tip: the first change of orders each day is free.", "Tip: a promotion comes with gold from the admiralty.", "Tip: the logbook's Deeds tab shows how close you are to each deed.", "Tip: new to the sea? Finish the captain's checklist in the logbook for 50 gold.", "Tip: captain's tips can be switched off, or shown again, in Settings.", "Tip: taste every port's tavern dish for XP and a new sail colour.", "Tip: half sail in a squall saves your canvas and earns XP.", "Tip: anchor right over a map's red X and the crew will dive for the chest.", "Tip: the harbour master pays double on every third order.", "Tip: fire from her bow or stern to rake for extra damage.", "Tip: at night, patrols only spot you up close.", "Tip: selling lots of one good in one port floods it. Spread your cargo.", "Tip: lie still in a safe harbour and the crew patch the hull.", "Tip: three hits in a row lift crew morale.", "Tip: if a ship tries to cross your bow, turn toward her.", "Tip: patrols can't see far in fog.", "Tip: market news in the Log tells you which port is short of what.", "Tip: taverns post bounties on named patrol ships.", "Tip: wreckage sometimes hides a crate worth more gold.", "Tip: drop anchor at sea and the crew will fish.", "Tip: taverns run harbour races to the next port.", "Tip: fish bite faster at night, and a grouper fetches the most.", "Tip: a fish stew lifts crew spirits more than gold can.", "Tip: diving birds mark a shoal. Anchor there and fish bite twice as fast.", "Tip: a golden shimmer on the water means sunken gold. Anchor on it to dive.", "Tip: take in sail when a rogue wave rolls in.", "Tip: sell often in one port and they will know you, and patch your hull for less.", "Tip: dolphins lead you on for a few seconds. Follow them.", "Tip: after a wind shift, check where the wind settles and trim to suit.", "Tip: when the crew is full, castaways pay for their passage.", "Tip: look up on clear nights. Shooting stars cheer the crew.", "Tip: sail out of a storm by day and you may see a rainbow.", "Tip: selling into a shortage earns double favour in that port.", "Tip: check the Log for today's orders. They pay gold and experience.", "Tip: land five hits in a row and your gun crews reload faster for a while.", "Tip: rise in rank and shipyards patch your hull for less.", "Tip: the tavern can give you different orders for 5 gold.", "Tip: every third order pays double.", "Tip: a sailing master halves the damage rogue waves do to your sails.", "Tip: reef your sails in a squall or the canvas tears.", "Tip: taverns sell treasure maps. Follow the red X.", "Tip: every port's tavern has its own dish for the crew."];
       tip.textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
     }
     boot.appendChild(tip);
@@ -18865,7 +18920,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       critDbg53: function () { return wilds51.map(function (w) { return { town: w.town, p: townSpot53(w), n: critters53.filter(function (c) { return Math.hypot(c.hx - ISLANDS[w.town].x, c.hz - ISLANDS[w.town].z) < ISLANDS[w.town].landR; }).length }; }); },
       trees53: function (sp) { if (sp) return wilds51[0].spots.slice(0, 12); return wilds51.map(function (w) { return w.hid53 ? w.hid53.split(",").length - 1 : 0; }); }, bars53: function () { const g = activeFoes51(); return g ? g.foes.filter(function (f) { return !f.dead; }).map(function (f) { return Math.round(f.bar.scale.x * 100) / 100; }) : []; },
       critters53: function () { const n = {}; critters53.forEach(function (c) { n[c.kind] = (n[c.kind] || 0) + 1; }); return { n: n, total: critters53.length, vis: critters53.filter(function (c) { return c.g.visible; }).length }; },
-      merge55: function () { return merge55; }, scene55: function () { return scene; }, jobs56: function () { return jobs56(); }, jobLines56: function () { const L = []; jobLines56(L); return L; }, setLedger56: function (k, v) { ledger[k] = v; }, setHp56: function (v) { landHp51 = v; }, hp56: function () { return landHp51; }, qaSink56: function () { const q = document.getElementById("qasink48"); if (q) q.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); return !!q; }, dodge56: function () { return dodgeLog56.slice(); }, dodgeNow56: function () { dodgeAt56 = performance.now(); dodgeT53 = 0.45; }, back55: function () { backPress55(); return back55.last; }, paused55: function () { return paused; }, within55: function () { return within55; }, lod55: function () { return lodShips55.filter(function (o) { return o.userData.far55; }).length + '/' + lodShips55.length; }, wreck55: function () { wreckPlayer(); }, stand55: function (k, v) { standing[k] = v; }, setGold55: function (v) { ledger.gold = v; }, st55: function () { return { sail: sail, speed: ship.speed, docked: !!safeHarbourAt(ship.x, ship.z) && Math.abs(ship.speed) < 0.6, grace: grace55, chart: chartPanel.style.display, menu: menuKind, mode: mode, hp: landHp51 }; }, chartOn55: function () { chartPanel.style.display = 'block'; }, f55: function () { return { svc: x3.svc55 || 0, rank: svcRank55(), peace: peaceMap55(), war: FAC54.map(atWar54), aiwar: x3.aiwar55 || 0, own: owners54() }; }, serve55: function (n) { serve55(n); return svcRank55(); }, treaty55: function (k) { return signTreaty55(k); }, aiWar55: function () { return aiWar55(true); }, peaceTick55: function (t) { peaceTick55(t); return peaceMap55(); }, dc55: function () { const fr = new THREE.Frustum(), m = new THREE.Matrix4(); camera.updateMatrixWorld(); m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); fr.setFromProjectionMatrix(m); const out = {}; scene.children.forEach(function (top, ti) { let n = 0; top.traverseVisible(function (o) { if ((o.isMesh || o.isSprite || o.isLine || o.isPoints) && o.layers.test(camera.layers) && (o.frustumCulled === false || !o.geometry || (o.geometry.boundingSphere || o.geometry.computeBoundingSphere(), fr.intersectsObject(o)))) n++; }); if (!n) return; const ud = Object.keys(top.userData || {}).join("|"); const key = (top.name || top.type) + ":" + ud + (top.isSprite ? ":spr" : ""); out[key] = (out[key] || 0) + n; }); return { calls: renderer.info.render.calls, groups: Object.entries(out).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 25) }; },
+      bug58: function () { bugReport58(); return bugText58; }, merge55: function () { return merge55; }, house58: function () { return { before: house58.before, after: house58.after, isl: house58.isl.map(function (P, i) { return P ? { i: i, n: P.houses.length, merged: P.merged.filter(function (m) { return m.visible; }).length, sep: P.houses.filter(function (d) { return d.o.visible; }).length } : null; }).filter(Boolean) }; }, scene55: function () { return scene; }, jobs56: function () { return jobs56(); }, jobLines56: function () { const L = []; jobLines56(L); return L; }, setLedger56: function (k, v) { ledger[k] = v; }, setHp56: function (v) { landHp51 = v; }, hp56: function () { return landHp51; }, qaSink56: function () { const q = document.getElementById("qasink48"); if (q) q.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); return !!q; }, dodge56: function () { return dodgeLog56.slice(); }, dodgeNow56: function () { dodgeAt56 = performance.now(); dodgeT53 = 0.45; }, back55: function () { backPress55(); return back55.last; }, paused55: function () { return paused; }, within55: function () { return within55; }, lod55: function () { return lodShips55.filter(function (o) { return o.userData.far55; }).length + '/' + lodShips55.length; }, wreck55: function () { wreckPlayer(); }, stand55: function (k, v) { standing[k] = v; }, setGold55: function (v) { ledger.gold = v; }, st55: function () { return { sail: sail, speed: ship.speed, docked: !!safeHarbourAt(ship.x, ship.z) && Math.abs(ship.speed) < 0.6, grace: grace55, chart: chartPanel.style.display, menu: menuKind, mode: mode, hp: landHp51 }; }, chartOn55: function () { chartPanel.style.display = 'block'; }, f55: function () { return { svc: x3.svc55 || 0, rank: svcRank55(), peace: peaceMap55(), war: FAC54.map(atWar54), aiwar: x3.aiwar55 || 0, own: owners54() }; }, serve55: function (n) { serve55(n); return svcRank55(); }, treaty55: function (k) { return signTreaty55(k); }, aiWar55: function () { return aiWar55(true); }, peaceTick55: function (t) { peaceTick55(t); return peaceMap55(); }, dc55: function () { const fr = new THREE.Frustum(), m = new THREE.Matrix4(); camera.updateMatrixWorld(); m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); fr.setFromProjectionMatrix(m); const out = {}; scene.children.forEach(function (top, ti) { let n = 0; top.traverseVisible(function (o) { if ((o.isMesh || o.isSprite || o.isLine || o.isPoints) && o.layers.test(camera.layers) && (o.frustumCulled === false || !o.geometry || (o.geometry.boundingSphere || o.geometry.computeBoundingSphere(), fr.intersectsObject(o)))) n++; }); if (!n) return; const ud = Object.keys(top.userData || {}).join("|"); const key = (top.name || top.type) + ":" + ud + (top.isSprite ? ":spr" : ""); out[key] = (out[key] || 0) + n; }); return { calls: renderer.info.render.calls, groups: Object.entries(out).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 25) }; },
       counter54: function (go) { if (go) { counterT54 = 0.01; } return counter54 ? { i: counter54.i, k: counter54.k, t: counter54.t, fought: counter54.fought, n: counter54.foes.length } : null; }, startCounter54: function () { return startCounter54(); }, sinkCounter54: function () { if (counter54) counter54.foes.forEach(function (f) { f.alive = false; f.sinking = true; }); }, patrols54: function () { return patrols54.filter(function (f) { return f.alive; }).map(function (f) { return { nation: f.nation, hunt: f.hunt, port: f.port54 }; }); }, gold54: function () { const g = document.getElementById("gold54"); return g ? { t: g.textContent, op: getComputedStyle(g).opacity } : null; }, fpsTxt54: function () { const e = document.getElementById("qafps54"); return e ? e.textContent : ""; },
       fac54: function () { return { fac: fac54(), own: owners54(), held: FAC54.map(held54), def: FAC54.map(defenders54), siege: siege54 ? { i: siege54.i, n: siege54.foes.length, left: siege54.foes.filter(function (f) { return f.alive && !f.sinking; }).length } : null, caps: x3.caps54 || 0, forts: forts.map(function (g) { return g.key; }), st: Object.assign({}, standing), btn: siegeBtn54 ? siegeBtn54.style.display + "|" + siegeBtn54.textContent : "" }; }, join54: function (k) { joinFac54(k); return fac54(); }, siege54: function (i) { startSiege54(i); return siege54 ? siege54.foes.length : 0; }, sinkSiege54: function () { if (siege54) siege54.foes.forEach(function (f) { f.hull = 0; f.alive = false; f.sinking = true; }); }, levy54: function (g) { return { buy: buyOf(g), sell: sellOf(g), levy: levy54() }; },
       pack54: function () { const g = activeFoes51(); if (!g) return 0; let n = 0; g.foes.forEach(function (f, j) { if (f.dead) return; const a = j * 0.7; const nx = person.x + Math.sin(a) * 5, nz = person.z + Math.cos(a) * 5; if (onLand(nx, nz)) { f.x = nx; f.z = nz; n++; } }); return n; },
