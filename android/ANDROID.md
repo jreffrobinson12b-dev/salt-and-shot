@@ -13,3 +13,10 @@ Trusted Web Activity shell built with Google's Bubblewrap from `twa-manifest.jso
 5. Check on a phone: opens fullscreen, landscape, no URL bar, Back opens the pause menu, works offline after first run.
 
 Not done yet (needs the user's decision/keys): signing key, publishing assetlinks.json, Play Console listing.
+
+## Signing key (Jeff's step — not created by the bot)
+The bot does not create or hold a signing key. When you are ready:
+1. `bubblewrap init --manifest https://jreffrobinson12b-dev.github.io/salt-and-shot/manifest.webmanifest` (it offers to create a key; keep the keystore and passwords private).
+2. `bubblewrap build` produces app-release-signed.apk and .aab.
+3. `keytool -list -v -keystore <your.keystore>` gives the SHA-256 fingerprint; put it in assetlinks.template.json, save as `.well-known/assetlinks.json` on the site.
+Version for this build: 0.67.0 (code 67).
