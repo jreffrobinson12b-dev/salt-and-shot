@@ -1,8 +1,8 @@
-# Android APK — readiness notes, batch 97
+# Android APK — readiness notes, batch 98
 
 Salt & Shot is a PWA (manifest, icons including maskable, service worker, fullscreen landscape). There are two ways to put it on a phone. Neither path is finished until Jeff adds a signing key — the bot does not create or hold one. Target remains a private-beta Android app at batch 100. Batches 95–100 are the window for Jeff's signing and a Play internal test track.
 
-Version scheme: `versionName` is `0.N.0` and `versionCode` is `N`, where N is the batch (0.97.0 / 97 for this build). Keep TWA and the bundled APK in step after every publish.
+Version scheme: `versionName` is `0.N.0` and `versionCode` is `N`, where N is the batch (0.98.0 / 98 for this build). Keep TWA and the bundled APK in step after every publish.
 
 ## 1. Trusted Web Activity (live page)
 
@@ -17,7 +17,7 @@ The thin shell is built with Google's Bubblewrap from `twa-manifest.json` in the
 4. `bubblewrap build` → `app-release-signed.apk` (sideload for beta) and `.aab` (Play Store).
 5. Check on a phone: opens fullscreen, landscape, no URL bar, Back opens Pause, works offline after first run.
 
-`appVersionName` / `appVersionCode` in `twa-manifest.json` should match the batch (0.97.0 / 97 for this build).
+`appVersionName` / `appVersionCode` in `twa-manifest.json` should match the batch (0.98.0 / 98 for this build).
 
 ## 2. Bundled WebView APK (`pirates3d/android`)
 
@@ -27,7 +27,7 @@ After each game build:
 
     cp salt-and-shot.html android/app/src/main/assets/salt-and-shot.html
 
-Keep `app/build.gradle` `versionName` / `versionCode` in step with the batch (0.97.0 / 97). From batch 87, the system Back button opens Pause and does not leave the voyage; onPause saves and opens Pause.
+Keep `app/build.gradle` `versionName` / `versionCode` in step with the batch (0.98.0 / 98). From batch 87, the system Back button opens Pause and does not leave the voyage; onPause saves and opens Pause.
 
 Do not create a new signing key here. If you already have a keystore, keep it private and out of git. The bot never prints keystore values and never runs `git add -A` in this folder.
 
