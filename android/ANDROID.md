@@ -1,12 +1,12 @@
-# Android APK — readiness notes, batch 99
+# Android APK — readiness notes, batch 100 · private beta
 
-Salt & Shot is a PWA (manifest, icons including maskable, service worker, fullscreen landscape). There are two ways to put it on a phone. Neither path is finished until Jeff adds a signing key — the bot does not create or hold one. Batch 100 is the private-beta target. This is the last build before that beta. Version 100 will be `0.100.0` / `100` under the existing scheme.
+Salt & Shot is a PWA (manifest, icons including maskable, service worker, fullscreen landscape). There are two ways to put it on a phone. Neither path is finished until Jeff adds a signing key — the bot does not create or hold one. This is the private-beta build. Version is `0.100.0` / `100` under the existing scheme, not `1.0.0`.
 
-Version scheme: `versionName` is `0.N.0` and `versionCode` is `N`, where N is the batch (0.99.0 / 99 for this build). Keep TWA and the bundled APK in step after every publish.
+Version scheme: `versionName` is `0.N.0` and `versionCode` is `N`, where N is the batch (`0.100.0` / `100` for this private-beta build). Keep TWA and the bundled APK in step after every publish.
 
 ## Beta handoff — what Jeff does himself
 
-The bot does not create a signing key, does not print keystore or password values, and does not upload to Play. These steps are Jeff's, and 100 is the batch to finish them on.
+The bot does not create a signing key, does not print keystore or password values, and does not upload to Play. These steps are Jeff's. This private-beta build is the one to finish them on.
 
 ### Order of operations
 
@@ -31,7 +31,7 @@ Build a signed release APK (for sideload) and, when you are ready for Play, an A
 
 Sideload the APK onto your phone and, when you like, onto Games 2 / private-beta testers. On the phone, check:
 
-- The version name matches the batch (`0.N.0`; this build is `0.99.0`, the beta will be `0.100.0`).
+- The version name matches the batch (`0.N.0`; this private-beta build is `0.100.0`).
 - It opens fullscreen and in landscape.
 - TWA has no URL bar (that needs `assetlinks.json` at the origin root).
 - The system Back button opens Pause and does not leave the voyage.
@@ -44,7 +44,7 @@ For TWA: publish `assetlinks.json` at https://jreffrobinson12b-dev.github.io/.we
 
 ### 6. Play internal test track
 
-At batch 100: a Play Console internal test track, using the signed AAB. The bot never uploads to Play.
+At this private-beta batch: a Play Console internal test track, using the signed AAB. The bot never uploads to Play.
 
 ### Do not commit
 
@@ -70,7 +70,7 @@ The thin shell is built with Google's Bubblewrap from `twa-manifest.json` in the
 4. `bubblewrap build` → `app-release-signed.apk` (sideload for beta) and `.aab` (Play Store).
 5. Check on a phone: opens fullscreen, landscape, no URL bar, Back opens Pause, works offline after first run.
 
-`appVersionName` / `appVersionCode` in `twa-manifest.json` should match the batch (0.99.0 / 99 for this build).
+`appVersionName` / `appVersionCode` in `twa-manifest.json` should match the batch (`0.100.0` / `100` for this private-beta build).
 
 ## 2. Bundled WebView APK (`pirates3d/android`)
 
@@ -80,7 +80,7 @@ After each game build:
 
     cp salt-and-shot.html android/app/src/main/assets/salt-and-shot.html
 
-Keep `app/build.gradle` `versionName` / `versionCode` in step with the batch (0.99.0 / 99). From batch 87, the system Back button opens Pause and does not leave the voyage; onPause saves and opens Pause.
+Keep `app/build.gradle` `versionName` / `versionCode` in step with the batch (`0.100.0` / `100` for this private-beta build). From batch 87, the system Back button opens Pause and does not leave the voyage; onPause saves and opens Pause.
 
 Do not create a new signing key here. If you already have a keystore, keep it private and out of git. The bot never prints keystore values and never runs `git add -A` in this folder.
 
