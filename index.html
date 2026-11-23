@@ -5041,9 +5041,10 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     group.add(port);
     group.add(star);
     const pennant = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.7, 0.9),
-      new THREE.MeshBasicMaterial({ color: pennantColor, side: THREE.DoubleSide })
+      new THREE.PlaneGeometry(1.15, 0.62),
+      new THREE.MeshBasicMaterial({ map: pennantTex99(pennantColor), color: 0xffffff, side: THREE.DoubleSide, transparent: true, depthWrite: false })
     );
+    pennant.name = "pennant";
     pennant.position.set(1.1, Math.max(7.2, sb.max.y * 0.62), sb.min.z * 0.45);
     group.add(pennant);
     group.userData.hullId = spec.id;
@@ -7498,6 +7499,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function line96() { return "jobs " + JOBS56.length + ", town/harbour draw cuts toward 250, far houses hide at 70 yd when unmerged, tighter ashore dress/lanterns/palms, water plane covers the first frame, shaders warmed so a jump or hull swap is not a white plane, sail cycles Furled-Half-Full-Half, ANDROID 0.96.0"; }
   function line97() { return "jobs " + JOBS56.length + ", crown ships stay neutral until offended or at war, auto-gunner never fires on a neutral, starter patrol hits eased, galleon camera frames both hulls and clears sails, far haze is sea-teal not white, Full repair toasts and refreshes the HUD, backups on first hour and war win, ANDROID 0.97.0"; }
   function line98() { return "jobs " + JOBS56.length + ", docked Bramble sheets culled, galleon camera pulls out at overlap, dock labels stay on a tight phone zoom, Sail keeps a fixed slot, auto-gunner prefers the player's or the nearer weaker target, God mode toasts on the first tap, ANDROID 0.98.0"; }
+  function line99() { return "jobs " + JOBS56.length + ", harbour puffs stay out of the lens, galleon-fight sea stays clean, ships that cut the view fade, hulls push apart, QA shows range in yards, ANDROID 0.99.0"; }
   var autoStop91 = true;
   function harbourPad90() { try { for (let i = 0; i < PORTS.length; i++) { const h = PORTS[i].harbour; if (Math.hypot(ship.x - h.x, ship.z - h.z) <= h.r + 28) return PORTS[i]; const d = PORTS[i].dock; if (d && ship.x >= Math.min(d.x0, d.x1) - 6 && ship.x <= Math.max(d.x0, d.x1) + 6 && ship.z >= Math.min(d.z0, d.z1) - 6 && ship.z <= Math.max(d.z0, d.z1) + 6) return PORTS[i]; } } catch (e) { /* optional */ } return null; }
   var helmHold90 = 0, leaveCam90 = 0;
@@ -7579,6 +7581,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       back = Math.max(back, (big ? 22 : mid ? 13 : 8) * k);
       lift = Math.max(lift, (big ? 6.5 : mid ? 5 : 3.5) * k); /* Batch 97: back and slide more, lift less, so a galleon at ~31 yd stays in frame instead of a high crane shot */
       if (dShip < 8) { back = Math.max(back, big ? 28 : mid ? 18 : 12); lift = Math.max(lift, big ? 9 : mid ? 7 : 5); } /* Batch 98: emergency pull-back when hulls overlap at ~0 yd */
+      if (dShip < 5) { back = Math.max(back, big ? 36 : mid ? 22 : 16); lift = Math.max(lift, big ? 11 : mid ? 8 : 6); away += -Math.sign(side || 1) * (big ? 10 : mid ? 7 : 5); } /* Batch 99: last-resort lift/back and a sideways nudge so the lens is not on a deck at 0-5 yd */
       if (!ahead) {
         away += -Math.sign(side || 1) * (big ? 14 : mid ? 7 : 4) * k;
         lookS += Math.sign(side || 1) * (big ? 10 : mid ? 6 : 3) * k;
@@ -7612,6 +7615,267 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     return n;
   }
 
+  const pennantTexCache99 = {};
+  function pennantTex99(col) {
+    const k = ((col >>> 0).toString(16));
+    if (pennantTexCache99[k]) return pennantTexCache99[k];
+    const c = document.createElement("canvas"); c.width = 64; c.height = 32;
+    const g = c.getContext("2d", { willReadFrequently: true });
+    const r = (col >> 16) & 255, gv = (col >> 8) & 255, b = col & 255;
+    g.clearRect(0, 0, 64, 32);
+    g.beginPath(); g.moveTo(2, 3); g.lineTo(62, 16); g.lineTo(2, 29); g.closePath();
+    g.fillStyle = "rgb(" + r + "," + gv + "," + b + ")"; g.fill();
+    g.strokeStyle = "rgba(20,14,8,0.55)"; g.lineWidth = 2; g.stroke();
+    const tex = new THREE.CanvasTexture(c); tex.needsUpdate = true;
+    pennantTexCache99[k] = tex;
+    return tex;
+  }
+  function hullBox99(f) {
+    const id = (f === ship || f.player) ? (playerHull && playerHull.id) : (f.hullId || f.kind);
+    const big = !!(f.oro60 || f.galleon || f.boss || /manowar|galleon/i.test(id || ""));
+    const mid = !!(f.oroEsc60 || (f.hullMax || 0) >= 140 || /brig|frigate/i.test(id || ""));
+    return { halfLen: big ? 22 : mid ? 14 : 8, halfW: big ? 8 : mid ? 6 : 4, heading: f.heading || 0, x: f.x, z: f.z, ref: f, big: big, mid: mid };
+  }
+  function segSeg99(ax, az, ahex, ahez, alen, bx, bz, bhex, bhez, blen) {
+    const a0x = ax - ahex * alen, a0z = az - ahez * alen, a1x = ax + ahex * alen, a1z = az + ahez * alen;
+    const b0x = bx - bhex * blen, b0z = bz - bhez * blen, b1x = bx + bhex * blen, b1z = bz + bhez * blen;
+    const abx = a1x - a0x, abz = a1z - a0z, cdx = b1x - b0x, cdz = b1z - b0z;
+    const r_x = a0x - b0x, r_z = a0z - b0z;
+    const a = abx * abx + abz * abz, b = abx * cdx + abz * cdz, c = cdx * cdx + cdz * cdz, d = abx * r_x + abz * r_z, e = cdx * r_x + cdz * r_z;
+    const den = a * c - b * b;
+    let s = 0, t = 0;
+    if (Math.abs(den) > 1e-8) s = clamp((b * e - c * d) / den, 0, 1);
+    t = c > 1e-8 ? clamp((b * s + e) / c, 0, 1) : 0;
+    s = a > 1e-8 ? clamp((b * t - d) / a, 0, 1) : 0;
+    const px = a0x + abx * s, pz = a0z + abz * s, qx = b0x + cdx * t, qz = b0z + cdz * t;
+    return { dx: qx - px, dz: qz - pz, d: Math.hypot(qx - px, qz - pz) || 0.01 };
+  }
+  function placeOk99(x, z) {
+    try { if (typeof onLand === "function" && onLand(x, z)) return false; } catch (e1) { /* optional */ }
+    try { if (typeof spotAfloat === "function" && !spotAfloat(x, z)) return false; } catch (e2) { /* optional */ }
+    return true;
+  }
+  let pushLast99 = [];
+  function pushApart99(dt) {
+    if (mode !== "sea" || !ship || titleOn) return 0;
+    const list = [{ x: ship.x, z: ship.z, heading: ship.heading, hullId: playerHull && playerHull.id, hullMax: ship.hullMax, player: true, ref: ship, root: ship.root }];
+    try { foes.forEach(function (f) { if (f && f.alive && !f.gone && !f.sinking) list.push(f); }); } catch (e) { /* optional */ }
+    try { if (consort && !consort.sinking && !consort.gone) list.push(consort); } catch (e2) { /* optional */ }
+    const boxes = list.map(hullBox99);
+    const k = 1 - Math.exp(-Math.max(0.01, dt || 0.05) * 4);
+    let n = 0;
+    pushLast99 = [];
+    for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+      const A = boxes[i], B = boxes[j];
+      const ahx = Math.sin(A.heading), ahz = Math.cos(A.heading), bhx = Math.sin(B.heading), bhz = Math.cos(B.heading);
+      const hit = segSeg99(A.x, A.z, ahx, ahz, A.halfLen, B.x, B.z, bhx, bhz, B.halfLen);
+      const need = A.halfW + B.halfW + 0.6;
+      if (hit.d >= need) continue;
+      const push = (need - hit.d) * 0.5 * k;
+      const nx = hit.dx / hit.d, nz = hit.dz / hit.d;
+      const aPlayer = !!(A.ref && (A.ref === ship || A.ref.player));
+      const bPlayer = !!(B.ref && (B.ref === ship || B.ref.player));
+      const aShare = aPlayer ? 0.3 : (bPlayer ? 0.7 : 0.5);
+      const bShare = 1 - aShare;
+      const ax = A.ref.x - nx * push * aShare * 2, az = A.ref.z - nz * push * aShare * 2;
+      const bx = B.ref.x + nx * push * bShare * 2, bz = B.ref.z + nz * push * bShare * 2;
+      if (placeOk99(ax, az)) { A.ref.x = ax; A.ref.z = az; if (A.ref.root) A.ref.root.position.set(ax, A.ref.root.position.y, az); }
+      if (placeOk99(bx, bz)) { B.ref.x = bx; B.ref.z = bz; if (B.ref.root) B.ref.root.position.set(bx, B.ref.root.position.y, bz); }
+      n++;
+      pushLast99.push({ a: A.ref.name || (aPlayer ? "you" : "?"), b: B.ref.name || (bPlayer ? "you" : "?"), d: Math.round(hit.d * 10) / 10 });
+    }
+    return n;
+  }
+  function camShipSeg99(px, pz) {
+    const ax = camera.position.x, az = camera.position.z, bx = ship.x, bz = ship.z;
+    const abx = bx - ax, abz = bz - az, apx = px - ax, apz = pz - az;
+    const ab2 = abx * abx + abz * abz || 1e-6;
+    const tt = Math.max(0, Math.min(1, (apx * abx + apz * abz) / ab2));
+    const qx = ax + abx * tt, qz = az + abz * tt;
+    return { t: tt, d: Math.hypot(px - qx, pz - qz) };
+  }
+  function applyFade99(root, k, hidePenn) {
+    if (!root) return;
+    root.traverse(function (m) {
+      if (m.isMesh && /pennant/i.test(m.name || "")) { m.visible = !hidePenn && k < 0.85; }
+      if (!m.isMesh || !m.material) return;
+      if (/pennant/i.test(m.name || "")) return;
+      const mats = Array.isArray(m.material) ? m.material : [m.material];
+      const out = [];
+      for (let i = 0; i < mats.length; i++) {
+        const mat = mats[i]; if (!mat) { out.push(mat); continue; }
+        if (!m.userData.fade99) m.userData.fade99 = [];
+        if (!m.userData.fade99[i]) {
+          const c = mat.clone();
+          c.transparent = true;
+          if (c.opacity == null) c.opacity = 1;
+          m.userData.fade99[i] = { base: c.opacity, mat: c };
+        }
+        const rec = m.userData.fade99[i];
+        const isSail = /sail/i.test(m.name || "") || (m.parent && /sail/i.test(m.parent.name || ""));
+        const dest = rec.base * (isSail ? (1 - k * 0.88) : (1 - k * 0.72));
+        rec.mat.opacity = dest;
+        rec.mat.depthWrite = dest > 0.55;
+        rec.mat.transparent = dest < 0.98;
+        out.push(rec.mat);
+      }
+      if (out.length) { if (Array.isArray(m.material)) m.material = out; else m.material = out[0]; }
+    });
+  }
+  let fadeList99 = [];
+  function occludeBetween99(dt) {
+    fadeList99 = [];
+    if (mode !== "sea" || !ship || !camera || titleOn) return 0;
+    const reduce = !!(x3 && x3.calm) || (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches);
+    const rate = reduce ? 2.2 : 7;
+    const sk = 1 - Math.exp(-Math.max(0.01, dt || 0.05) * rate);
+    const others = [];
+    try { foes.forEach(function (f) { if (f && f.alive && !f.gone && !f.sinking && f.root) others.push(f); }); } catch (e) { /* optional */ }
+    try { if (consort && !consort.sinking && !consort.gone && consort.root) others.push(consort); } catch (e2) { /* optional */ }
+    let boardF = null;
+    try { boardF = typeof boardTarget === "function" ? boardTarget() : null; } catch (e3) { /* optional */ }
+    others.forEach(function (f) {
+      const box = hullBox99(f);
+      const hit = camShipSeg99(f.x, f.z);
+      const dShip = Math.hypot(f.x - ship.x, f.z - ship.z);
+      const camD = Math.hypot(f.x - camera.position.x, f.z - camera.position.z);
+      const fluff = (box.big ? 10 : box.mid ? 7 : 5);
+      const onLine = hit.t > 0.08 && hit.t < 0.92 && hit.d < (box.halfW + fluff);
+      let want = 0;
+      if (onLine) {
+        const closeCam = 1 - Math.min(1, Math.max(0, (camD - 8) / 36));
+        const tight = 1 - Math.min(1, hit.d / (box.halfW + fluff));
+        want = Math.max(0, Math.min(1, 0.35 + 0.65 * closeCam * tight));
+        if (dShip > 24 && dShip < 42) want = Math.max(want, 0.4 * tight); /* Batch 99: a ship at 32-37 yd that fills the left is partly faded */
+      }
+      let skip = false;
+      if (boardF && boardF === f && (f.struck75 || f.hull <= (f.hullMax || 100) * 0.4) && dShip < 36) skip = true;
+      if (skip) want = 0;
+      f.fade99 = (f.fade99 || 0) + (want - (f.fade99 || 0)) * sk;
+      if (f.fade99 < 0.02) f.fade99 = 0;
+      applyFade99(f.root, f.fade99, camD < 10 || f.fade99 > 0.5);
+      if (f.fade99 > 0.05) fadeList99.push({ name: f.name, k: Math.round(f.fade99 * 100) / 100, d: Math.round(dShip), cam: Math.round(camD) });
+    });
+    return fadeList99.length;
+  }
+  function rangeInfo99() {
+    let target = null, td = 1e9, near = null, nd = 1e9, large = null, ld = 1e9;
+    try { const b = typeof boardTarget === "function" ? boardTarget() : null; if (b && b.alive !== false && !b.gone) { target = b; td = Math.hypot(b.x - ship.x, b.z - ship.z); } } catch (e) { /* optional */ }
+    try { if (!target && typeof lastFoeHit !== "undefined" && lastFoeHit && lastFoeHit.alive && !lastFoeHit.gone && !lastFoeHit.sinking) { target = lastFoeHit; td = Math.hypot(target.x - ship.x, target.z - ship.z); } } catch (e2) { /* optional */ }
+    try {
+      (foes || []).concat(consort ? [consort] : []).forEach(function (f) {
+        if (!f || f.alive === false || f.gone || f.sinking) return;
+        const d = Math.hypot(f.x - ship.x, f.z - ship.z);
+        if (d < nd) { nd = d; near = f; }
+        const big = !!(f.oro60 || f.galleon || f.boss || (f.hullMax || 0) >= 140);
+        if (big && d < ld) { ld = d; large = f; }
+      });
+    } catch (e3) { /* optional */ }
+    if (!target && near) { target = near; td = nd; }
+    return { target: target, td: td, large: large, ld: ld, near: near, nd: nd };
+  }
+  let rangeTagT99 = 0;
+  function updateRange99() {
+    const qaOn = /[?&]qa=1\b/.test(location.search);
+    let devOn = false;
+    try { const dp = document.getElementById("devpanel57"); devOn = !!(dp && dp.style.display !== "none" && dp.offsetHeight > 0); } catch (e) { /* optional */ }
+    try { if (document.getElementById("devmode47") || (typeof god57 !== "undefined" && god57)) devOn = true; } catch (e2) { /* optional */ }
+    const on = (qaOn || devOn) && mode === "sea" && !titleOn;
+    let el = document.getElementById("range99");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "range99";
+      el.style.cssText = "display:none;position:absolute;left:50%;transform:translateX(-50%);padding:4px 11px;border-radius:10px;background:rgba(8,20,32,.82);color:#f4efe2;font:700 13px system-ui,sans-serif;pointer-events:none;white-space:nowrap;z-index:8;letter-spacing:.02em";
+      const ui = document.getElementById("ui"); if (ui) ui.appendChild(el);
+    }
+    let qline = document.getElementById("qarange99");
+    if (qaOn && !qline) {
+      qline = document.createElement("div");
+      qline.id = "qarange99";
+      qline.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);top:calc(34px + env(safe-area-inset-top));z-index:61;font:700 12px system-ui,sans-serif;color:#f4efe2;background:rgba(8,20,32,.7);padding:2px 8px;border-radius:8px;pointer-events:none;white-space:nowrap";
+      document.body.appendChild(qline);
+    }
+    const info = rangeInfo99();
+    const parts = [];
+    if (info.target && info.td < 1e8) parts.push((info.target.name || "Target") + " " + Math.round(info.td) + " yd");
+    if (info.large && info.large !== info.target && info.ld < 1e8) parts.push((info.large.oro60 || info.large.galleon ? "Galleon" : "Large") + " " + (info.large.name || "") + " " + Math.round(info.ld) + " yd");
+    const text = parts.length ? parts.join(" \u00B7 ") : "Range: none";
+    if (el) {
+      const ui = document.getElementById("ui");
+      const ur = ui ? ui.getBoundingClientRect() : { top: 0 };
+      const chip = document.getElementById("dockchip98");
+      const badge = typeof safeBadge !== "undefined" ? safeBadge : null;
+      const cr = chip && chip.style.display !== "none" ? chip.getBoundingClientRect() : null;
+      const br = badge && badge.style.display === "block" ? badge.getBoundingClientRect() : null;
+      let top = 78;
+      if (cr && cr.height) top = cr.bottom - ur.top + 6;
+      else if (br && br.height) top = br.bottom - ur.top + 6;
+      el.style.top = Math.round(top) + "px";
+      el.textContent = text;
+      el.style.display = on ? "block" : "none";
+    }
+    if (qline) { qline.textContent = "Range: " + text; qline.style.display = on ? "block" : "none"; }
+    try {
+      const st = document.getElementById("devgod57");
+      if (st && on && info.target && info.td < 1e8) {
+        if (!st.dataset.base99) st.dataset.base99 = st.textContent;
+        const base = st.dataset.base99 || st.textContent;
+        if (!/yd/.test(base)) st.textContent = base + " \u00B7 " + Math.round(info.td) + " yd";
+      }
+    } catch (e3) { /* optional */ }
+    rangeTagT99++;
+    if (on && (rangeTagT99 % 15 === 0)) {
+      try {
+        const marked = {};
+        [info.target, info.large].forEach(function (f) {
+          if (!f || !f.root || marked[f.name]) return;
+          marked[f.name] = 1;
+          const d = f === info.target ? info.td : info.ld;
+          if (!f.rangeTag99) {
+            const spr = typeof nameSprite === "function" ? nameSprite("0 yd", 0) : null;
+            if (spr) { spr.userData.range99 = 1; f.root.add(spr); f.rangeTag99 = spr; }
+          }
+          if (f.rangeTag99) {
+            const label = Math.round(d) + " yd";
+            if (f.rangeTag99.userData.txt99 !== label) {
+              f.rangeTag99.userData.txt99 = label;
+              const nspr = nameSprite(label, 0);
+              f.rangeTag99.material.map = nspr.material.map;
+              f.rangeTag99.material.needsUpdate = true;
+              f.rangeTag99.scale.copy(nspr.scale);
+            }
+            const rig = typeof rigHeight === "function" ? rigHeight(f.hullId || "cutter") : { name: 16 };
+            f.rangeTag99.position.y = (rig.name || 16) + 2.2;
+            f.rangeTag99.visible = true;
+          }
+        });
+      } catch (e4) { /* optional */ }
+    }
+    if (!on) {
+      try { foes.forEach(function (f) { if (f && f.rangeTag99) f.rangeTag99.visible = false; }); } catch (e5) { /* optional */ }
+    }
+  }
+  function palePlanes99() {
+    const out = [];
+    try {
+      scene.traverse(function (o) {
+        if (!o.visible || !o.isMesh || !o.geometry) return;
+        const typ = o.geometry.type || "";
+        if (typ !== "PlaneGeometry" && typ !== "CircleGeometry") return;
+        const e = o.matrixWorld && o.matrixWorld.elements; if (!e) return;
+        const x = e[12], y = e[13], z = e[14];
+        const d = camera ? Math.hypot(x - camera.position.x, z - camera.position.z) : 0;
+        const mat = o.material;
+        const noMap = !(mat && mat.map);
+        const name = o.name || "";
+        if (/water|seabed|bow-foam|consort-foam|sail/i.test(name)) return;
+        const op = mat && mat.opacity != null ? mat.opacity : 1;
+        if (op < 0.05) return;
+        if (d < 80 && (noMap || /wind-streak|wake-quad|pennant/i.test(name))) out.push({ name: name || typ, d: Math.round(d * 10) / 10, y: Math.round(y * 10) / 10, op: Math.round(op * 100) / 100, noMap: !!noMap });
+      });
+    } catch (e) { /* optional */ }
+    return out;
+  }
 
   function strikeLim76(f) { return Math.max(3, Math.round((f.hullMax || 100) * 0.06)); }
   function strike76(f) { const lim = strikeLim76(f); f.struck75 = lim; f.ignore = 0; f.hull = Math.max(1, Math.min(f.hull, lim)); f.hunt = false; f.cool = Math.max(f.cool || 0, 4); try { sfx64("struck76"); } catch (e) { /* optional */ } try { floatText(f.x, 10, f.z, "struck", "#ffd75a"); } catch (e) { /* optional */ } if (x3) { x3.struck76 = (x3.struck76 || 0) + 1; if (x3.struck76 === 1) { rec69("Lore: a ship that hauls down her flag gives up the fight. Honour says you board, not sink."); rec69("Lore: your consort holds fire on a struck ship."); } } say(f.name + " strikes her colours! Come alongside and board her.", 3.5); /* Batch 76 (Games 2: two lines per strike): say() already writes Recent */ }
@@ -8450,14 +8714,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
             catch (e1) { d.cx94 = p.x; d.cz94 = p.z; }
           }
         }
-        const lim94 = room57 ? 0 : (sea ? 55 : 65); /* Batch 96: tighter ashore dress (was 80) aimed at the 265 Bramble reading */
+        const lim94 = room57 ? 0 : (sea ? 55 : 58); /* Batch 99: tighter ashore dress (was 65). Sea approach stays 55 so t182 / t185 still hold */
         const want = Math.hypot(d.cx94 - cx, d.cz94 - cz) < lim94;
         if (o.visible !== want) o.visible = want;
       }
       if (typeof quayLanterns !== "undefined") {
         for (let i = 0; i < quayLanterns.length; i++) {
           const g = quayLanterns[i]; if (!g) continue;
-          const wantL = !room57 && Math.hypot(g.position.x - sx, g.position.z - sz) < (sea ? 70 : 72); /* Batch 96: tighter ashore lanterns (was 90) */
+          const wantL = !room57 && Math.hypot(g.position.x - sx, g.position.z - sz) < (sea ? 70 : 64); /* Batch 99: tighter ashore lanterns (was 72). Sea stays 70 */
           if (g.visible !== wantL) g.visible = wantL;
         }
       }
@@ -10041,7 +10305,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const colours = nationWord(f.nation);
     const temper = foeTemper(f);
     const stance98 = (typeof foeHostile97 === "function" && foeHostile97(f)) ? "Hostile." : "Neutral.";
-    say(f.name + ", " + hullWord(f.hullId) + ", " + (colours ? colours + " colours" : "no colours") + ". " + stance98 + " Hull " + Math.round(f.hull) + " of " + f.hullMax + ". " + Math.round(best.d) + " yards. " + (temper === "bold" ? "A bold captain." : temper === "wary" ? "A wary captain." : "A steady captain.") + (f.thin > 0 ? " Her crew is thin." : ""), 5);
+    say(f.name + ", " + hullWord(f.hullId) + ", " + (colours ? colours + " colours" : "no colours") + ". " + stance98 + " Hull " + Math.round(f.hull) + " of " + f.hullMax + ". " + Math.round(best.d) + " yd. " + (temper === "bold" ? "A bold captain." : temper === "wary" ? "A wary captain." : "A steady captain.") + (f.thin > 0 ? " Her crew is thin." : ""), 5);
   }
   // Tavern bounties: a posted reward for sinking one named patrol. One at a time, lasts 15 minutes once taken.
   const POSTING_PAY = 150, POSTING_LIFE = 900, POSTING_SWIFT = 300, SWIFT_BONUS = 30;
@@ -10552,7 +10816,8 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   const session58 = performance.now();
   function bugReport58() {
     let isl = "?"; try { const px = mode === "land" ? person.x : ship.x, pz = mode === "land" ? person.z : ship.z; let bd = 1e9; ISLANDS.forEach(function (q) { const d = Math.hypot(q.x - px, q.z - pz); if (d < bd) { bd = d; isl = (q.name || "island") + " " + Math.round(d) + " m"; } }); } catch (e) { /* optional */ }
-    const L = ["Salt & Shot bug report", "Build: batch 98", "Batch 98: " + line98(), "Batch 97: " + line97(), "Batch 96: " + line96(), "Batch 95: " + line95(), "Batch 94: " + line94(), "Batch 93: " + line93(), "Batch 92: " + line92(), "Batch 91: " + line91(), "Batch 90: " + line90(), "Batch 89: " + line89(), "Batch 88: " + line88(), "Batch 87: " + line87(), "Batch 86: " + line86(), "Batch 85: " + line85(), "Batch 84: " + line84(), "Batch 83: " + line83(), "Batch 82: " + line82(), "Batch 81: " + line81(), "Batch 80: " + line80(), "Batch 79: " + line79(), "Batch 78: " + line78(), "Batch 77: largest prize " + (x3.bigPrize77 || 0) + ", draw peak " + drawPeak77, "Batch 76: struck " + (x3.struck76 || 0) + ", news " + newsAgo76() + ", toasts queued " + toastQueue.length, "Batch 75: events " + (x3.fevN74 || 0) + ", " + jobsLine75() + ", galleon " + oroState75(), "News: " + (x3.fev74 || "none") + " (" + (x3.fevN74 || 0) + " so far), jobs " + JOBS56.length + ", ports greeted " + (x3.ports74 || "-"), "Graphics: " + (x3.lowGfx ? "low" : "full") + ", Boardings: " + (x3.boards71 || 0) + " (won " + (x3.boardWins71 || 0) + "), fight call cuts: " + ["noFightPx70", "noPanelHide70", "noSpr70", "noShadow70", "noFar71"].filter(function (k) { return x3[k]; }).map(function (k) { return k + " off"; }).join(", ") || "all on", "App: " + appMode66() + ", SW " + sw66.state + (sw66.ver ? " (" + sw66.ver + ")" : "") + ", " + (navigator.onLine === false ? "offline" : "online") + ", storage " + (persist66 === null ? "?" : persist66 ? "persisted" : "not persisted"), "Device: " + (navigator.deviceMemory || "?") + " GB, " + (navigator.hardwareConcurrency || "?") + " cores, heap " + (performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + " MB" : "?") + ", pixel ratio " + renderer.getPixelRatio().toFixed(2) + ", perf steps " + perfState.steps + (x3 && x3.save66 ? ", Battery saver" : "") + ", crew proxies " + pxN67 + "/" + pxBuilt67 + ", flags merged " + flagsMerged67 + ", trim baked " + trimBaked68 + ", your sails " + (ship.root && ship.root.userData.sailM68 && !(x3 && x3.noYou68) ? "merged" : "separate") + ", your ship calls " + (function () { try { return shipCalls68(); } catch (e) { return "?"; } })() + ", sails merged on " + (function () { let n = 0; try { lodShips55.forEach(function (o) { if (o.userData.sailM68) n++; }); } catch (e) { /* optional */ } return n; })() + " ships" + (x3 && x3.calm ? ", reduced motion" : "") + (x3 && x3.tipsOn === false ? ", tips off" : ""), "Story: chapter IV stage " + (x3 ? (x3.sCh460 || 0) : "?") + (x3 && x3.fin66 ? ", finale paid " + x3.fin66 : "") + (x3 && x3.keep66 ? ", keepsake: " + x3.keep66 : ""), "Perf: " + lastCalls61 + " draw calls, " + Math.round(fps65) + " fps, fight peak " + peak73.max + " calls", "Session: " + Math.round((performance.now() - session64) / 60000) + " min" + (dev57 ? ", Dev used" : ", Dev not used"), "Tips seen: " + ((x3 && x3.tips64) || "").split("|").filter(Boolean).length, "Last error: " + (lastErr65 || "none"), "Story: chapter " + storyCh60() + ", Chapter IV stage " + (x3 ? x3.sCh460 || 0 : 0), "Difficulty: " + ((x3 && x3.diff) || "normal") + (slow63 < 1 ? " (QA slow motion)" : "") + (auto63 ? " (QA auto-gunner)" : ""), (function () { try { const fs = foes.filter(function (f) { return (f.oro60 || f.oroEsc60) && !f.gone; }); return fs.length ? "Galleon fight: " + fs.map(function (f) { return f.name + " " + Math.max(0, Math.round(f.hull)) + "/" + f.hullMax + (f.hunt ? " hunting" : f.held63 ? " held back" : ""); }).join(", ") : "Galleon fight: none"; } catch (e) { return "Galleon fight: ?"; } })(), "Screen: " + innerWidth + "x" + innerHeight + " @" + (window.devicePixelRatio || 1).toFixed(2), "Settings: sound " + (x3 ? x3.volume : "?") + ", gfx " + (x3 && x3.lowGfx ? "low" : "normal") + (x3 && x3.assist64 ? ", aim assist" : "") + (x3 && x3.speed64 ? ", 75% speed" : "") + (x3 && x3.cb64 ? ", colour-blind" : "") + (x3 && x3.hc64 ? ", high contrast" : ""), "Last toasts: " + (toastLog64.slice(-5).join(" | ") || "none"), "Browser: " + (navigator.userAgent.match(/(Chrome|Firefox|Safari|Edg)\/[\d.]+/) || ["?"])[0] + (/Android/.test(navigator.userAgent) ? " Android" : /iPhone|iPad/.test(navigator.userAgent) ? " iOS" : ""), /* Batch 64 */ "Input: menu " + (menuOpen ? "open (" + (menuKind || "?") + ")" : "closed") + ", paused " + paused + (room57 ? ", room at counter " + !!room57.talked : ""), "Time: " + new Date().toString(), "Where: " + mode + (room57 ? " (inside " + room57.kind + ")" : "") + ", near " + isl, "Ship: " + playerHull.id + " hull " + Math.round(ship.hull) + "/" + ship.hullMax + ", crew " + x3.crew, "Gold " + ledger.gold + " \u00B7 XP " + x3.xp + " \u00B7 " + DIFF_WORD[x3.diff] + (dev57 ? " \u00B7 DEV MODE" : ""), "Frame rate about " + (fpsV54 || Math.round(1000 / Math.max(1, fps48.iv))) + " fps, draw calls " + (lastCalls61 || renderer.info.render.calls || "?") + " (fight peak " + Math.max(peak73.max, peak73.last || 0) + ")" + ", smoke " + smokes.length + ", shots " + shots.length + ", foes " + foes.filter(function (f) { return f.alive; }).length + (god57 ? ", god mode" : ""), "Screen " + innerWidth + "x" + innerHeight + " @" + (window.devicePixelRatio || 1) + " (drawing at " + renderer.getPixelRatio() + ", shadows " + (renderer.shadowMap.enabled ? sun.shadow.mapSize.x : "off") + ", " + shadowCut60 + " small casters off)" + ", graphics " + (x3.lowGfx ? "low" : "full"), "Siege: " + (siege54 ? PORTS[siege54.i].name + ", " + siege54.foes.filter(function (f) { return f.alive && !f.sinking; }).length + " guards" : "none"), "Dev: " + (dev57 ? "on" + (god57 ? ", god" : "") + (rich57 ? ", gold" : "") : "off"), "Story: chapter III stage " + (x3.sSpy59 || 0) + ", widow " + (x3.sWidow59 || 0) + ", bell " + (x3.sBell59 || 0) + ", ports taken " + ((x3.capLog59 || []).length), "Jobs: " + (function () { try { return Object.keys(jobs56()).join(", ") || "none"; } catch (e) { return "?"; } })(), "Last dodges: " + dodgeLog56.slice(-3).map(function (d) { return d.k + (d.ok ? " dodged" : " hit"); }).join(", "), "Save size: " + (function () { try { let n = 0; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); n += (localStorage.getItem(k) || "").length; } return Math.round(n / 1024) + " KB"; } catch (e) { return "?"; } })(), "Device: " + navigator.userAgent, "What happened: "]; /* Batch 58: jobs, dodges, save size */
+    const L = ["Salt & Shot bug report", "Build: batch 99", "Batch 99: " + line99(), "Batch 98: " + line98(), "Batch 97: " + line97(), "Batch 96: " + line96(), "Batch 95: " + line95(), "Batch 94: " + line94(), "Batch 93: " + line93(), "Batch 92: " + line92(), "Batch 91: " + line91(), "Batch 90: " + line90(), "Batch 89: " + line89(), "Batch 88: " + line88(), "Batch 87: " + line87(), "Batch 86: " + line86(), "Batch 85: " + line85(), "Batch 84: " + line84(), "Batch 83: " + line83(), "Batch 82: " + line82(), "Batch 81: " + line81(), "Batch 80: " + line80(), "Batch 79: " + line79(), "Batch 78: " + line78(), "Batch 77: largest prize " + (x3.bigPrize77 || 0) + ", draw peak " + drawPeak77, "Batch 76: struck " + (x3.struck76 || 0) + ", news " + newsAgo76() + ", toasts queued " + toastQueue.length, "Batch 75: events " + (x3.fevN74 || 0) + ", " + jobsLine75() + ", galleon " + oroState75(), "News: " + (x3.fev74 || "none") + " (" + (x3.fevN74 || 0) + " so far), jobs " + JOBS56.length + ", ports greeted " + (x3.ports74 || "-"), "Graphics: " + (x3.lowGfx ? "low" : "full") + ", Boardings: " + (x3.boards71 || 0) + " (won " + (x3.boardWins71 || 0) + "), fight call cuts: " + ["noFightPx70", "noPanelHide70", "noSpr70", "noShadow70", "noFar71"].filter(function (k) { return x3[k]; }).map(function (k) { return k + " off"; }).join(", ") || "all on", "App: " + appMode66() + ", SW " + sw66.state + (sw66.ver ? " (" + sw66.ver + ")" : "") + ", " + (navigator.onLine === false ? "offline" : "online") + ", storage " + (persist66 === null ? "?" : persist66 ? "persisted" : "not persisted"), "Device: " + (navigator.deviceMemory || "?") + " GB, " + (navigator.hardwareConcurrency || "?") + " cores, heap " + (performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + " MB" : "?") + ", pixel ratio " + renderer.getPixelRatio().toFixed(2) + ", perf steps " + perfState.steps + (x3 && x3.save66 ? ", Battery saver" : "") + ", crew proxies " + pxN67 + "/" + pxBuilt67 + ", flags merged " + flagsMerged67 + ", trim baked " + trimBaked68 + ", your sails " + (ship.root && ship.root.userData.sailM68 && !(x3 && x3.noYou68) ? "merged" : "separate") + ", your ship calls " + (function () { try { return shipCalls68(); } catch (e) { return "?"; } })() + ", sails merged on " + (function () { let n = 0; try { lodShips55.forEach(function (o) { if (o.userData.sailM68) n++; }); } catch (e) { /* optional */ } return n; })() + " ships" + (x3 && x3.calm ? ", reduced motion" : "") + (x3 && x3.tipsOn === false ? ", tips off" : ""), "Story: chapter IV stage " + (x3 ? (x3.sCh460 || 0) : "?") + (x3 && x3.fin66 ? ", finale paid " + x3.fin66 : "") + (x3 && x3.keep66 ? ", keepsake: " + x3.keep66 : ""), "Perf: " + lastCalls61 + " draw calls, " + Math.round(fps65) + " fps, fight peak " + peak73.max + " calls", "Session: " + Math.round((performance.now() - session64) / 60000) + " min" + (dev57 ? ", Dev used" : ", Dev not used"), "Tips seen: " + ((x3 && x3.tips64) || "").split("|").filter(Boolean).length, "Last error: " + (lastErr65 || "none"), "Story: chapter " + storyCh60() + ", Chapter IV stage " + (x3 ? x3.sCh460 || 0 : 0), "Difficulty: " + ((x3 && x3.diff) || "normal") + (slow63 < 1 ? " (QA slow motion)" : "") + (auto63 ? " (QA auto-gunner)" : ""), (function () { try { const fs = foes.filter(function (f) { return (f.oro60 || f.oroEsc60) && !f.gone; }); return fs.length ? "Galleon fight: " + fs.map(function (f) { return f.name + " " + Math.max(0, Math.round(f.hull)) + "/" + f.hullMax + (f.hunt ? " hunting" : f.held63 ? " held back" : ""); }).join(", ") : "Galleon fight: none"; } catch (e) { return "Galleon fight: ?"; } })(), "Screen: " + innerWidth + "x" + innerHeight + " @" + (window.devicePixelRatio || 1).toFixed(2), "Settings: sound " + (x3 ? x3.volume : "?") + ", gfx " + (x3 && x3.lowGfx ? "low" : "normal") + (x3 && x3.assist64 ? ", aim assist" : "") + (x3 && x3.speed64 ? ", 75% speed" : "") + (x3 && x3.cb64 ? ", colour-blind" : "") + (x3 && x3.hc64 ? ", high contrast" : ""), "Last toasts: " + (toastLog64.slice(-5).join(" | ") || "none"), "Browser: " + (navigator.userAgent.match(/(Chrome|Firefox|Safari|Edg)\/[\d.]+/) || ["?"])[0] + (/Android/.test(navigator.userAgent) ? " Android" : /iPhone|iPad/.test(navigator.userAgent) ? " iOS" : ""), /* Batch 64 */ "Input: menu " + (menuOpen ? "open (" + (menuKind || "?") + ")" : "closed") + ", paused " + paused + (room57 ? ", room at counter " + !!room57.talked : ""), "Time: " + new Date().toString(), "Where: " + mode + (room57 ? " (inside " + room57.kind + ")" : "") + ", near " + isl, "Ship: " + playerHull.id + " hull " + Math.round(ship.hull) + "/" + ship.hullMax + ", crew " + x3.crew, "Gold " + ledger.gold + " \u00B7 XP " + x3.xp + " \u00B7 " + DIFF_WORD[x3.diff] + (dev57 ? " \u00B7 DEV MODE" : ""), "Frame rate about " + (fpsV54 || Math.round(1000 / Math.max(1, fps48.iv))) + " fps, draw calls " + (lastCalls61 || renderer.info.render.calls || "?") + " (fight peak " + Math.max(peak73.max, peak73.last || 0) + ")" + ", smoke " + smokes.length + ", shots " + shots.length + ", foes " + foes.filter(function (f) { return f.alive; }).length + (god57 ? ", god mode" : ""), "Screen " + innerWidth + "x" + innerHeight + " @" + (window.devicePixelRatio || 1) + " (drawing at " + renderer.getPixelRatio() + ", shadows " + (renderer.shadowMap.enabled ? sun.shadow.mapSize.x : "off") + ", " + shadowCut60 + " small casters off)" + ", graphics " + (x3.lowGfx ? "low" : "full"), "Siege: " + (siege54 ? PORTS[siege54.i].name + ", " + siege54.foes.filter(function (f) { return f.alive && !f.sinking; }).length + " guards" : "none"), "Dev: " + (dev57 ? "on" + (god57 ? ", god" : "") + (rich57 ? ", gold" : "") : "off"), "Story: chapter III stage " + (x3.sSpy59 || 0) + ", widow " + (x3.sWidow59 || 0) + ", bell " + (x3.sBell59 || 0) + ", ports taken " + ((x3.capLog59 || []).length), "Jobs: " + (function () { try { return Object.keys(jobs56()).join(", ") || "none"; } catch (e) { return "?"; } })(), "Last dodges: " + dodgeLog56.slice(-3).map(function (d) { return d.k + (d.ok ? " dodged" : " hit"); }).join(", "), "Save size: " + (function () { try { let n = 0; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); n += (localStorage.getItem(k) || "").length; } return Math.round(n / 1024) + " KB"; } catch (e) { return "?"; } })(), "Device: " + navigator.userAgent, "What happened: "]; /* Batch 58: jobs, dodges, save size */
+    try { const r99 = rangeInfo99(); const bits = []; if (r99.target && r99.td < 1e8) bits.push(r99.target.name + " " + Math.round(r99.td) + " yd"); if (r99.large && r99.large !== r99.target && r99.ld < 1e8) bits.push("nearest large " + r99.large.name + " " + Math.round(r99.ld) + " yd"); L.splice(2, 0, "Range: " + (bits.join(", ") || "none")); } catch (eR99) { /* optional */ }
     const txt = L.join("\n"); bugText58 = txt;
     const done = function () { say("Bug report copied. Paste it into your message and add what happened.", 3); toast("Bug report copied to the clipboard.", "Beta"); sfx64("ok"); /* Batch 64: also a toast, visible above Settings */ };
     try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt).then(done, function () { window.prompt("Copy this report:", txt); }); return; } } catch (e) { /* fall through */ }
@@ -10602,7 +10867,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow("Tips: " + (x3.tipsOn === false || x3.hintsOff ? "off" : "on"), function () { const on = x3.tipsOn === false || !!x3.hintsOff; x3.tipsOn = on; x3.hintsOff = !on; writeSave(); renderSettings(); })); /* Batch 66: merges Captain's tips */
     box.appendChild(setRow("Show FPS: " + (x3.fps65 ? "on" : "off"), function () { x3.fps65 = !x3.fps65; writeSave(); renderSettings(); }));
     box.appendChild(setRow("Sound test", function () { if (!x3.volume) toast("Sound is off in Settings, so nothing plays.", "Sound"); /* Batch 78 (Games 2): one Sound test row */ ["click", "coin", "rank", "harbour", "horn", "clang", "whistle", "chime", "jobcoin", /* Batch 75 */ "sale", "thunder", "sight", /* Batch 76 */ "struck76", "page76", /* Batch 77 */ "horn77e", "horn77s", "horn77f"].forEach(function (k, i) { setTimeout(function () { sfx64(k); }, i * 600); }); })); /* Batch 74 */
-    { const nw = document.createElement("div"); nw.id = "pausenews74"; nw.style.cssText = "grid-column:1/-1;font-size:13px;opacity:.85"; nw.textContent = fevLine74() + " Events seen: " + (x3.fevN74 || 0) + "."; box.appendChild(nw); } { const wn = document.createElement("div"); wn.id = "pausenew75"; wn.style.cssText = "grid-column:1/-1;font-size:12px;opacity:.75"; wn.textContent = "New in batch 98: while you are docked, a Tavern, Market and Shipyard chip stays readable on a tight phone zoom. Sail keeps its place when Board appears. The auto-gunner prefers your target or a nearer, weaker ship. God mode applies on the first tap. Settings still offer Larger text, and the list scrolls on a small screen. Jeff signs the Android app; this build does not create a key or upload to Play."; box.appendChild(wn); } /* Batch 75 */ /* Batch 74: faction news in Pause */
+    { const nw = document.createElement("div"); nw.id = "pausenews74"; nw.style.cssText = "grid-column:1/-1;font-size:13px;opacity:.85"; nw.textContent = fevLine74() + " Events seen: " + (x3.fevN74 || 0) + "."; box.appendChild(nw); } { const wn = document.createElement("div"); wn.id = "pausenew75"; wn.style.cssText = "grid-column:1/-1;font-size:12px;opacity:.75"; wn.textContent = "New in batch 99: harbour smoke stays out of the lens, even underway. A ship that cuts between you and the camera fades so you can still see your own. Hulls push apart on contact. QA and Dev show range in yards. The frame-rate tip no longer covers the middle of a tight zoom. 100 is the private beta; Jeff signs the Android app and, if he wants, uploads to Play. This build does not create a key or upload to Play."; box.appendChild(wn); } /* Batch 75 */ /* Batch 74: faction news in Pause */
     box.appendChild(setRow("Recent messages", function () { const L = recent67().filter(function (x) { return filt72(x); }).slice(-10); /* Batch 67: 10, story lines too */ /* asked for: shown now, even while paused; queued messages are kept */ showCard68("recent68", "Recent messages (last 40)", L.length ? recentDay69().filter(function (x) { return filt72(x); }).slice(-10) : ["No messages yet."], true); /* Batch 68 (Games 2: button opened nothing behind Settings) */ }));
     box.appendChild(setRow("Game speed: " + (x3.speed64 ? "75%" : "100%"), function () { x3.speed64 = !x3.speed64; writeSave(); renderSettings(); }));
     box.appendChild(setRow("UI sounds: " + (x3.uiSnd64 === false ? "off" : "on"), function () { x3.uiSnd64 = x3.uiSnd64 === false; writeSave(); renderSettings(); }));
@@ -10621,10 +10886,15 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     box.appendChild(setRow(pauseKind === "pause" ? "Resume" : "Close", closeSettings));
     const ver = document.createElement("div");
     ver.id = "setver";
-    ver.textContent = "Version: batch 98";
-    ver.title = "Private beta"; { const as64 = [x3.assist64 ? "aim assist" : "", x3.speed64 ? "75% speed" : "", x3.cb64 ? "colour-blind bars" : ""].filter(Boolean); if (as64.length) ver.textContent += " \u00B7 assists: " + as64.join(", "); } /* Batch 64 */ ver.textContent += " \u00B7 private beta \u00B7 played " + Math.max(1, Math.round((performance.now() - session58) / 60000)) + " min this session" + (x3 && x3.dodged53 ? " \u00B7 " + x3.dodged53 + " blows dodged" : "") + (x3 && x3.sDinner === 3 ? " \u00B7 Chapter III " + ((x3.sSpy59 || 0) >= 6 ? "done" : "under way") : "") + (x3 && x3.capLog59 && x3.capLog59.length ? " \u00B7 " + x3.capLog59.length + " port" + (x3.capLog59.length > 1 ? "s" : "") + " taken" : ""); /* Batch 58. Batch 59: story and captures */
+    ver.textContent = "Version: batch 99";
+    ver.title = "Batch 99 — last build before the private beta"; { const as64 = [x3.assist64 ? "aim assist" : "", x3.speed64 ? "75% speed" : "", x3.cb64 ? "colour-blind bars" : ""].filter(Boolean); if (as64.length) ver.textContent += " \u00B7 assists: " + as64.join(", "); } /* Batch 64 */ ver.textContent += " \u00B7 private beta \u00B7 played " + Math.max(1, Math.round((performance.now() - session58) / 60000)) + " min this session" + (x3 && x3.dodged53 ? " \u00B7 " + x3.dodged53 + " blows dodged" : "") + (x3 && x3.sDinner === 3 ? " \u00B7 Chapter III " + ((x3.sSpy59 || 0) >= 6 ? "done" : "under way") : "") + (x3 && x3.capLog59 && x3.capLog59.length ? " \u00B7 " + x3.capLog59.length + " port" + (x3.capLog59.length > 1 ? "s" : "") + " taken" : ""); /* Batch 58. Batch 59: story and captures */
     ver.style.cssText = "font:12px system-ui,sans-serif;opacity:.6;text-align:center;margin-top:2px";
     box.appendChild(ver);
+    const bnote99 = document.createElement("div");
+    bnote99.id = "betanote99";
+    bnote99.textContent = "Batch 99 — last build before the private beta. Jeff signs and uploads the Android app; the game does not create a key or send a report unless you paste one.";
+    bnote99.style.cssText = "grid-column:1/-1;font:12px system-ui,sans-serif;opacity:.75;text-align:center;margin:4px 0 8px;line-height:1.35";
+    box.appendChild(bnote99);
   }
   // Batch 47: credits and copyright, the same text as CREDITS.md in the published repo.
   const MIT47 = "The MIT License\n\nCopyright \u00a9 2010-2023 three.js authors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n";
@@ -11612,6 +11882,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         color: 0xe7f4f1, map: wakeTex, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide
       });
       const mesh = new THREE.Mesh(wakeGeo, mat);
+      mesh.name = "wake-quad";
       mesh.rotation.order = "YXZ";
       mesh.rotation.x = -Math.PI / 2;
       mesh.position.y = 0.07;
@@ -11661,9 +11932,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       const k = Math.max(0, p.life / p.max);
       // Batch 49: each foam patch fades in quickly, then spreads wider and thins as it ages, so the wake opens into a V instead of a row of stamps.
       const born = Math.min(1, (p.max - p.life) / 0.12), age = 1 - k;
-      const bright = Math.min(1, p.speed / 10) * k * (0.6 + 0.4 * k) * gain * born;
+      const bright = Math.min(0.45, Math.min(1, p.speed / 10) * k * (0.6 + 0.4 * k) * gain * born); /* Batch 99: cap opacity so a close wake cannot blow out to a white slab */
       p.mesh.material.opacity = bright;
-      p.mesh.scale.set(1 + age * (0.7 + Math.min(1, p.speed / 10) * 0.6), 1 + age * 0.3, 1);
+      p.mesh.scale.set(Math.min(2.1, 1 + age * (0.7 + Math.min(1, p.speed / 10) * 0.6)), Math.min(1.4, 1 + age * 0.3), 1);
       p.mesh.visible = bright > 0.035;
       if (p.life <= 0) {
         p.mesh.visible = false;
@@ -12937,6 +13208,19 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       camBob = damp(camBob, ship.bobY || 0, dt, 1.7);
       desired.set(ship.x - fx * hDist + rx * 3.2, camY + camBob, ship.z - fz * hDist + rz * 3.2);
       try { camFillBack91(desired, dt); camClearHulls88(desired); } catch (e) { /* optional */ } /* Batch 95: fill first, then push out of hulls so a back-off cannot land inside an escort. Batch 91 */
+      try {
+        if (mode === "sea" && ship && desired) {
+          const pd = Math.hypot(desired.x - ship.x, desired.z - ship.z);
+          const need = (playerHull && /frigate|manowar/.test(playerHull.id) ? 16 : 13);
+          if (pd < need) {
+            const yaw = (camHead != null ? camHead : ship.heading) + (lookYaw || 0);
+            const fx = Math.sin(yaw), fz = Math.cos(yaw);
+            const push = need - pd;
+            desired.x -= fx * push; desired.z -= fz * push;
+            desired.y = Math.min(26, Math.max(desired.y, 9 + (need - pd) * 0.35));
+          }
+        }
+      } catch (eOwn) { /* optional */ } /* Batch 99: do not sit in the player's own sails at 15-38 yd (98-s6-15, 17) */
       look.set(ship.x + fx * 1.2 + rx * (camFillS95.lookS || 0) + fx * (camFillS95.lookF || 0), 2.6 + lift + camBob, ship.z + fz * 1.2 + rz * (camFillS95.lookS || 0) + fz * (camFillS95.lookF || 0)); /* Batch 97: look toward a nearby large ship so both hulls stay in the frame */
     } else {
       // Batch 44: the camera follows the captain's facing only for forward walking; sideways pushes no longer swing it like tank controls.
@@ -14458,7 +14742,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   document.getElementById("ui").appendChild(dockChip98);
   function placeHbrChip98() {
     try {
-      const docked = !!(x3 && !titleOn && mode === "sea" && !menuOpen && !fightOn && safeHarbourAt(ship.x, ship.z) && Math.abs(ship.speed) < 1.5);
+      const docked = !!(x3 && !titleOn && mode === "sea" && !menuOpen && !fightOn && safeHarbourAt(ship.x, ship.z)); /* Batch 99: stays on while you are in harbour, not only when moored */
       dockChip98.style.display = docked ? "block" : "none";
       if (!docked) return;
       const ui = document.getElementById("ui");
@@ -14804,22 +15088,44 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     const st = document.createElement("div"); st.id = "devstate57"; st.style.cssText = "margin-top:6px;font-size:12px;opacity:.85"; p.appendChild(st);
     function placeDev98() {
       try {
-        const btns = document.getElementById("btns");
+        const ids = ["btns", "sail", "fire", "act", "fireport47", "firestbd47", "shot", "board", "boardslot98"];
         const map = document.getElementById("map");
         const logEl = document.getElementById("log");
-        const br = btns && btns.getBoundingClientRect();
+        const hit = function (a, b) { return a && b && a.width && b.width && a.right > b.left + 2 && a.left < b.right - 2 && a.bottom > b.top + 2 && a.top < b.bottom - 2; };
+        const rects = [];
+        ids.forEach(function (id) {
+          const e = document.getElementById(id);
+          if (!e || e.style.display === "none" || (id !== "btns" && getComputedStyle(e).visibility === "hidden")) return;
+          const r = e.getBoundingClientRect();
+          if (r.width && r.height) rects.push(r);
+        });
+        let union = null;
+        rects.forEach(function (r) {
+          if (!union) union = { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+          else { union.left = Math.min(union.left, r.left); union.right = Math.max(union.right, r.right); union.top = Math.min(union.top, r.top); union.bottom = Math.max(union.bottom, r.bottom); }
+        });
         const mr = map && map.getBoundingClientRect();
         const lr = logEl && logEl.getBoundingClientRect();
-        const hit = function (a, b) { return a && b && a.width && b.width && a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom; };
         btn.style.left = "auto";
-        if (br && br.height) {
-          btn.style.top = "auto";
-          btn.style.right = Math.max(8, Math.round(innerWidth - br.right)) + "px";
-          btn.style.bottom = Math.max(8, Math.round(innerHeight - br.top + 8)) + "px";
-          const dr = btn.getBoundingClientRect();
-          if ((mr && (hit(dr, mr) || dr.top < mr.bottom + 6)) || (lr && hit(dr, lr))) {
-            btn.style.right = Math.max(8, Math.round(innerWidth - br.left + 8)) + "px";
-            btn.style.bottom = Math.max(8, Math.round(innerHeight - br.bottom)) + "px";
+        btn.style.top = "auto";
+        if (union) {
+          btn.style.right = Math.max(8, Math.round(innerWidth - union.right)) + "px";
+          btn.style.bottom = Math.max(8, Math.round(innerHeight - union.top + 8)) + "px";
+          let dr = btn.getBoundingClientRect();
+          const blocked = function () {
+            dr = btn.getBoundingClientRect();
+            if (rects.some(function (r) { return hit(dr, r); })) return true;
+            if (mr && (hit(dr, mr) || dr.top < mr.bottom + 6)) return true;
+            if (lr && hit(dr, lr)) return true;
+            return false;
+          };
+          if (blocked()) {
+            btn.style.right = Math.max(8, Math.round(innerWidth - union.left + 8)) + "px";
+            btn.style.bottom = Math.max(8, Math.round(innerHeight - union.bottom)) + "px";
+          }
+          if (blocked()) {
+            btn.style.right = "8px";
+            btn.style.bottom = Math.max(8, Math.round(innerHeight - union.top + 8)) + "px";
           }
         } else if (mr && mr.height) {
           btn.style.bottom = "auto";
@@ -14827,7 +15133,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
           btn.style.right = "8px";
         }
       } catch (eD) { /* optional */ }
-    }
+    } /* Batch 99: stay clear of Fire Port / Fire Stbd / Shot / Board as well as Anchor (98-s6-23) */
     function layoutDev95() {
       const vv = window.visualViewport;
       const vw = (vv && vv.width) || innerWidth;
@@ -14912,7 +15218,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!far59.list || far59.scan <= 0) { far59.scan = 8; far59.list = []; const skip = new Set(blobs58.concat(signs47)); scene.children.forEach(function (o) { if (o === ship.root || skip.has(o) || o.userData.lod55 || o.isCamera || o.isLight) return; const tag = o.userData.tag || o.name || ""; if (/^(sun|cloud|gull|sea|water|sky)/.test(tag)) return; let c = null; if (o.isMesh && o.geometry) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); const bs = o.geometry.boundingSphere; if (bs.radius > 120) return; c = bs.center.clone().applyMatrix4(o.matrixWorld); } else c = o.position.clone(); if (Math.abs(c.x) + Math.abs(c.z) < 0.01 && !o.isMesh) return; let rad62 = o.userData.rad62; if (rad62 == null) { if (o.isMesh && o.geometry) rad62 = o.geometry.boundingSphere.radius * Math.max(o.scale.x, o.scale.z); else { const bb = new THREE.Box3().setFromObject(o); rad62 = bb.isEmpty() ? 0 : Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) / 2; } o.userData.rad62 = rad62; } far59.list.push({ o: o, x: c.x, z: c.z, r: rad62 }); }); }
     far59.scan -= 0.25; far59.n = 0;
     { let ci = 0; scene.children.forEach(function (o) { if ((o.userData.tag || o.name) !== "cloud") return; const hide = mode === "land" && (ci++ % 2 === 1); if (!!o.userData.cl60 !== hide) { o.userData.cl60 = hide; o.traverse(function (m) { if (m.isMesh || m.isSprite) m.layers.set(hide ? 1 : 0); }); } }); } // Batch 60: ashore, half the clouds
-    { const fpsNow = 1000 / Math.max(1, fps48.iv); slowT60 = fpsNow < 12 && !(x3 && x3.lowGfx) ? slowT60 + 0.25 : 0; if (slowT60 > 20 && x3 && !x3.lowTip60) { x3.lowTip60 = 1; toast("The game is running slowly on this device. Settings \u2192 Graphics: Low gives a smoother frame rate.", "Frame rate"); } } // Batch 60
+    { const fpsNow = 1000 / Math.max(1, fps48.iv); slowT60 = fpsNow < 12 && !(x3 && x3.lowGfx) ? slowT60 + 0.25 : 0; if (slowT60 > 20 && x3 && !x3.lowTip60) { x3.lowTip60 = 1; say("Frame rate: the game is running slowly. Settings → Graphics: Low is smoother.", 5); /* Batch 99: a small say() banner, not the centred Frame rate card that covered a 300% view */ } } // Batch 60
     far59.list.forEach(function (e) { const dd62 = Math.hypot(e.x - cx, e.z - cz); const f = (mode === "land" && !room57 && dd62 > (x3 && x3.lowGfx ? 90 : 110)) || /* Batch 96: ashore far scenery 110 (was 125), low-gfx 90 */ (mode === "sea" && e.r < ((fightZone64 || afterCut79()) ? 20 : 7) && dd62 > ((fightZone64 || afterCut79()) && !x3.noFar71 ? 70 : x3 && x3.lowGfx || IS_PHONE ? 95 : 120)); /* Batch 95: ashore small scenery beyond 125 m leaves the view (was 150). Batch 62: at sea, small shore props beyond 120 m leave the main view; houses and big scenery stay as landmarks */ if (f) far59.n++; if (!!e.o.userData.far59 === f) return; e.o.userData.far59 = f; e.o.traverse(function (m) { if (m.isMesh || m.isSprite || m.isPoints) m.layers.set(f ? 1 : 0); }); });
     // Batch 57 (Games 2): Belleisle ran at 4-8 fps. Ashore, whole ships beyond 110 m drop out of the main view (they are only specks behind the town).
     lodShips55.forEach(function (o) { const f57 = o !== ship.root && mode === "land" && Math.hypot(o.position.x - cx, o.position.z - cz) > 110; if (!!o.userData.far57 === f57) return; o.userData.far57 = f57; const det = o.userData.lod55; o.traverse(function (m) { if (!m.isMesh && !m.isSprite) return; m.layers.set(f57 || (o.userData.far55 && det.indexOf(m) >= 0) ? 1 : 0); }); });
@@ -15998,7 +16304,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   /* Batch 65: per-frame draw-call recorder by category (QA, off unless started) */
   let rec65 = null; const fr65 = new THREE.Frustum(), pm65 = new THREE.Matrix4();
   /* Batch 67 (Games 2): the full draw-call breakdown in a scrollable card, not a 6-line toast */
-  function helpLines76() { const L = ["Sailing: the stick steers at sea and walks ashore. Sail raises or lowers canvas; run with the wind.", "Guns: the Guns button fires a broadside. Q / E look to a side; F fires.", "Boarding: weaken a ship below the board line, or wait for her to strike her colours, then come alongside slowly and tap Board.", "Struck ships stop firing and wait. Board prefers a struck ship, then the biggest.", "Consort: keep one captured ship as a consort. One at a time.", "Ashore: come in slow near a quay, then step off. Taverns, markets and shipyards have jobs and repairs.", "Jobs: each port's board has work. The Voyage tab counts jobs done per port.", "News: the crowns send news every few minutes. It lasts about 6 minutes and changes pay or morale. Pause and Voyage show it.", "Shipyard: each hull offer is compared with the ship you sail.", "Struck ships: your consort holds fire on them and on the ship you are boarding.", "News horns: each crown has its own call.", "Safe harbour: inside a harbour nobody attacks you.", "Trade: the market notes what you paid, so each sale shows its profit. The Log keeps the total.", "Saves: two backup copies are kept; a damaged save loads from the newest good one.", "Harbour: sail in under canvas and the harbour bell rings. A tow is silent.", "Perf: after a capture the far scenery stays light for a few seconds, so the frame rate does not jump.", "News: a muster raises job pay; a blockade trims it. Pause shows which is on.", "Jobs: sail into a harbour with no job on and you will hear about the notice board. The Voyage tab lists how many you still have open.", "News: a market glut is a reason to wait; an enlistment raises job pay. Pause shows which is on.", "Shallows: if you run aground, steer toward open sea; she will crawl off the bank.", "News: a trade boom raises job pay; a custom-house audit trims it. Pause shows which is on.", "News: a merchant fair raises job pay. Pause shows which is on.", "News: a shipyard week raises job pay. A neap tide leaves less water in the approaches.", "Jobs: the notice board is inside each tavern. Step ashore, look for the lantern over the tavern door, go in, and walk up to the landlord. Voyage shows jobs you can take now, and whether you already have one in hand.", "Android: the system Back button opens Pause, the same as in a browser.", "Fight: if a large ship fills the view, the camera backs off. Board a galleon from a little further out.", "Feedback: Pause \u2192 Copy a bug report / feedback. Nothing is sent unless you paste it.", "Saves: the voyage saves itself. Pause \u2192 Export save keeps a copy.", "War: after the treasure galleon, go ashore at a quay and sign with a side. Besiege an enemy port from open water; sink or board the guards.", "Ashore: Sword when the ring is lit, Pistol at range, Dodge when you see !.", "Harbour: escorts will not hunt you inside a safe harbour.", "Harbour: a sailed arrival rings the harbour bell and shows a toast.", "God mode (Dev): your hull cannot be hurt, including in a lost boarding.", "Boarding: a refusal always says how many yards you are. If her hull is already low enough but you are still short, the hint says Come closer (N yd). You can board once she is below the board line, even before she strikes. A short Board-again countdown only appears after a lost boarding.", "Town: each port's tavern has a Tavern label, the same way as the market and the shipyard. The notice board is inside.", "First hour: after the lessons, Pause and the Log always show the next step — the agent’s contract, the tavern notice board, and the safe harbour.", "War: take every port and the war is yours. Hold them if a counter-attack comes, or sail on.", "First hour: when the lessons, the contract, a safe harbour, and a job or a fight are done, you get a small prize, and Pause still has the next step.", "War: after you sign, Pause shows how many ports you hold.", "First hour: until it is done, Pause lists what you still need: the agent, a sailed arrival, and a job or a fight.", "War: when you take a port, the toast says how many you hold.", "Android: a private-beta phone app is in the works (batches 95 to 100). The system Back button already opens Pause. Jeff signs the app; this build does not create a key.", "Sea: the water under the ship is the sea itself, not a pale plane.", "First hour: Pause lists every item, done and not-done: the agent, a sailed harbour arrival, and a job or a fight. The treasure galleon comes later.", "Town: from a ship in the harbour, the Tavern label stays up so you can find the board.", "Harbour: the bell toast rings only when you sail in, not after a Dev jump.", "Dev: the Dev panel scales and scrolls on a small or zoomed screen, and Close takes it off the page.", "Town: farther houses, palms and quay clutter hide sooner, so a phone harbour stays nearer 250 draw calls. The Tavern label still stays up from the ship.", "Sea: after a hull change or a long jump the water and islands keep their colour; they should not flash white while a shader compiles.", "Sails: the Sail button goes Furled, then Half, then Full, then back to Half, so you can fill or shorten without furling all the way. The canvas answers sooner.", "Camera: near a galleon the view backs off and lifts smoothly, and stays out of nearby hulls and masts.", "Guns: the auto-gunner only fires at your target or at a hostile, never at a neutral ship.", "Boarding: a struck escort heaves to so you can catch her. Come-closer stays up instead of a raking-shot line when you are closing to board.", "QA: God and the QA toggles show on or off as they really are. Strong-ship does not count as Command a bigger ship. Struck ship alongside and Board-again wait are there to test boarding.", "Sea: far ships and islands fade into a sea-teal haze; they should not draw as white paper on the horizon.", "Guns: English, Spanish and French ships leave a new captain be until fired on or until you sign against their flag. Pirates still hunt. The auto-gunner follows the same rule.", "Fight: a starter cutter or sloop takes lighter hits from ordinary patrols, so a first fight can be broken off.", "Camera: near a galleon or a passing ship the view backs off and slides to keep both hulls in the frame, and stays out of nearby sails.", "Dev: Full repair restores hull, sails and crew, toasts, and refreshes the HUD at once.", "Dock: a compact Tavern, Market and Shipyard chip stays on screen when you are moored, even at a tight phone zoom.", "Guns: the auto-gunner prefers the ship you are fighting, or the nearest or most damaged hostile in range.", "Sail: the Sail button keeps a fixed slot, so it does not jump when Board appears.", "Dev: God mode applies on the first tap, toasts, and refreshes the HUD.", "Settings: Larger text stays in the list; the panel scrolls on a small phone."]; try { if (/qa=1/.test(location.search)) L.push("Dev (?qa=1 only): the Dev button opens jumps, god mode and QA toggles. Auto-gunner can stop at a struck ship."); } catch (e) { /* optional */ } L.push("Version: batch 98"); return L; }
+  function helpLines76() { const L = ["Sailing: the stick steers at sea and walks ashore. Sail raises or lowers canvas; run with the wind.", "Guns: the Guns button fires a broadside. Q / E look to a side; F fires.", "Boarding: weaken a ship below the board line, or wait for her to strike her colours, then come alongside slowly and tap Board.", "Struck ships stop firing and wait. Board prefers a struck ship, then the biggest.", "Consort: keep one captured ship as a consort. One at a time.", "Ashore: come in slow near a quay, then step off. Taverns, markets and shipyards have jobs and repairs.", "Jobs: each port's board has work. The Voyage tab counts jobs done per port.", "News: the crowns send news every few minutes. It lasts about 6 minutes and changes pay or morale. Pause and Voyage show it.", "Shipyard: each hull offer is compared with the ship you sail.", "Struck ships: your consort holds fire on them and on the ship you are boarding.", "News horns: each crown has its own call.", "Safe harbour: inside a harbour nobody attacks you.", "Trade: the market notes what you paid, so each sale shows its profit. The Log keeps the total.", "Saves: two backup copies are kept; a damaged save loads from the newest good one.", "Harbour: sail in under canvas and the harbour bell rings. A tow is silent.", "Perf: after a capture the far scenery stays light for a few seconds, so the frame rate does not jump.", "News: a muster raises job pay; a blockade trims it. Pause shows which is on.", "Jobs: sail into a harbour with no job on and you will hear about the notice board. The Voyage tab lists how many you still have open.", "News: a market glut is a reason to wait; an enlistment raises job pay. Pause shows which is on.", "Shallows: if you run aground, steer toward open sea; she will crawl off the bank.", "News: a trade boom raises job pay; a custom-house audit trims it. Pause shows which is on.", "News: a merchant fair raises job pay. Pause shows which is on.", "News: a shipyard week raises job pay. A neap tide leaves less water in the approaches.", "Jobs: the notice board is inside each tavern. Step ashore, look for the lantern over the tavern door, go in, and walk up to the landlord. Voyage shows jobs you can take now, and whether you already have one in hand.", "Android: the system Back button opens Pause, the same as in a browser.", "Fight: if a large ship fills the view, the camera backs off. Board a galleon from a little further out.", "Feedback: Pause \u2192 Copy a bug report / feedback. Nothing is sent unless you paste it.", "Saves: the voyage saves itself. Pause \u2192 Export save keeps a copy.", "War: after the treasure galleon, go ashore at a quay and sign with a side. Besiege an enemy port from open water; sink or board the guards.", "Ashore: Sword when the ring is lit, Pistol at range, Dodge when you see !.", "Harbour: escorts will not hunt you inside a safe harbour.", "Harbour: a sailed arrival rings the harbour bell and shows a toast.", "God mode (Dev): your hull cannot be hurt, including in a lost boarding.", "Boarding: a refusal always says how many yards you are. If her hull is already low enough but you are still short, the hint says Come closer (N yd). You can board once she is below the board line, even before she strikes. A short Board-again countdown only appears after a lost boarding.", "Town: each port's tavern has a Tavern label, the same way as the market and the shipyard. The notice board is inside.", "First hour: after the lessons, Pause and the Log always show the next step — the agent’s contract, the tavern notice board, and the safe harbour.", "War: take every port and the war is yours. Hold them if a counter-attack comes, or sail on.", "First hour: when the lessons, the contract, a safe harbour, and a job or a fight are done, you get a small prize, and Pause still has the next step.", "War: after you sign, Pause shows how many ports you hold.", "First hour: until it is done, Pause lists what you still need: the agent, a sailed arrival, and a job or a fight.", "War: when you take a port, the toast says how many you hold.", "Android: 100 is the private beta. Jeff creates the signing key, sideloads the APK, publishes assetlinks, and uploads to Play if he wants an internal test track. This build does not create a key or upload to Play. The system Back button already opens Pause.", "Sea: the water under the ship is the sea itself, not a pale plane.", "First hour: Pause lists every item, done and not-done: the agent, a sailed harbour arrival, and a job or a fight. The treasure galleon comes later.", "Town: from a ship in the harbour, the Tavern label stays up so you can find the board.", "Harbour: the bell toast rings only when you sail in, not after a Dev jump.", "Dev: the Dev panel scales and scrolls on a small or zoomed screen, and Close takes it off the page.", "Town: farther houses, palms and quay clutter hide sooner, so a phone harbour stays nearer 250 draw calls. The Tavern label still stays up from the ship.", "Sea: after a hull change or a long jump the water and islands keep their colour; they should not flash white while a shader compiles.", "Sails: the Sail button goes Furled, then Half, then Full, then back to Half, so you can fill or shorten without furling all the way. The canvas answers sooner.", "Camera: near a galleon the view backs off and lifts smoothly, and stays out of nearby hulls and masts.", "Guns: the auto-gunner only fires at your target or at a hostile, never at a neutral ship.", "Boarding: a struck escort heaves to so you can catch her. Come-closer stays up instead of a raking-shot line when you are closing to board.", "QA: God and the QA toggles show on or off as they really are. Strong-ship does not count as Command a bigger ship. Struck ship alongside and Board-again wait are there to test boarding.", "Sea: far ships and islands fade into a sea-teal haze; they should not draw as white paper on the horizon.", "Guns: English, Spanish and French ships leave a new captain be until fired on or until you sign against their flag. Pirates still hunt. The auto-gunner follows the same rule.", "Fight: a starter cutter or sloop takes lighter hits from ordinary patrols, so a first fight can be broken off.", "Camera: near a galleon or a passing ship the view backs off and slides to keep both hulls in the frame, and stays out of nearby sails.", "Dev: Full repair restores hull, sails and crew, toasts, and refreshes the HUD at once.", "Dock: a compact Tavern, Market and Shipyard chip stays on screen when you are moored, even at a tight phone zoom.", "Guns: the auto-gunner prefers the ship you are fighting, or the nearest or most damaged hostile in range.", "Sail: the Sail button keeps a fixed slot, so it does not jump when Board appears.", "Dev: God mode applies on the first tap, toasts, and refreshes the HUD.", "Settings: Larger text stays in the list; the panel scrolls on a small phone.", "Harbour: wood smoke no longer fills the view when you are docked or close in.", "View: a ship that cuts between you and the camera fades so you can still see your own cutter.", "Hulls: ships push apart if they touch, so they do not sit inside one another.", "Range: QA and Dev show yards to the target, so you can hold 24-32 yd.", "Private beta: Pause → Copy a bug report. Nothing is sent unless you paste it. Thanks to the Games 2 testers."]; try { if (/qa=1/.test(location.search)) L.push("Dev (?qa=1 only): the Dev button opens jumps, god mode and QA toggles. Auto-gunner can stop at a struck ship."); } catch (e) { /* optional */ } L.push("Version: batch 99"); return L; }
   window.addEventListener("keydown", function (e) { if (e.key !== "Escape") return; const h76 = document.getElementById("help76"); if (h76) { h76.remove(); e.stopImmediatePropagation(); e.preventDefault(); } }, true); /* Batch 76: Esc closes Help first, leaves Pause open */
   function showHelp76() { try { sfx64("page76"); } catch (e) { /* optional */ } showCard68("help76", "Help", helpLines76()); try { const h = document.getElementById("help76"); if (h) { h.style.fontSize = "16px"; h.style.lineHeight = "1.5"; h.style.padding = "16px 18px"; h.querySelectorAll("div,p,li").forEach(function (e) { if (!e.querySelector("div,p,li")) { e.style.margin = "0 0 8px"; e.style.lineHeight = "1.5"; } }); } } catch (e) { /* optional */ } /* Batch 78 (Games 2): bigger Help text, looser lines */ }
   function showCard68(id, title, lines) { const old = document.getElementById(id); if (old) old.remove(); const d = document.createElement("div"); d.id = id; d.setAttribute("role", "dialog"); d.setAttribute("aria-label", title); d.style.cssText = "position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9999;background:rgba(20,26,34,.97);color:#fff;border:2px solid #ffd75a;border-radius:10px;padding:10px 14px;max-height:80vh;width:min(520px,90vw);overflow-y:auto;font:" + (document.body.classList.contains("big65") ? 18 : 14) + "px/1.4 system-ui,sans-serif"; if (document.body.classList.contains("hc64")) d.style.cssText += ";background:#000;border-color:#fff"; d.innerHTML = "<b>" + title + "</b><br>" + lines.map(function (t) { return String(t).replace(/[<>&]/g, ""); }).join("<br>") + "<br><button type='button' class='c68x' style='margin-top:8px;min-height:44px;min-width:88px'>Close</button>" + (arguments[3] ? " <button type='button' class='c69cp' style='margin-top:8px;min-height:44px;min-width:88px'>Copy</button>" : ""); document.body.appendChild(d); d.querySelector(".c68x").addEventListener("pointerdown", function (e) { e.stopPropagation(); d.remove(); }); const cp = d.querySelector(".c69cp"); if (cp) cp.addEventListener("pointerdown", function (e) { e.stopPropagation(); const txt = lines.join("\n"); try { navigator.clipboard.writeText(txt); } catch (er) { /* optional */ } window.__copied69 = txt; cp.textContent = "Copied"; }); /* Batch 69: Copy */ try { d.querySelector(".c68x").focus(); } catch (e) { /* optional */ } return d; }
@@ -16035,6 +16341,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (mode === "sea" && x3.alarm64 !== false && ship.hull > 0 && ship.hull < ship.hullMax * 0.25 && !playerSafe()) { bellT64 -= 0.5; if (bellT64 <= 0) { bellT64 = ship.hull < ship.hullMax * 0.1 ? 3 : 6; /* Batch 65 */ sfx64("bell"); } } else bellT64 = 0;
     // onboarding, once each
     if (mode === "sea" && !fightOn) { if (tip64("text98", "Hard to read on a phone? Open Settings and turn on Larger text. The list scrolls if your screen is short.")) return;
+      if (tip64("fade99", "If another ship fills the view, she will fade so you can still see your own cutter.")) return;
       if (sail > 0 && tip64("sail64", "Steer with the stick, raise and lower sail with Sail, and fire a broadside with Fire Port / Fire Stbd. Settings has Aim assist and a 75% game speed if you want an easier time.", "Controls")) return;
       if (ship.hull < ship.hullMax * 0.5 && tip64("hull64", "Your hull is under half. Any shipyard patches it: Bramble Quay, Salt Cay, San Lorenzo or Belleisle.")) return;
       if (dayU && dayU.value < 0.3 && tip64("night64", "Night at sea: forts and lookouts see less, and a battle won by moonlight counts double for some deeds.")) return; }
@@ -16495,7 +16802,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     godLabel: function () { try { syncToggleLabels95(); } catch (e) { /* optional */ } const b = document.getElementById("devgod57"); return b ? b.textContent : ""; }
   };
   window.__b96 = {
-    limits: function () { return { seaDress: 55, landDress: 65, seaLamp: 70, landLamp: 72, seaPalm: 130, landPalm: 150, farLand: 110, houseHide: 70, water: 3200, near: camera.near, lodSea: 62 }; },
+    limits: function () { return { seaDress: 55, landDress: 58, seaLamp: 70, landLamp: 64, seaPalm: 130, landPalm: 150, farLand: 110, houseHide: 70, water: 3200, near: camera.near, lodSea: 62 }; },
     tavern: function () { return placeTags.some(function (t) { return /Tavern/.test(t.userData && t.userData.label || ""); }); },
     cycleSail: function () { return cycleSail96(); },
     sail: function () { return sail; },
@@ -16600,7 +16907,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     gunnerPick: function () { const p = typeof pickGunnerTarget98 === "function" ? pickGunnerTarget98() : null; return p && p.f ? { name: p.f.name, hull: p.f.hull, max: p.f.hullMax, d: Math.hypot(p.f.x - ship.x, p.f.z - ship.z), score: p.score } : null; },
     god: function () { const b = document.getElementById("devgod57"); return { on: !!god57, label: b ? b.textContent : "", hull: ship.hull, max: ship.hullMax }; },
     stance: function (name) { const f = foes.find(function (q) { return q && q.name === name; }); return f ? { name: f.name, hostile: !!(typeof foeHostile97 === "function" && foeHostile97(f)), word: (typeof foeHostile97 === "function" && foeHostile97(f)) ? "Hostile" : "Neutral" } : null; },
-    ver: function () { return { ver98: x3 && x3.ver98, ver97: x3 && x3.ver97 }; },
+    ver: function () { return { ver98: x3 && x3.ver98, ver97: x3 && x3.ver97, ver99: x3 && x3.ver99 }; },
     puffs: function () {
       const cam = camera.position, out = [];
       (chimneys || []).forEach(function (c) {
@@ -16635,6 +16942,63 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       return { ok: name === near.name, pick: name, near: near.name, far: far.name, dNear: 14, dFar: 36 };
     }
   };
+
+  window.__b99 = {
+    ver: function () { return { ver99: x3 && x3.ver99, ver98: x3 && x3.ver98, ver97: x3 && x3.ver97 }; },
+    puffs: function () {
+      const cam = camera.position, close = [], hbr = 0;
+      let inHbr = false;
+      try { if (typeof safeHarbourAt === "function" && safeHarbourAt(cam.x, cam.z)) inHbr = true; } catch (e) { /* optional */ }
+      (chimneys || []).forEach(function (c) {
+        if (!c.sp) return;
+        const d = Math.hypot(c.sp.position.x - cam.x, c.sp.position.z - cam.z);
+        const op = (c.sp.visible && c.sp.material && c.sp.material.opacity) || 0;
+        if ((d < 45 || inHbr) && op > 0.05) close.push({ d: Math.round(d * 10) / 10, op: Math.round(op * 100) / 100 });
+      });
+      return { close: close.length, items: close, n: (chimneys || []).length, inHarbour: inHbr };
+    },
+    planes: function () { return palePlanes99(); },
+    fade: function () { return fadeList99.slice(); },
+    push: function () { return pushLast99.slice(); },
+    range: function () {
+      const r = rangeInfo99();
+      const el = document.getElementById("range99");
+      const ql = document.getElementById("qarange99");
+      return {
+        target: r.target ? { name: r.target.name, d: Math.round(r.td) } : null,
+        large: r.large ? { name: r.large.name, d: Math.round(r.ld) } : null,
+        text: el ? el.textContent : "",
+        on: !!(el && el.style.display !== "none" && el.offsetHeight > 0),
+        qa: ql ? ql.textContent : "",
+        w: el ? el.getBoundingClientRect().width : 0,
+        h: el ? el.getBoundingClientRect().height : 0
+      };
+    },
+    overlap: function (name, dist) {
+      const f = foes.find(function (q) { return q && q.name === name; });
+      if (!f) return null;
+      f.alive = true; f.sinking = false; f.gone = false; f.hide65 = false;
+      if (f.root) f.root.visible = true;
+      f.x = ship.x + (dist || 2); f.z = ship.z;
+      f.heading = ship.heading || 0;
+      if (f.root) f.root.position.set(f.x, f.root.position.y, f.z);
+      const n = pushApart99(1);
+      return { name: f.name, d: Math.round(Math.hypot(f.x - ship.x, f.z - ship.z) * 10) / 10, x: f.x, z: f.z, n: n };
+    },
+    occlude: function (name) {
+      const f = foes.find(function (q) { return q && q.name === name; });
+      if (!f || !camera) return null;
+      const midX = (camera.position.x + ship.x) / 2, midZ = (camera.position.z + ship.z) / 2;
+      f.x = midX; f.z = midZ;
+      if (f.root) f.root.position.set(f.x, f.root.position.y, f.z);
+      occludeBetween99(1);
+      return { name: f.name, k: Math.round((f.fade99 || 0) * 100) / 100, list: fadeList99.slice() };
+    },
+    fpsToast: function () { return { el: !!(document.getElementById("toast") && /Frame rate/i.test(document.getElementById("toast").textContent || "")), say: true }; },
+    dockChip: function () { return window.__b98 && window.__b98.dockChip(); },
+    android: function () { return "0.99.0"; }
+  };
+
   window.__b73 = { exch: function (l) { exchange(l); return fight ? { p: fight.parry73 || 0, you: fight.you, them: fight.them, on: fightOn } : null; }, cons: function () { return consort ? { hull: consort.hull, max: consort.hullMax, d: Math.hypot(consort.x - ship.x, consort.z - ship.z) } : null; }, rel: function () { const g = oroFoe60(); if (!g) return null; const fx = Math.sin(ship.heading), fz = Math.cos(ship.heading), dx = g.x - ship.x, dz = g.z - ship.z; return (fx * dx + fz * dz) / Math.max(1, Math.hypot(dx, dz)); }, room: function () { return !!room57; }, peak: function (reset) { if (reset) { peak73.max = 0; peak73.by = []; } return peak73; }, fire: function (sg) { try { fire(sg); } catch (e) { return String(e); } return 1; }, turn: function (h) { ship.heading = h; }, ship: function () { return ship; } };
   window.__b75 = { oro: function () { return oroFoe60(); }, so: function () { return ship; }, oroN: function () { return foes.filter(function (f) { return f.oro60 || f.oroEsc60; }).length; }, dmg: function (n) { const g = oroFoe60(); if (g) damageFoe(g, n); return g ? g.hull : null; }, ship: function () { return { x: ship.x, z: ship.z, hull: ship.hull, speed: ship.speed, mode: mode, fightOn: fightOn, ch: x3 && x3.sCh460, menu: menuOpen }; }, board: function () { const b = boardTarget(); return b ? b.name : null; } };
   window.__b72 = { filt: function (t) { return filt72(t); }, fleet: function () { return fleet72(); }, log: function (t) { rec69(t); }, mem: function () { return { g: renderer.info.memory.geometries, t: renderer.info.memory.textures }; }, struck: function (s) { const f = foes.find(function (q) { return q.alive && !q.gone && !q.sinking && !(q.ignore >= 999); }); if (!f) return null; f.ignore = s; f.hull = 2; f.x = ship.x + 3; f.z = ship.z; ship.speed = 0; return boardWhy70(true) || ("mode " + mode + " fight " + fightOn); } };
@@ -17252,14 +17616,14 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       scene.add(g); bunt46.push(g);
       for (let b = 0; b < 2; b++) { const m = new THREE.Mesh(BOAT, wood); const bx = h.x + px * (10 + b * 3) - ox * 6, bz = h.z + pz * (10 + b * 3) - oz * 6; if (!spotAfloat(bx, bz)) continue; m.position.set(bx, 0.15, bz); m.rotation.y = Math.atan2(ox, oz) + b; scene.add(m); boats46.push({ m: m, ph: pi + b * 1.7 }); }
       const ex = along ? (Math.abs(d.x0 - h.x) < Math.abs(d.x1 - h.x) ? d.x0 : d.x1) : dcx, ez = along ? dcz : (Math.abs(d.z0 - h.z) < Math.abs(d.z1 - h.z) ? d.z0 : d.z1);
-      const lamp = new THREE.Sprite(glowMat46(0xffc070, 0)); lamp.scale.setScalar(2.6); lamp.position.set(ex, d.deck + 2.4, ez); scene.add(lamp); dockLamps46.push(lamp);
+      const lamp = new THREE.Sprite(glowMat46(0xffc070, 0)); lamp.name = "dock-lamp"; lamp.scale.setScalar(2.6); lamp.position.set(ex, d.deck + 2.4, ez); scene.add(lamp); dockLamps46.push(lamp);
     });
     for (let i = 0; i < 14; i++) { const f = new THREE.Sprite(glowMat46(0xd8ff7a, 0)); f.scale.setScalar(0.35); f.visible = false; scene.add(f); flies46.push({ o: f, ph: Math.random() * 20, ox: (Math.random() - 0.5) * 16, oz: (Math.random() - 0.5) * 16 }); }
     for (let i = 0; i < 4; i++) { const f = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex(), color: i % 2 ? 0xfff2a0 : 0xffffff, transparent: true, opacity: 0.9, depthWrite: false })); f.scale.setScalar(0.3); f.visible = false; scene.add(f); bflies46.push({ o: f, ph: Math.random() * 20, ox: (Math.random() - 0.5) * 12, oz: (Math.random() - 0.5) * 12 }); }
     doors.forEach(function (dr) { if (dr.stall) return; const t = new THREE.Sprite(glowMat46(0xffa850, 0)); t.scale.setScalar(1.8); t.position.set(dr.x, feetY(dr.x, dr.z) + 2.6, dr.z); t.visible = false; scene.add(t); torches46.push(t); });
     doorRing46 = flat45(RING45, 0xf2d48a, 0); pblob46 = flat45(FLAT45, 0x101010, 0);
     torches46.forEach(function (o) { const g = new THREE.Mesh(FLAT45, new THREE.MeshBasicMaterial({ map: softTex(), color: 0xffa850, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending })); g.position.set(o.position.x, o.position.y - 2.5, o.position.z); g.scale.setScalar(2.4); g.visible = false; scene.add(g); torchGlow46.push(g); });
-    dockLamps46.forEach(function (l) { const r = new THREE.Sprite(glowMat46(0xffb060, 0)); r.position.set(l.position.x, 0.25, l.position.z); r.visible = false; scene.add(r); dockRefl46.push(r); });
+    dockLamps46.forEach(function (l) { const r = new THREE.Sprite(glowMat46(0xffb060, 0)); r.name = "dock-refl"; r.position.set(l.position.x, 0.25, l.position.z); r.visible = false; scene.add(r); dockRefl46.push(r); });
   }
   function update46(dt) {
     if (!built46) build46();
@@ -17913,21 +18277,25 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     if (!windStreaks) {
       windStreaks = [];
       for (let k = 0; k < 10; k++) {
-        const m = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 7), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false }));
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 7), new THREE.MeshBasicMaterial({ color: 0xb8d4d0, transparent: true, opacity: 0, depthWrite: false, depthTest: true }));
+        m.name = "wind-streak";
         m.rotation.x = -Math.PI / 2; scene.add(m);
         windStreaks.push({ m: m, ph: k / 10, ox: (Math.random() - 0.5) * 70, oz: (Math.random() - 0.5) * 70 });
       }
     }
     const wx = Math.sin(windAngle), wz = Math.cos(windAngle);
     windStreaks.forEach(function (w) {
-      w.m.visible = on;
-      if (!on) return;
+      if (!on) { w.m.visible = false; w.m.material.opacity = 0; return; }
       const u = (t * (gustT > 0 ? 0.26 : 0.18) + w.ph) % 1;
       const along = (u - 0.5) * 40;
       w.m.position.set(ship.x + w.ox + wx * along, 0.45, ship.z + w.oz + wz * along);
+      w.m.rotation.x = -Math.PI / 2;
       w.m.rotation.z = -windAngle;
-      w.m.material.opacity = Math.sin(u * Math.PI) * (gustT > 0 ? 0.34 : 0.22);
-    });
+      const camD = camera ? Math.hypot(w.m.position.x - camera.position.x, w.m.position.z - camera.position.z) : 99;
+      const op = camD < 14 ? 0 : Math.sin(u * Math.PI) * (gustT > 0 ? 0.22 : 0.14);
+      w.m.material.opacity = op;
+      w.m.visible = op > 0.03;
+    }); /* Batch 99: sea-teal, not pure white; hide close to the camera and force flat on the water so a streak cannot read as a pale slab */
   }
   // Lightning: brief flashes near squalls, with a far-off rumble.
   let lightningT = 4;
@@ -17956,11 +18324,11 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
   function updateNightGlows() {
     const nightK = clamp((0.4 - dayU.value) / 0.3, 0, 1);
     if (!lampHalo) {
-      lampHalo = glowSprite(0xffb85a, 4.5);
-      personGlow = glowSprite(0xffc070, 5);
+      lampHalo = glowSprite(0xffb85a, 4.5); lampHalo.name = "lamp-halo";
+      personGlow = glowSprite(0xffc070, 5); personGlow.name = "person-glow";
       quayGlows = PORTS.map(function (p) {
         const disc = new THREE.Mesh(new THREE.CircleGeometry(7, 24), new THREE.MeshBasicMaterial({ map: softTex(), color: 0xffb060, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
-        disc.rotation.x = -Math.PI / 2; disc.position.set(p.gang.x, 0.35, p.gang.z); scene.add(disc); return disc;
+        disc.name = "quay-glow"; disc.rotation.x = -Math.PI / 2; disc.position.set(p.gang.x, 0.35, p.gang.z); scene.add(disc); return disc;
       });
     }
     if (sternLamp) { sternLamp.getWorldPosition(lampHalo.position); lampHalo.visible = nightK > 0 && sternLamp.visible !== false && mode === "sea"; lampHalo.material.opacity = 0.55 * nightK * (0.9 + 0.1 * Math.sin(gfxTime.value * 9)); }
@@ -18213,13 +18581,19 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       try {
         if (camera) {
           const camD = Math.hypot(c.sp.position.x - camera.position.x, c.sp.position.z - camera.position.z);
-          if (camD < 28) op = 0;
+          let inHbr = false;
+          if (typeof safeHarbourAt === "function" && typeof PORTS !== "undefined") {
+            if (safeHarbourAt(camera.position.x, camera.position.z)) inHbr = true;
+            else PORTS.forEach(function (p) { if (Math.hypot(camera.position.x - p.harbour.x, camera.position.z - p.harbour.z) < (p.harbour.r || 16) + 8) inHbr = true; });
+          }
+          if (camD < 45 || inHbr) op = 0;
+          if (inHbr) { const scH = Math.min(sc, 1.6); c.sp.scale.set(scH, scH, 1); }
         }
       } catch (eC) { /* optional */ }
       c.sp.visible = op > 0.02;
       c.sp.material.opacity = op;
     });
-  } /* Batch 98: chimney smoke sits inland on the roofs, and hides if the camera is close, so it cannot fill a docked view as pale vertical sheets */
+  } /* Batch 99: hide puffs inside 45 yd or when the camera is in a harbour ring, so underway-in-harbour bands cannot linger. Batch 98 moved them inland and hid inside 28 yd */
   // Whales: now and then a spout of mist rises far off the bow by day.
   let spout = null, spoutT = 90, whalesSeen = 0, whaleBack = null;
   function updateWhale(dt) {
@@ -18325,6 +18699,9 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
     updateBossRest(dt);
     updateTutorial(dt);
     updateBowFoam(t);
+    try { pushApart99(dt); } catch (ePa) { /* optional */ }
+    try { occludeBetween99(dt); } catch (eOc) { /* optional */ }
+    try { updateRange99(); } catch (eRg) { /* optional */ }
   }
   function diffK(k) { const d = DIFF[(x3 && x3.diff) || "normal"] || DIFF.normal; return d[k]; }
   let renownTick = 0;
@@ -19537,7 +19914,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       }
     } catch (e) { /* optional */ }
   }
-  function writeSave() { try { if (x3) { x3.ver75 = 75; x3.ver76 = 76; x3.ver77 = 77; x3.ver78 = 78; x3.ver79 = 79; x3.ver80 = 80; x3.ver81 = 81; x3.ver82 = 82; x3.ver83 = 83; x3.ver84 = 84; x3.ver85 = 85; x3.ver86 = 86; x3.ver87 = 87; x3.ver88 = 88; x3.ver89 = 89; x3.ver90 = 90; x3.ver91 = 91; x3.ver92 = 92; x3.ver93 = 93; x3.ver94 = 94; x3.ver95 = 95; x3.ver96 = 96; x3.ver97 = 97; x3.ver98 = 98; } } catch (e) { /* optional */ } /* Batch 75: save version note */
+  function writeSave() { try { if (x3) { x3.ver75 = 75; x3.ver76 = 76; x3.ver77 = 77; x3.ver78 = 78; x3.ver79 = 79; x3.ver80 = 80; x3.ver81 = 81; x3.ver82 = 82; x3.ver83 = 83; x3.ver84 = 84; x3.ver85 = 85; x3.ver86 = 86; x3.ver87 = 87; x3.ver88 = 88; x3.ver89 = 89; x3.ver90 = 90; x3.ver91 = 91; x3.ver92 = 92; x3.ver93 = 93; x3.ver94 = 94; x3.ver95 = 95; x3.ver96 = 96; x3.ver97 = 97; x3.ver98 = 98; x3.ver99 = 99; } } catch (e) { /* optional */ } /* Batch 75: save version note */
     if (!worldReady || titleOn || importReload47 || practice47 || dev57) return; // Batch 57: dev mode never writes the normal save
     const data = {
       gold: ledger.gold,
@@ -19956,7 +20333,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
         tapBoth47(rb, function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } const now = performance.now(); if (!armedR || now - armedR > 60000) { armedR = now; rb.textContent = "Swap back? Tap again"; return; } try { const cur = localStorage.getItem(SAVE_KEY); localStorage.setItem(SAVE_KEY, bk); if (cur) localStorage.setItem(SAVE_KEY + "-before-new", cur); else localStorage.removeItem(SAVE_KEY + "-before-new"); } catch (err) { return; } importReload47 = true; location.reload(); }); boot.appendChild(rb); } }
     const tv = document.createElement("div");
     tv.id = "titlever";
-    tv.textContent = "Version: batch 98";
+    tv.textContent = "Version: batch 99";
     // Batch 50: the version sits in the bottom-right corner of the screen, so a long tip or a short screen can never push it out of view.
     tv.style.cssText = "position:fixed;right:calc(8px + env(safe-area-inset-right));bottom:calc(6px + env(safe-area-inset-bottom));font-size:11px;opacity:.55;pointer-events:none;z-index:2";
     boot.appendChild(tv);
@@ -20867,7 +21244,7 @@ window.SALT_COLORMAP="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYA
       wild53: function () { const w = wildHere51() || wilds51[0]; return { here: !!wildHere51(), kd: x3 ? (x3.knock53 || 0) : 0, foes: w.foes.map(function (f) { return { k: f.kind, hp: f.hp, dead: f.dead, d: Math.round(Math.hypot(f.x - person.x, f.z - person.z) * 10) / 10, x: f.x, z: f.z, px: person.x, pz: person.z, wind: f.wind53 > 0 || f.ch53 === 1, ch: f.ch53 || 0, inTown: !outside51(w, f.x, f.z), vis: f.g.visible }; }) }; },
       sword53: function (act) { if (act === "swing") swingSword53(); else if (act === "dodge") dodge53(); else if (act === "cutlass") { x3.cutlass53 = true; } else if (act === "ready") { swordCd53 = 0; dodgeCd53 = 0; } const sb = document.getElementById("sword53"), db = document.getElementById("dodge53"); return { cd: swordCd53, dcd: dodgeCd53, dodgeT: dodgeT53, reach: swordReach53(), dmg: swordDmg53(), cutlass: hasCutlass53(), swings: swings53, hits: swordHits53, dodges: dodges53, dodged: dodged53, combo: combo53, shown: !!(sb && getComputedStyle(sb).display !== "none"), dshown: !!(db && getComputedStyle(db).display !== "none"), label: sb ? sb.textContent : "", blade: !!(blade53 && blade53.piv.visible), hp: landHp51, yaw: person.yaw, px: person.x, pz: person.z }; },
       hurt51: function (i, n) { const grp = activeFoes51(); if (grp && grp.foes[i]) hurtLandFoe51(grp.foes[i], n); return grp ? grp.foes[i].hp : null; },
-      toTreasure51: function () { ship.x = TREASURE51.ship.x; ship.z = TREASURE51.ship.z; ship.speed = 0; mode = "sea"; return !!treasureBeach51(); },
+      toTreasure51: function () { ship.x = 248; ship.z = 85; ship.speed = 0; mode = "sea"; if (ship.root) ship.root.position.set(ship.x, ship.root.position.y, ship.z); return { x: ship.x, z: ship.z, shallow: (typeof shallowFactor === "function" ? shallowFactor(ship.x, ship.z) : 1) }; } /* Batch 99: open water west of Gull Rock, not in the shallow band by the beach (98-s6-09) */,
       goAshore51: function () { goAshore(); return mode; },
       board51: function () { boardShip(true); return mode; },
       setHp51: function (n) { landHp51 = n; },

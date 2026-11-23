@@ -1,8 +1,61 @@
-# Android APK — readiness notes, batch 98
+# Android APK — readiness notes, batch 99
 
-Salt & Shot is a PWA (manifest, icons including maskable, service worker, fullscreen landscape). There are two ways to put it on a phone. Neither path is finished until Jeff adds a signing key — the bot does not create or hold one. Target remains a private-beta Android app at batch 100. Batches 95–100 are the window for Jeff's signing and a Play internal test track.
+Salt & Shot is a PWA (manifest, icons including maskable, service worker, fullscreen landscape). There are two ways to put it on a phone. Neither path is finished until Jeff adds a signing key — the bot does not create or hold one. Batch 100 is the private-beta target. This is the last build before that beta. Version 100 will be `0.100.0` / `100` under the existing scheme.
 
-Version scheme: `versionName` is `0.N.0` and `versionCode` is `N`, where N is the batch (0.98.0 / 98 for this build). Keep TWA and the bundled APK in step after every publish.
+Version scheme: `versionName` is `0.N.0` and `versionCode` is `N`, where N is the batch (0.99.0 / 99 for this build). Keep TWA and the bundled APK in step after every publish.
+
+## Beta handoff — what Jeff does himself
+
+The bot does not create a signing key, does not print keystore or password values, and does not upload to Play. These steps are Jeff's, and 100 is the batch to finish them on.
+
+### Order of operations
+
+1. Create the signing key (once), if you do not already have one.
+2. Publish `assetlinks.json` at the origin root (needed so TWA has no URL bar).
+3. Build and sideload a signed release APK; check it on a phone.
+4. Optional, at batch 100: upload the signed AAB to a Play Console internal test track.
+
+### 1. Signing key
+
+Create a signing key once, if you do not already have one. Keep the keystore and its passwords private. Do not commit the keystore, and do not paste keystore values into chat. The bot will not create one.
+
+### 2. Local keystore for the bundled APK
+
+Point the bundled APK at that existing key with a local `keystore.properties` file. Do not use `git add -A` in the android folders.
+
+### 3. Build
+
+Build a signed release APK (for sideload) and, when you are ready for Play, an AAB.
+
+### 4. Sideload checks
+
+Sideload the APK onto your phone and, when you like, onto Games 2 / private-beta testers. On the phone, check:
+
+- The version name matches the batch (`0.N.0`; this build is `0.99.0`, the beta will be `0.100.0`).
+- It opens fullscreen and in landscape.
+- TWA has no URL bar (that needs `assetlinks.json` at the origin root).
+- The system Back button opens Pause and does not leave the voyage.
+- Leaving the app saves the voyage (onPause).
+- After the first run, it still opens offline.
+
+### 5. Digital Asset Links
+
+For TWA: publish `assetlinks.json` at https://jreffrobinson12b-dev.github.io/.well-known/assetlinks.json with the SHA-256 from `bubblewrap fingerprint list`.
+
+### 6. Play internal test track
+
+At batch 100: a Play Console internal test track, using the signed AAB. The bot never uploads to Play.
+
+### Do not commit
+
+Never commit, and never `git add -A` around, any of:
+
+- `android.keystore` / `*.keystore` / `*.jks`
+- `keystore.properties`
+- keystore or key passwords
+- private fingerprint notes that include the keystore password
+
+The HTML, service worker, and version numbers are kept current each batch. Signing, assetlinks, sideload, and Play remain Jeff's.
 
 ## 1. Trusted Web Activity (live page)
 
@@ -17,7 +70,7 @@ The thin shell is built with Google's Bubblewrap from `twa-manifest.json` in the
 4. `bubblewrap build` → `app-release-signed.apk` (sideload for beta) and `.aab` (Play Store).
 5. Check on a phone: opens fullscreen, landscape, no URL bar, Back opens Pause, works offline after first run.
 
-`appVersionName` / `appVersionCode` in `twa-manifest.json` should match the batch (0.98.0 / 98 for this build).
+`appVersionName` / `appVersionCode` in `twa-manifest.json` should match the batch (0.99.0 / 99 for this build).
 
 ## 2. Bundled WebView APK (`pirates3d/android`)
 
@@ -27,25 +80,8 @@ After each game build:
 
     cp salt-and-shot.html android/app/src/main/assets/salt-and-shot.html
 
-Keep `app/build.gradle` `versionName` / `versionCode` in step with the batch (0.98.0 / 98). From batch 87, the system Back button opens Pause and does not leave the voyage; onPause saves and opens Pause.
+Keep `app/build.gradle` `versionName` / `versionCode` in step with the batch (0.99.0 / 99). From batch 87, the system Back button opens Pause and does not leave the voyage; onPause saves and opens Pause.
 
 Do not create a new signing key here. If you already have a keystore, keep it private and out of git. The bot never prints keystore values and never runs `git add -A` in this folder.
 
-## Private beta checklist (batches 95–100) — Jeff's steps
-
-The bot does not create a signing key, does not print keystore or password values, and does not upload to Play. These steps are Jeff's, and they can start in this window:
-
-1. Create a signing key once, if you do not already have one. Keep the keystore and its passwords private. Do not commit the keystore, and do not paste keystore values into chat.
-2. Point the bundled APK at that existing key (a local `keystore.properties` file). Do not use `git add -A` in the android folders.
-3. Build a signed release APK (for sideload) and, when you are ready for Play, an AAB.
-4. Sideload the APK onto your phone and, when you like, onto Games 2 / private-beta testers. On the phone, check:
-   - The version name matches the batch (`0.N.0`).
-   - It opens fullscreen and in landscape.
-   - TWA has no URL bar (that needs `assetlinks.json` at the origin root).
-   - The system Back button opens Pause and does not leave the voyage.
-   - Leaving the app saves the voyage (onPause).
-   - After the first run, it still opens offline.
-5. For TWA: publish `assetlinks.json` at https://jreffrobinson12b-dev.github.io/.well-known/assetlinks.json with the SHA-256 from `bubblewrap fingerprint list`.
-6. Optional, toward batch 100: a Play Console internal test track, using the signed AAB. The bot never uploads to Play.
-
-The HTML, service worker, and version numbers are kept current each batch. Signing, assetlinks, sideload, and Play remain Jeff's.
+Credits and license (rechecked in 99 against the published CREDITS.md / LICENSE): © 2026 Jeff Robinson, three.js r160 MIT (GLTFLoader, BufferGeometryUtils), Kenney Pirate Kit 2.1 and Blocky Characters 2.0 CC0, Web Audio with no recorded samples, thanks to the Games 2 testers. Title and Settings Credits must stay in step with that list.
