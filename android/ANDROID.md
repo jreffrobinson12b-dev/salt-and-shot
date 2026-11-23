@@ -1,22 +1,34 @@
-# Android APK (Trusted Web Activity) — readiness notes, batch 66
+# Android APK — readiness notes, batch 87
 
-The game is a PWA (manifest, icons incl. maskable, service worker, fullscreen landscape), so the APK is a thin
-Trusted Web Activity shell built with Google's Bubblewrap from `twa-manifest.json`.
+Salt & Shot is a PWA (manifest, icons including maskable, service worker, fullscreen landscape). There are two ways to put it on a phone. Neither path is finished until Jeff adds a signing key — the bot does not create or hold one.
+
+## 1. Trusted Web Activity (live page)
+
+The thin shell is built with Google's Bubblewrap from `twa-manifest.json` in this folder (on the published repo) or `/workspace/salt-and-shot/android/`.
 
 1. Install: `npm i -g @bubblewrap/cli` (needs JDK 17 + Android SDK; Bubblewrap can download both).
 2. `cd android && bubblewrap init --manifest https://jreffrobinson12b-dev.github.io/salt-and-shot/manifest.webmanifest`
-   (or `bubblewrap build` using the twa-manifest.json here). Creates/uses `android.keystore` — keep it private, never commit it.
+   (or `bubblewrap build` using the twa-manifest.json here). It may offer to create `android.keystore` — keep that private, never commit it.
 3. `bubblewrap fingerprint list` → copy the SHA-256 into `assetlinks.template.json`, save it as
    `/.well-known/assetlinks.json` at the ORIGIN root (https://jreffrobinson12b-dev.github.io/.well-known/assetlinks.json,
    i.e. the user-site repo, not this project repo). Without it the app shows a browser URL bar.
 4. `bubblewrap build` → `app-release-signed.apk` (sideload for beta) and `.aab` (Play Store).
-5. Check on a phone: opens fullscreen, landscape, no URL bar, Back opens the pause menu, works offline after first run.
+5. Check on a phone: opens fullscreen, landscape, no URL bar, Back opens Pause, works offline after first run.
 
-Not done yet (needs the user's decision/keys): signing key, publishing assetlinks.json, Play Console listing.
+`appVersionName` / `appVersionCode` in `twa-manifest.json` should match the batch (0.87.0 / 87 for this build).
 
-## Signing key (Jeff's step — not created by the bot)
-The bot does not create or hold a signing key. When you are ready:
-1. `bubblewrap init --manifest https://jreffrobinson12b-dev.github.io/salt-and-shot/manifest.webmanifest` (it offers to create a key; keep the keystore and passwords private).
-2. `bubblewrap build` produces app-release-signed.apk and .aab.
-3. `keytool -list -v -keystore <your.keystore>` gives the SHA-256 fingerprint; put it in assetlinks.template.json, save as `.well-known/assetlinks.json` on the site.
-Version for this build: 0.67.0 (code 67).
+## 2. Bundled WebView APK (`pirates3d/android`)
+
+This project wraps a local copy of the game (`app/src/main/assets/salt-and-shot.html`) in a WebView. It does not need the live site after install.
+
+After each game build:
+
+    cp salt-and-shot.html android/app/src/main/assets/salt-and-shot.html
+
+Keep `app/build.gradle` `versionName` / `versionCode` in step with the batch (0.87.0 / 87). From batch 87, the system Back button opens Pause and does not leave the voyage; onPause saves and opens Pause.
+
+Do not create a new signing key here. If you already have a keystore, keep it private and out of git.
+
+## Not done yet (Jeff's steps)
+
+Signing key, publishing `assetlinks.json`, and a Play Console internal test track. Target is still a private-beta Android app around batch 100.
