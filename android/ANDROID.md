@@ -15,7 +15,7 @@ The thin shell is built with Google's Bubblewrap from `twa-manifest.json` in thi
 4. `bubblewrap build` → `app-release-signed.apk` (sideload for beta) and `.aab` (Play Store).
 5. Check on a phone: opens fullscreen, landscape, no URL bar, Back opens Pause, works offline after first run.
 
-`appVersionName` / `appVersionCode` in `twa-manifest.json` should match the batch (0.90.0 / 90 for this build).
+`appVersionName` / `appVersionCode` in `twa-manifest.json` should match the batch (0.91.0 / 91 for this build).
 
 ## 2. Bundled WebView APK (`pirates3d/android`)
 
@@ -25,7 +25,7 @@ After each game build:
 
     cp salt-and-shot.html android/app/src/main/assets/salt-and-shot.html
 
-Keep `app/build.gradle` `versionName` / `versionCode` in step with the batch (0.90.0 / 90). From batch 87, the system Back button opens Pause and does not leave the voyage; onPause saves and opens Pause.
+Keep `app/build.gradle` `versionName` / `versionCode` in step with the batch (0.91.0 / 91). From batch 87, the system Back button opens Pause and does not leave the voyage; onPause saves and opens Pause.
 
 Do not create a new signing key here. If you already have a keystore, keep it private and out of git.
 
